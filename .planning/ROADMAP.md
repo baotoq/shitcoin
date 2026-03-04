@@ -12,7 +12,7 @@ This roadmap takes the project from zero to a working multi-node blockchain with
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Core Chain Foundation** - Block structure, SHA-256d hashing, PoW mining, difficulty adjustment, and persistent storage
+- [x] **Phase 1: Core Chain Foundation** - Block structure, SHA-256d hashing, PoW mining, difficulty adjustment, and persistent storage (completed 2026-03-04)
 - [ ] **Phase 2: Wallets and Transactions** - ECDSA keys, Bitcoin-style addresses, UTXO transaction model with signing and reversible UTXO set
 - [ ] **Phase 3: Mempool, Mining Integration, and CLI** - Transaction mempool, Merkle tree, full mining pipeline, and complete CLI for exercising all local functionality
 - [ ] **Phase 4: P2P Networking and Consensus** - TCP peer connections, block/transaction broadcasting, chain synchronization, and fork resolution
@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Restarting the node loads the previously mined chain from disk without data loss
   4. After N blocks are mined, the difficulty target visibly adjusts based on actual vs target block time
   5. Consensus parameters (block time target, difficulty interval) are configurable without code changes
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 01-01-PLAN.md — Project scaffold, domain types (Block/Header/Hash), SHA-256d hashing, PoW mining service, and go-zero config
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Chain Foundation | 1/2 | In Progress | - |
+| 1. Core Chain Foundation | 2/2 | Complete   | 2026-03-04 |
 | 2. Wallets and Transactions | 0/0 | Not started | - |
 | 3. Mempool, Mining Integration, and CLI | 0/0 | Not started | - |
 | 4. P2P Networking and Consensus | 0/0 | Not started | - |

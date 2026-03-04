@@ -9,12 +9,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Blocks & Mining
 
-- [ ] **MINE-01**: System creates a genesis block with a configurable embedded message on chain initialization
+- [x] **MINE-01**: System creates a genesis block with a configurable embedded message on chain initialization
 - [x] **MINE-02**: Block structure contains header (prev hash, Merkle root, timestamp, difficulty target, nonce) and body (transaction list)
 - [x] **MINE-03**: Block headers are hashed using SHA-256 double-hash with deterministic canonical serialization
 - [ ] **MINE-04**: User can mine a block manually via CLI command
 - [ ] **MINE-05**: Node can auto-mine blocks continuously in the background with context-based cancellation
-- [ ] **MINE-06**: Difficulty adjusts automatically every N blocks based on actual vs target block time (window-based, clamped)
+- [x] **MINE-06**: Difficulty adjusts automatically every N blocks based on actual vs target block time (window-based, clamped)
 - [ ] **MINE-07**: Block headers include a Merkle root computed from the block's transaction hashes
 - [ ] **MINE-08**: Block reward halves every N blocks (configurable interval)
 - [x] **MINE-09**: Consensus parameters (block time target, difficulty interval, initial reward, halving interval) are configurable
@@ -92,12 +92,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MINE-01 | Phase 1 | Pending |
+| MINE-01 | Phase 1 | Complete |
 | MINE-02 | Phase 1 | Complete |
 | MINE-03 | Phase 1 | Complete |
 | MINE-04 | Phase 3 | Pending |
 | MINE-05 | Phase 3 | Pending |
-| MINE-06 | Phase 1 | Pending |
+| MINE-06 | Phase 1 | Complete |
 | MINE-07 | Phase 3 | Pending |
 | MINE-08 | Phase 6 | Pending |
 | MINE-09 | Phase 1 | Complete |
