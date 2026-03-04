@@ -132,14 +132,15 @@ func TestMineDeterministic(t *testing.T) {
 
 func TestMineNonceExhausted(t *testing.T) {
 	// bits=256 means target = 2^0 = 1, which is effectively impossible
-	// (hash must be < 1, meaning all zeros, which is astronomically unlikely)
+	// (hash must be < 1, meaning all zeros)
+	// Use MineWithMaxNonce to limit search space and avoid 4B iterations
 	b, err := NewGenesisBlock("Impossible", 256)
 	if err != nil {
 		t.Fatalf("NewGenesisBlock failed: %v", err)
 	}
 
 	pow := &ProofOfWork{}
-	err = pow.Mine(b)
+	err = pow.MineWithMaxNonce(b, 1000)
 	if err != ErrNonceExhausted {
 		t.Errorf("expected ErrNonceExhausted, got: %v", err)
 	}

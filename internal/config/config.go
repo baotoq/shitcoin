@@ -27,7 +27,20 @@ type ConsensusConfig struct {
 	InitialDifficulty int `json:",default=16"`
 
 	// GenesisMessage is the message embedded in the genesis block.
-	GenesisMessage string `json:",default=The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"`
+	// Default is applied in ApplyDefaults() to avoid go vet warning about spaces in struct tags.
+	GenesisMessage string `json:",optional"`
+}
+
+// DefaultGenesisMessage is the default genesis block message when none is configured.
+const DefaultGenesisMessage = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
+
+// ApplyDefaults fills in zero-value fields with their default values.
+// Call this after conf.MustLoad to handle defaults that cannot be expressed
+// in struct tags (e.g., strings with spaces).
+func (c *ConsensusConfig) ApplyDefaults() {
+	if c.GenesisMessage == "" {
+		c.GenesisMessage = DefaultGenesisMessage
+	}
 }
 
 // StorageConfig holds storage-related settings.

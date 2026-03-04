@@ -77,6 +77,7 @@ Port: 8080
 
 	var c Config
 	conf.MustLoad(configPath, &c)
+	c.Consensus.ApplyDefaults()
 
 	// Verify defaults are applied for consensus
 	if c.Consensus.BlockTimeTarget != 10 {
