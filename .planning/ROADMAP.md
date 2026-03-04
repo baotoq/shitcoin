@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffold, domain types (Block/Header/Hash), SHA-256d hashing, PoW mining service, and go-zero config
+- [x] 01-01-PLAN.md — Project scaffold, domain types (Block/Header/Hash), SHA-256d hashing, PoW mining service, and go-zero config
 - [ ] 01-02-PLAN.md — Difficulty adjustment, Chain aggregate, bbolt persistence, and runnable main entry point
 
 ### Phase 2: Wallets and Transactions
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Chain Foundation | 0/2 | Planning complete | - |
+| 1. Core Chain Foundation | 1/2 | In Progress | - |
 | 2. Wallets and Transactions | 0/0 | Not started | - |
 | 3. Mempool, Mining Integration, and CLI | 0/0 | Not started | - |
 | 4. P2P Networking and Consensus | 0/0 | Not started | - |
@@ -131,4 +131,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-05*
+*Last updated: 2026-03-05 (01-01 complete)*
