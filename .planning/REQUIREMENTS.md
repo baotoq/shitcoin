@@ -92,54 +92,54 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MINE-01 | — | Pending |
-| MINE-02 | — | Pending |
-| MINE-03 | — | Pending |
-| MINE-04 | — | Pending |
-| MINE-05 | — | Pending |
-| MINE-06 | — | Pending |
-| MINE-07 | — | Pending |
-| MINE-08 | — | Pending |
-| MINE-09 | — | Pending |
-| TX-01 | — | Pending |
-| TX-02 | — | Pending |
-| TX-03 | — | Pending |
-| TX-04 | — | Pending |
-| TX-05 | — | Pending |
-| TX-06 | — | Pending |
-| TX-07 | — | Pending |
-| TX-08 | — | Pending |
-| TX-09 | — | Pending |
-| TX-10 | — | Pending |
-| NET-01 | — | Pending |
-| NET-02 | — | Pending |
-| NET-03 | — | Pending |
-| NET-04 | — | Pending |
-| NET-05 | — | Pending |
-| NET-06 | — | Pending |
-| NET-07 | — | Pending |
-| NET-08 | — | Pending |
-| NET-09 | — | Pending |
-| CLI-01 | — | Pending |
-| CLI-02 | — | Pending |
-| CLI-03 | — | Pending |
-| CLI-04 | — | Pending |
-| CLI-05 | — | Pending |
-| CLI-06 | — | Pending |
-| CLI-07 | — | Pending |
-| DASH-01 | — | Pending |
-| DASH-02 | — | Pending |
-| DASH-03 | — | Pending |
-| DASH-04 | — | Pending |
-| DASH-05 | — | Pending |
-| ORCH-01 | — | Pending |
-| DEMO-01 | — | Pending |
+| MINE-01 | Phase 1 | Pending |
+| MINE-02 | Phase 1 | Pending |
+| MINE-03 | Phase 1 | Pending |
+| MINE-04 | Phase 3 | Pending |
+| MINE-05 | Phase 3 | Pending |
+| MINE-06 | Phase 1 | Pending |
+| MINE-07 | Phase 3 | Pending |
+| MINE-08 | Phase 6 | Pending |
+| MINE-09 | Phase 1 | Pending |
+| TX-01 | Phase 2 | Pending |
+| TX-02 | Phase 2 | Pending |
+| TX-03 | Phase 2 | Pending |
+| TX-04 | Phase 2 | Pending |
+| TX-05 | Phase 2 | Pending |
+| TX-06 | Phase 2 | Pending |
+| TX-07 | Phase 2 | Pending |
+| TX-08 | Phase 2 | Pending |
+| TX-09 | Phase 6 | Pending |
+| TX-10 | Phase 6 | Pending |
+| NET-01 | Phase 4 | Pending |
+| NET-02 | Phase 4 | Pending |
+| NET-03 | Phase 3 | Pending |
+| NET-04 | Phase 4 | Pending |
+| NET-05 | Phase 4 | Pending |
+| NET-06 | Phase 4 | Pending |
+| NET-07 | Phase 4 | Pending |
+| NET-08 | Phase 4 | Pending |
+| NET-09 | Phase 4 | Pending |
+| CLI-01 | Phase 3 | Pending |
+| CLI-02 | Phase 3 | Pending |
+| CLI-03 | Phase 3 | Pending |
+| CLI-04 | Phase 3 | Pending |
+| CLI-05 | Phase 3 | Pending |
+| CLI-06 | Phase 3 | Pending |
+| CLI-07 | Phase 3 | Pending |
+| DASH-01 | Phase 5 | Pending |
+| DASH-02 | Phase 5 | Pending |
+| DASH-03 | Phase 5 | Pending |
+| DASH-04 | Phase 5 | Pending |
+| DASH-05 | Phase 5 | Pending |
+| ORCH-01 | Phase 6 | Pending |
+| DEMO-01 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 42 total
-- Mapped to phases: 0
-- Unmapped: 42 ⚠️
+- Mapped to phases: 42
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-05*
-*Last updated: 2026-03-05 after initial definition*
+*Last updated: 2026-03-05 after roadmap creation*
