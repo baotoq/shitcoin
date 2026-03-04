@@ -3,9 +3,9 @@ Host: 0.0.0.0
 Port: 8080
 
 Consensus:
-  BlockTimeTarget: 10
+  BlockTimeTarget: 1
   DifficultyAdjustInterval: 10
-  InitialDifficulty: 16
+  InitialDifficulty: 5
   GenesisMessage: "Hello, Shitcoin!"
 
 Storage:
