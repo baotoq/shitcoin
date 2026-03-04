@@ -1,0 +1,12 @@
+Name: shitcoin
+Host: 0.0.0.0
+Port: 8080
+
+Consensus:
+  BlockTimeTarget: 10
+  DifficultyAdjustInterval: 10
+  InitialDifficulty: 16
+  GenesisMessage: "Hello, Shitcoin!"
+
+Storage:
+  DBPath: data/shitcoin.db
