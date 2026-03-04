@@ -2,7 +2,10 @@ module github.com/baotoq/shitcoin
 
 go 1.23.4
 
-require github.com/zeromicro/go-zero v1.10.0
+require (
+	github.com/zeromicro/go-zero v1.10.0
+	go.etcd.io/bbolt v1.4.3
+)
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
