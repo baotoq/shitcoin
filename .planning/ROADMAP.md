@@ -31,11 +31,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Restarting the node loads the previously mined chain from disk without data loss
   4. After N blocks are mined, the difficulty target visibly adjusts based on actual vs target block time
   5. Consensus parameters (block time target, difficulty interval) are configurable without code changes
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Project scaffold, domain types (Block/Header/Hash), SHA-256d hashing, PoW mining service, and go-zero config
+- [ ] 01-02-PLAN.md — Difficulty adjustment, Chain aggregate, bbolt persistence, and runnable main entry point
 
 ### Phase 2: Wallets and Transactions
 **Goal**: Users can create wallets, derive addresses, and send coins via UTXO transactions with cryptographic signing and verification
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Chain Foundation | 0/0 | Not started | - |
+| 1. Core Chain Foundation | 0/2 | Planning complete | - |
 | 2. Wallets and Transactions | 0/0 | Not started | - |
 | 3. Mempool, Mining Integration, and CLI | 0/0 | Not started | - |
 | 4. P2P Networking and Consensus | 0/0 | Not started | - |
