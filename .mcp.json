@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "go-zero": {
+      "command": "/Users/baotoq/go/bin/mcp-zero",
+      "env": {
+        "GOCTL_PATH": "/Users/baotoq/go/bin/goctl"
+      }
+    }
+  }
+}
