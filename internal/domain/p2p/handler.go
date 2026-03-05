@@ -23,6 +23,8 @@ func (s *Server) handleMessage(peer *Peer, msg Message) {
 		s.handleInv(peer, msg)
 	case CmdGetData:
 		s.handleGetData(peer, msg)
+	case CmdGetBlocks:
+		s.handleGetBlocks(peer, msg)
 	case CmdBlock:
 		s.handleBlock(peer, msg)
 	case CmdTx:
@@ -234,4 +236,54 @@ func (s *Server) handleBlock(peer *Peer, msg Message) {
 
 	// Re-broadcast inv to other peers (exclude sender)
 	s.BroadcastBlock(blk, peer.Addr())
+}
+
+// maxGetBlocksBatch is the maximum number of blocks returned per CmdGetBlocks request.
+const maxGetBlocksBatch = 500
+
+// handleGetBlocks processes a GetBlocks request by serving the requested block range.
+// Caps response at maxGetBlocksBatch blocks to prevent memory exhaustion.
+func (s *Server) handleGetBlocks(peer *Peer, msg Message) {
+	var payload GetBlocksPayload
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		slog.Warn("invalid getblocks payload", "addr", peer.Addr(), "err", err)
+		return
+	}
+
+	ctx := context.Background()
+
+	// If EndHeight is 0, resolve to current chain height
+	endHeight := payload.EndHeight
+	if endHeight == 0 {
+		endHeight = s.chain.Height()
+	}
+
+	// Validate range
+	if payload.StartHeight > endHeight {
+		return
+	}
+
+	// Cap batch size
+	if endHeight-payload.StartHeight+1 > maxGetBlocksBatch {
+		endHeight = payload.StartHeight + maxGetBlocksBatch - 1
+	}
+
+	blocks, err := s.chainRepo.GetBlocksInRange(ctx, payload.StartHeight, endHeight)
+	if err != nil {
+		slog.Error("failed to get blocks in range", "start", payload.StartHeight, "end", endHeight, "err", err)
+		return
+	}
+
+	// Send each block as a CmdBlock message
+	for _, blk := range blocks {
+		bp := BlockPayloadFromDomain(blk)
+		blockMsg, err := NewMessage(CmdBlock, bp)
+		if err != nil {
+			slog.Error("failed to create block message for sync", "height", blk.Height(), "err", err)
+			continue
+		}
+		peer.Send(blockMsg)
+	}
+
+	slog.Info("served blocks to peer", "addr", peer.Addr(), "start", payload.StartHeight, "end", endHeight, "count", len(blocks))
 }
