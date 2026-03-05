@@ -5,17 +5,21 @@ import "time"
 // Block is an entity (aggregate root) identified by its hash.
 // All fields are unexported; access via getters, mutation via specific methods.
 // Pointer receiver for entity semantics.
+//
+// Transactions are stored as []any to avoid circular imports between block and tx packages.
+// The chain aggregate is responsible for type-safe access via type assertions.
 type Block struct {
 	header       Header
 	hash         Hash
 	height       uint64
-	message      string   // only used for genesis block
-	transactions [][]byte // empty in Phase 1, typed transactions in Phase 2
+	message      string // only used for genesis block
+	transactions []any  // typed transactions stored as any to break import cycle
 }
 
 // NewGenesisBlock creates the genesis block (height=0, zero prevHash).
 // The block is created unmined -- use ProofOfWork.Mine() to find a valid nonce.
-func NewGenesisBlock(message string, bits uint32) (*Block, error) {
+// Accepts transactions as []any (typically []*tx.Transaction cast to any).
+func NewGenesisBlock(message string, bits uint32, txs []any) (*Block, error) {
 	header := NewHeader(
 		1,      // version
 		Hash{}, // zero prevBlockHash
@@ -24,17 +28,22 @@ func NewGenesisBlock(message string, bits uint32) (*Block, error) {
 		bits,
 	)
 
+	if txs == nil {
+		txs = make([]any, 0)
+	}
+
 	return &Block{
 		header:       header,
 		height:       0,
 		message:      message,
-		transactions: make([][]byte, 0),
+		transactions: txs,
 	}, nil
 }
 
 // NewBlock creates a new block with the given previous hash, height, and difficulty bits.
 // The block is created unmined -- use ProofOfWork.Mine() to find a valid nonce.
-func NewBlock(prevHash Hash, height uint64, bits uint32) (*Block, error) {
+// Accepts transactions as []any (typically []*tx.Transaction cast to any).
+func NewBlock(prevHash Hash, height uint64, bits uint32, txs []any) (*Block, error) {
 	header := NewHeader(
 		1, // version
 		prevHash,
@@ -43,16 +52,20 @@ func NewBlock(prevHash Hash, height uint64, bits uint32) (*Block, error) {
 		bits,
 	)
 
+	if txs == nil {
+		txs = make([]any, 0)
+	}
+
 	return &Block{
 		header:       header,
 		height:       height,
-		transactions: make([][]byte, 0),
+		transactions: txs,
 	}, nil
 }
 
 // ReconstructBlock creates a Block from stored data, bypassing mining.
 // Used when loading blocks from persistence.
-func ReconstructBlock(header Header, hash Hash, height uint64, message string, transactions [][]byte) *Block {
+func ReconstructBlock(header Header, hash Hash, height uint64, message string, transactions []any) *Block {
 	return &Block{
 		header:       header,
 		hash:         hash,
@@ -83,8 +96,9 @@ func (b *Block) Bits() uint32 { return b.header.bits }
 // Message returns the block's embedded message (genesis block only).
 func (b *Block) Message() string { return b.message }
 
-// Transactions returns the block's transaction list.
-func (b *Block) Transactions() [][]byte { return b.transactions }
+// RawTransactions returns the block's transactions as untyped slice.
+// Use TypedTransactions() or type-assert individual elements to *tx.Transaction.
+func (b *Block) RawTransactions() []any { return b.transactions }
 
 // SetHash sets the block's hash. Used by PoW after mining.
 func (b *Block) SetHash(hash Hash) { b.hash = hash }

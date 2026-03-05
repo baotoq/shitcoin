@@ -240,7 +240,7 @@ func TestHeaderSetNonce(t *testing.T) {
 // --- Block entity tests ---
 
 func TestNewGenesisBlock(t *testing.T) {
-	b, err := NewGenesisBlock("Hello, Shitcoin!", 16)
+	b, err := NewGenesisBlock("Hello, Shitcoin!", 16, nil)
 	if err != nil {
 		t.Fatalf("NewGenesisBlock failed: %v", err)
 	}
@@ -263,8 +263,8 @@ func TestNewGenesisBlock(t *testing.T) {
 	if b.Hash().IsZero() == false {
 		// Hash should be zero before mining
 	}
-	if len(b.Transactions()) != 0 {
-		t.Errorf("genesis Transactions() length = %d; want 0", len(b.Transactions()))
+	if len(b.RawTransactions()) != 0 {
+		t.Errorf("genesis Transactions() length = %d; want 0", len(b.RawTransactions()))
 	}
 }
 
@@ -272,7 +272,7 @@ func TestNewBlock(t *testing.T) {
 	var prevHash Hash
 	prevHash[0] = 0xab
 
-	b, err := NewBlock(prevHash, 1, 16)
+	b, err := NewBlock(prevHash, 1, 16, nil)
 	if err != nil {
 		t.Fatalf("NewBlock failed: %v", err)
 	}
@@ -292,7 +292,7 @@ func TestNewBlock(t *testing.T) {
 }
 
 func TestBlockSetHashAndNonce(t *testing.T) {
-	b, err := NewGenesisBlock("test", 16)
+	b, err := NewGenesisBlock("test", 16, nil)
 	if err != nil {
 		t.Fatalf("NewGenesisBlock failed: %v", err)
 	}
@@ -318,9 +318,8 @@ func TestReconstructBlock(t *testing.T) {
 
 	var hash Hash
 	hash[0] = 0x01
-	txs := [][]byte{[]byte("tx1"), []byte("tx2")}
 
-	b := ReconstructBlock(header, hash, 5, "genesis msg", txs)
+	b := ReconstructBlock(header, hash, 5, "genesis msg", nil)
 
 	if b.Height() != 5 {
 		t.Errorf("Height() = %d; want 5", b.Height())
@@ -330,9 +329,6 @@ func TestReconstructBlock(t *testing.T) {
 	}
 	if b.Message() != "genesis msg" {
 		t.Errorf("Message() = %q; want %q", b.Message(), "genesis msg")
-	}
-	if len(b.Transactions()) != 2 {
-		t.Errorf("Transactions() length = %d; want 2", len(b.Transactions()))
 	}
 	if b.Header().Nonce() != 42 {
 		t.Errorf("Header().Nonce() = %d; want 42", b.Header().Nonce())

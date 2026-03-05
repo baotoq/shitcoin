@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
+	"github.com/baotoq/shitcoin/internal/domain/utxo"
 )
 
 // Repository defines the persistence interface for the chain aggregate.
@@ -11,6 +12,10 @@ import (
 type Repository interface {
 	// SaveBlock persists a block to storage.
 	SaveBlock(ctx context.Context, b *block.Block) error
+
+	// SaveBlockWithUTXOs persists a block along with its UTXO changes atomically.
+	// The undo entry records all UTXO mutations for reversibility.
+	SaveBlockWithUTXOs(ctx context.Context, b *block.Block, undoEntry *utxo.UndoEntry) error
 
 	// GetBlock retrieves a block by its hash.
 	GetBlock(ctx context.Context, hash block.Hash) (*block.Block, error)

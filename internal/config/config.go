@@ -14,6 +14,9 @@ type Config struct {
 	Storage   StorageConfig   `json:"Storage"`
 }
 
+// SatoshiPerCoin is the number of satoshis in one coin.
+const SatoshiPerCoin int64 = 100_000_000
+
 // ConsensusConfig holds blockchain consensus parameters.
 // All fields have defaults so a minimal config (just Name/Host/Port) works.
 type ConsensusConfig struct {
@@ -29,6 +32,9 @@ type ConsensusConfig struct {
 	// GenesisMessage is the message embedded in the genesis block.
 	// Default is applied in ApplyDefaults() to avoid go vet warning about spaces in struct tags.
 	GenesisMessage string `json:",optional"`
+
+	// BlockReward is the coinbase reward in satoshis (default: 50 coins = 5,000,000,000 satoshis).
+	BlockReward int64 `json:",default=5000000000"`
 }
 
 // DefaultGenesisMessage is the default genesis block message when none is configured.

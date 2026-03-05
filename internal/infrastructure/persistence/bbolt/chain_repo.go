@@ -8,6 +8,8 @@ import (
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
 	"github.com/baotoq/shitcoin/internal/domain/chain"
+	"github.com/baotoq/shitcoin/internal/domain/tx"
+	"github.com/baotoq/shitcoin/internal/domain/utxo"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -32,6 +34,12 @@ func NewBboltRepository(db *bolt.DB) (*BboltRepository, error) {
 		if _, err := tx.CreateBucketIfNotExists(chainMetaBucket); err != nil {
 			return fmt.Errorf("create chain_meta bucket: %w", err)
 		}
+		if _, err := tx.CreateBucketIfNotExists(utxoBucket); err != nil {
+			return fmt.Errorf("create utxo bucket: %w", err)
+		}
+		if _, err := tx.CreateBucketIfNotExists(undoBucket); err != nil {
+			return fmt.Errorf("create undo bucket: %w", err)
+		}
 		return nil
 	})
 	if err != nil {
@@ -54,9 +62,9 @@ func heightIndexKey(height uint64) []byte {
 	return append(prefix, hk...)
 }
 
-// SaveBlock persists a block to bbolt in a single transaction.
-// Stores: block JSON by hash key, height index entry, and updates chain_meta.
-func (r *BboltRepository) SaveBlock(_ context.Context, b *block.Block) error {
+// saveBlockInTx saves a block within an existing bbolt transaction.
+// This is the shared logic used by both SaveBlock and SaveBlockWithUTXOs.
+func (r *BboltRepository) saveBlockInTx(boltTx *bolt.Tx, b *block.Block) error {
 	model := BlockModelFromDomain(b)
 	data, err := json.Marshal(model)
 	if err != nil {
@@ -64,27 +72,92 @@ func (r *BboltRepository) SaveBlock(_ context.Context, b *block.Block) error {
 	}
 
 	hashKey := []byte(b.Hash().String())
+	blocks := boltTx.Bucket(blocksBucket)
+	meta := boltTx.Bucket(chainMetaBucket)
 
-	return r.db.Update(func(tx *bolt.Tx) error {
-		blocks := tx.Bucket(blocksBucket)
-		meta := tx.Bucket(chainMetaBucket)
+	// Store block JSON by hash
+	if err := blocks.Put(hashKey, data); err != nil {
+		return fmt.Errorf("put block: %w", err)
+	}
 
-		// Store block JSON by hash
-		if err := blocks.Put(hashKey, data); err != nil {
-			return fmt.Errorf("put block: %w", err)
+	// Store height index: h:<8-byte height> -> hash string
+	if err := blocks.Put(heightIndexKey(b.Height()), hashKey); err != nil {
+		return fmt.Errorf("put height index: %w", err)
+	}
+
+	// Update chain metadata
+	if err := meta.Put(latestHashKey, hashKey); err != nil {
+		return fmt.Errorf("put latest hash: %w", err)
+	}
+	if err := meta.Put(heightKey, heightKey8(b.Height())); err != nil {
+		return fmt.Errorf("put height: %w", err)
+	}
+
+	return nil
+}
+
+// SaveBlock persists a block to bbolt in a single transaction.
+// Stores: block JSON by hash key, height index entry, and updates chain_meta.
+func (r *BboltRepository) SaveBlock(_ context.Context, b *block.Block) error {
+	return r.db.Update(func(boltTx *bolt.Tx) error {
+		return r.saveBlockInTx(boltTx, b)
+	})
+}
+
+// SaveBlockWithUTXOs persists a block along with its UTXO changes in a single
+// atomic bbolt transaction. This ensures crash-safe consistency between block
+// storage, UTXO state, and the undo log.
+func (r *BboltRepository) SaveBlockWithUTXOs(_ context.Context, b *block.Block, undoEntry *utxo.UndoEntry) error {
+	return r.db.Update(func(boltTx *bolt.Tx) error {
+		// 1. Save the block
+		if err := r.saveBlockInTx(boltTx, b); err != nil {
+			return err
 		}
 
-		// Store height index: h:<8-byte height> -> hash string
-		if err := blocks.Put(heightIndexKey(b.Height()), hashKey); err != nil {
-			return fmt.Errorf("put height index: %w", err)
+		utxoBkt := boltTx.Bucket(utxoBucket)
+		undoBkt := boltTx.Bucket(undoBucket)
+
+		// 2. Process UTXO changes from undo entry
+		// Remove spent UTXOs
+		for _, spent := range undoEntry.Spent {
+			txID, err := block.HashFromHex(spent.TxID)
+			if err != nil {
+				return fmt.Errorf("parse spent txid: %w", err)
+			}
+			key := utxoKey(txID, spent.Vout)
+			if err := utxoBkt.Delete(key); err != nil {
+				return fmt.Errorf("delete spent utxo: %w", err)
+			}
 		}
 
-		// Update chain metadata
-		if err := meta.Put(latestHashKey, hashKey); err != nil {
-			return fmt.Errorf("put latest hash: %w", err)
+		// Add created UTXOs -- we need to reconstruct them from the block's transactions
+		for _, rawTx := range b.RawTransactions() {
+			transaction, ok := rawTx.(*tx.Transaction)
+			if !ok {
+				continue
+			}
+			txID := transaction.ID()
+			for i, output := range transaction.Outputs() {
+				u := utxo.NewUTXO(txID, uint32(i), output.Value(), output.Address())
+				model := UTXOModelFromDomain(u)
+				data, err := json.Marshal(model)
+				if err != nil {
+					return fmt.Errorf("marshal utxo: %w", err)
+				}
+				key := utxoKey(txID, uint32(i))
+				if err := utxoBkt.Put(key, data); err != nil {
+					return fmt.Errorf("put utxo: %w", err)
+				}
+			}
 		}
-		if err := meta.Put(heightKey, heightKey8(b.Height())); err != nil {
-			return fmt.Errorf("put height: %w", err)
+
+		// 3. Save undo entry
+		undoData, err := json.Marshal(undoEntry)
+		if err != nil {
+			return fmt.Errorf("marshal undo entry: %w", err)
+		}
+		if err := undoBkt.Put(undoKey(undoEntry.BlockHeight), undoData); err != nil {
+			return fmt.Errorf("put undo entry: %w", err)
 		}
 
 		return nil

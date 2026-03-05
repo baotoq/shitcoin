@@ -8,6 +8,7 @@ import (
 	"github.com/baotoq/shitcoin/internal/config"
 	"github.com/baotoq/shitcoin/internal/domain/block"
 	"github.com/baotoq/shitcoin/internal/domain/chain"
+	"github.com/baotoq/shitcoin/internal/domain/utxo"
 	boltrepo "github.com/baotoq/shitcoin/internal/infrastructure/persistence/bbolt"
 	bolt "go.etcd.io/bbolt"
 )
@@ -18,6 +19,8 @@ type ServiceContext struct {
 	Config    config.Config
 	ChainRepo chain.Repository
 	Chain     *chain.Chain
+	UTXORepo  utxo.Repository
+	UTXOSet   *utxo.Set
 	DB        *bolt.DB
 }
 
@@ -36,12 +39,20 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(fmt.Sprintf("failed to open bbolt database at %s: %v", c.Storage.DBPath, err))
 	}
 
-	// Create repository
+	// Create chain repository
 	repo, err := boltrepo.NewBboltRepository(db)
 	if err != nil {
 		db.Close()
 		panic(fmt.Sprintf("failed to create bbolt repository: %v", err))
 	}
+
+	// Create UTXO repository and set
+	utxoRepo, err := boltrepo.NewUTXORepo(db)
+	if err != nil {
+		db.Close()
+		panic(fmt.Sprintf("failed to create utxo repository: %v", err))
+	}
+	utxoSet := utxo.NewSet(utxoRepo)
 
 	// Create PoW service
 	pow := &block.ProofOfWork{}
@@ -52,13 +63,16 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		DifficultyAdjustInterval: c.Consensus.DifficultyAdjustInterval,
 		InitialDifficulty:        c.Consensus.InitialDifficulty,
 		GenesisMessage:           c.Consensus.GenesisMessage,
+		BlockReward:              c.Consensus.BlockReward,
 	}
-	ch := chain.NewChain(repo, pow, chainConfig)
+	ch := chain.NewChain(repo, pow, chainConfig, utxoSet)
 
 	return &ServiceContext{
 		Config:    c,
 		ChainRepo: repo,
 		Chain:     ch,
+		UTXORepo:  utxoRepo,
+		UTXOSet:   utxoSet,
 		DB:        db,
 	}
 }

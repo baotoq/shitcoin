@@ -33,7 +33,10 @@ func main() {
 	ctx := context.Background()
 
 	// Initialize chain (creates genesis if new, loads existing if not)
-	if err := serviceCtx.Chain.Initialize(ctx); err != nil {
+	// Use a default miner address for the demo
+	minerAddress := "1DemoMinerAddress"
+
+	if err := serviceCtx.Chain.Initialize(ctx, minerAddress); err != nil {
 		panic(fmt.Sprintf("failed to initialize chain: %v", err))
 	}
 
@@ -60,7 +63,7 @@ func main() {
 
 	for i := 0; i < blocksToMine; i++ {
 		start := time.Now()
-		blk, err := serviceCtx.Chain.MineBlock(ctx)
+		blk, err := serviceCtx.Chain.MineBlock(ctx, minerAddress, nil)
 		if err != nil {
 			panic(fmt.Sprintf("failed to mine block: %v", err))
 		}

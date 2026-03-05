@@ -39,7 +39,7 @@ func TestBitsToTarget(t *testing.T) {
 }
 
 func TestMineGenesisBlock(t *testing.T) {
-	b, err := NewGenesisBlock("Test Genesis", 16)
+	b, err := NewGenesisBlock("Test Genesis", 16, nil)
 	if err != nil {
 		t.Fatalf("NewGenesisBlock failed: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestMineGenesisBlock(t *testing.T) {
 }
 
 func TestMineValidation(t *testing.T) {
-	b, err := NewGenesisBlock("Validation Test", 16)
+	b, err := NewGenesisBlock("Validation Test", 16, nil)
 	if err != nil {
 		t.Fatalf("NewGenesisBlock failed: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestMineValidation(t *testing.T) {
 	// Note: Validate recomputes the header hash, so it checks against that
 	// Let's do it properly: just change the nonce and check that validate
 	// uses the header's current state
-	b2, _ := NewGenesisBlock("Tamper Test", 16)
+	b2, _ := NewGenesisBlock("Tamper Test", 16, nil)
 	pow.Mine(b2)
 
 	// Save the good state
@@ -134,7 +134,7 @@ func TestMineNonceExhausted(t *testing.T) {
 	// bits=256 means target = 2^0 = 1, which is effectively impossible
 	// (hash must be < 1, meaning all zeros)
 	// Use MineWithMaxNonce to limit search space and avoid 4B iterations
-	b, err := NewGenesisBlock("Impossible", 256)
+	b, err := NewGenesisBlock("Impossible", 256, nil)
 	if err != nil {
 		t.Fatalf("NewGenesisBlock failed: %v", err)
 	}
@@ -150,7 +150,7 @@ func TestMineMultipleBlocks(t *testing.T) {
 	pow := &ProofOfWork{}
 
 	// Mine genesis
-	genesis, err := NewGenesisBlock("Multi-block test", 16)
+	genesis, err := NewGenesisBlock("Multi-block test", 16, nil)
 	if err != nil {
 		t.Fatalf("NewGenesisBlock failed: %v", err)
 	}
@@ -162,7 +162,7 @@ func TestMineMultipleBlocks(t *testing.T) {
 	}
 
 	// Mine block 1
-	block1, err := NewBlock(genesis.Hash(), 1, 16)
+	block1, err := NewBlock(genesis.Hash(), 1, 16, nil)
 	if err != nil {
 		t.Fatalf("NewBlock(1) failed: %v", err)
 	}
@@ -174,7 +174,7 @@ func TestMineMultipleBlocks(t *testing.T) {
 	}
 
 	// Mine block 2
-	block2, err := NewBlock(block1.Hash(), 2, 16)
+	block2, err := NewBlock(block1.Hash(), 2, 16, nil)
 	if err != nil {
 		t.Fatalf("NewBlock(2) failed: %v", err)
 	}

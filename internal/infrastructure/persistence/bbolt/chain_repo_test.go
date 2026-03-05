@@ -28,9 +28,9 @@ func createTestBlock(t *testing.T, prevHash block.Hash, height uint64, bits uint
 	var b *block.Block
 	var err error
 	if height == 0 {
-		b, err = block.NewGenesisBlock("test genesis", bits)
+		b, err = block.NewGenesisBlock("test genesis", bits, nil)
 	} else {
-		b, err = block.NewBlock(prevHash, height, bits)
+		b, err = block.NewBlock(prevHash, height, bits, nil)
 	}
 	if err != nil {
 		t.Fatalf("failed to create block: %v", err)
@@ -95,15 +95,15 @@ func TestGetBlockByHeight(t *testing.T) {
 	pow := &block.ProofOfWork{}
 
 	// Create and save 3 blocks
-	genesis, _ := block.NewGenesisBlock("test", 8)
+	genesis, _ := block.NewGenesisBlock("test", 8, nil)
 	pow.Mine(genesis)
 	repo.SaveBlock(ctx, genesis)
 
-	block1, _ := block.NewBlock(genesis.Hash(), 1, 8)
+	block1, _ := block.NewBlock(genesis.Hash(), 1, 8, nil)
 	pow.Mine(block1)
 	repo.SaveBlock(ctx, block1)
 
-	block2, _ := block.NewBlock(block1.Hash(), 2, 8)
+	block2, _ := block.NewBlock(block1.Hash(), 2, 8, nil)
 	pow.Mine(block2)
 	repo.SaveBlock(ctx, block2)
 
@@ -140,15 +140,15 @@ func TestGetLatestBlock(t *testing.T) {
 	pow := &block.ProofOfWork{}
 
 	// Create and save 3 blocks
-	genesis, _ := block.NewGenesisBlock("test", 8)
+	genesis, _ := block.NewGenesisBlock("test", 8, nil)
 	pow.Mine(genesis)
 	repo.SaveBlock(ctx, genesis)
 
-	block1, _ := block.NewBlock(genesis.Hash(), 1, 8)
+	block1, _ := block.NewBlock(genesis.Hash(), 1, 8, nil)
 	pow.Mine(block1)
 	repo.SaveBlock(ctx, block1)
 
-	block2, _ := block.NewBlock(block1.Hash(), 2, 8)
+	block2, _ := block.NewBlock(block1.Hash(), 2, 8, nil)
 	pow.Mine(block2)
 	repo.SaveBlock(ctx, block2)
 
@@ -185,15 +185,15 @@ func TestGetChainHeight(t *testing.T) {
 	}
 
 	// After 3 blocks (heights 0, 1, 2)
-	genesis, _ := block.NewGenesisBlock("test", 8)
+	genesis, _ := block.NewGenesisBlock("test", 8, nil)
 	pow.Mine(genesis)
 	repo.SaveBlock(ctx, genesis)
 
-	block1, _ := block.NewBlock(genesis.Hash(), 1, 8)
+	block1, _ := block.NewBlock(genesis.Hash(), 1, 8, nil)
 	pow.Mine(block1)
 	repo.SaveBlock(ctx, block1)
 
-	block2, _ := block.NewBlock(block1.Hash(), 2, 8)
+	block2, _ := block.NewBlock(block1.Hash(), 2, 8, nil)
 	pow.Mine(block2)
 	repo.SaveBlock(ctx, block2)
 
@@ -223,11 +223,11 @@ func TestChainPersistence(t *testing.T) {
 	ctx := context.Background()
 	pow := &block.ProofOfWork{}
 
-	genesis, _ := block.NewGenesisBlock("persist test", 8)
+	genesis, _ := block.NewGenesisBlock("persist test", 8, nil)
 	pow.Mine(genesis)
 	repo1.SaveBlock(ctx, genesis)
 
-	block1, _ := block.NewBlock(genesis.Hash(), 1, 8)
+	block1, _ := block.NewBlock(genesis.Hash(), 1, 8, nil)
 	pow.Mine(block1)
 	repo1.SaveBlock(ctx, block1)
 
@@ -332,14 +332,14 @@ func TestGetBlocksInRange(t *testing.T) {
 	pow := &block.ProofOfWork{}
 
 	// Create 5 blocks
-	genesis, _ := block.NewGenesisBlock("range test", 8)
+	genesis, _ := block.NewGenesisBlock("range test", 8, nil)
 	pow.Mine(genesis)
 	repo.SaveBlock(ctx, genesis)
 
 	prev := genesis
 	blocks := []*block.Block{genesis}
 	for i := uint64(1); i <= 4; i++ {
-		b, _ := block.NewBlock(prev.Hash(), i, 8)
+		b, _ := block.NewBlock(prev.Hash(), i, 8, nil)
 		pow.Mine(b)
 		repo.SaveBlock(ctx, b)
 		blocks = append(blocks, b)
