@@ -10,6 +10,9 @@ import (
 	"github.com/baotoq/shitcoin/internal/domain/chain"
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // mockUTXORepo implements utxo.Repository in-memory for chain tests.
@@ -204,23 +207,17 @@ func (m *mockChainRepo) DeleteBlocksAbove(_ context.Context, height uint64) erro
 	return nil
 }
 
-// mockMempoolAdder captures transactions added back to the mempool during reorg.
-type mockMempoolAdder struct {
-	mu    sync.Mutex
-	added []*tx.Transaction
+// MockMempoolAdder is a testify/mock implementation of chain.MempoolAdder.
+type MockMempoolAdder struct {
+	mock.Mock
 }
 
-func (m *mockMempoolAdder) Add(t *tx.Transaction) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.added = append(m.added, t)
-	return nil
+func (m *MockMempoolAdder) Add(t *tx.Transaction) error {
+	args := m.Called(t)
+	return args.Error(0)
 }
 
 func TestReorganize_SwitchesToLongerFork(t *testing.T) {
-	// Build a chain: genesis -> B1 -> B2 -> B3 -> A4 -> A5
-	// Fork at height 3: new blocks B4, B5, B6
-	// After reorg: tip = B6, height = 6
 	ctx := context.Background()
 	minerAddr := "miner-reorg"
 
@@ -235,28 +232,19 @@ func TestReorganize_SwitchesToLongerFork(t *testing.T) {
 	}
 	ch := chain.NewChain(repo, pow, cfg, utxoSet)
 
-	// Initialize with genesis
-	if err := ch.Initialize(ctx, minerAddr); err != nil {
-		t.Fatalf("Initialize failed: %v", err)
-	}
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
 
 	// Mine 5 blocks on the main chain: genesis(0) -> 1 -> 2 -> 3 -> 4(A4) -> 5(A5)
 	for i := 0; i < 5; i++ {
 		_, err := ch.MineBlock(ctx, minerAddr, nil)
-		if err != nil {
-			t.Fatalf("MineBlock %d failed: %v", i+1, err)
-		}
+		require.NoError(t, err)
 	}
 
-	if ch.Height() != 5 {
-		t.Fatalf("expected height 5, got %d", ch.Height())
-	}
+	require.Equal(t, uint64(5), ch.Height())
 
 	// Get the block at height 3 -- this is the fork point
 	forkBlock, err := repo.GetBlockByHeight(ctx, 3)
-	if err != nil {
-		t.Fatalf("GetBlockByHeight(3) failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Create 3 new blocks (heights 4, 5, 6) forming a longer fork from height 3
 	forkBlocks := make([]*block.Block, 0, 3)
@@ -270,78 +258,44 @@ func TestReorganize_SwitchesToLongerFork(t *testing.T) {
 		merkleRoot := block.ComputeMerkleRoot(txHashes)
 
 		newBlk, err := block.NewBlock(prevHash, i, uint32(cfg.InitialDifficulty), blockTxs, merkleRoot)
-		if err != nil {
-			t.Fatalf("NewBlock (fork height %d) failed: %v", i, err)
-		}
-		if err := pow.Mine(newBlk); err != nil {
-			t.Fatalf("Mine (fork height %d) failed: %v", i, err)
-		}
+		require.NoError(t, err)
+		require.NoError(t, pow.Mine(newBlk))
 		forkBlocks = append(forkBlocks, newBlk)
 		prevHash = newBlk.Hash()
 	}
 
 	// Record UTXO balance before reorg
 	balanceBefore, err := utxoSet.GetBalance(minerAddr)
-	if err != nil {
-		t.Fatalf("GetBalance before reorg failed: %v", err)
-	}
-	if balanceBefore <= 0 {
-		t.Fatalf("expected positive balance before reorg, got %d", balanceBefore)
-	}
+	require.NoError(t, err)
+	require.Greater(t, balanceBefore, int64(0))
 
-	mpool := &mockMempoolAdder{}
+	mpool := new(MockMempoolAdder)
+	// Coinbase txs are excluded from re-add, so no calls expected
 
 	// Execute reorganization: undo A4, A5, apply B4, B5, B6
-	if err := ch.Reorganize(ctx, 3, forkBlocks, mpool); err != nil {
-		t.Fatalf("Reorganize failed: %v", err)
-	}
+	require.NoError(t, ch.Reorganize(ctx, 3, forkBlocks, mpool))
 
 	// Verify new tip
-	if ch.Height() != 6 {
-		t.Errorf("expected height 6 after reorg, got %d", ch.Height())
-	}
+	assert.Equal(t, uint64(6), ch.Height())
 
 	latestBlock := ch.LatestBlock()
-	if latestBlock.Hash() != forkBlocks[2].Hash() {
-		t.Errorf("expected tip hash = %s, got %s",
-			forkBlocks[2].Hash().String()[:16],
-			latestBlock.Hash().String()[:16])
-	}
+	assert.Equal(t, forkBlocks[2].Hash(), latestBlock.Hash())
 
 	// Verify UTXO state reflects fork chain
-	// Original miner should have coins for blocks 0-3 (genesis + blocks 1-3)
-	// Fork miner should have coins for blocks 4-6
 	balanceAfter, err := utxoSet.GetBalance(minerAddr)
-	if err != nil {
-		t.Fatalf("GetBalance(minerAddr) after reorg failed: %v", err)
-	}
-	// Should have 4 blocks worth (genesis + blocks 1-3), not 6
+	require.NoError(t, err)
 	expectedMainBalance := cfg.BlockReward * 4 // blocks 0,1,2,3
-	if balanceAfter != expectedMainBalance {
-		t.Errorf("miner balance after reorg = %d, want %d", balanceAfter, expectedMainBalance)
-	}
+	assert.Equal(t, expectedMainBalance, balanceAfter)
 
 	forkBalance, err := utxoSet.GetBalance(forkMiner)
-	if err != nil {
-		t.Fatalf("GetBalance(forkMiner) after reorg failed: %v", err)
-	}
+	require.NoError(t, err)
 	expectedForkBalance := cfg.BlockReward * 3 // blocks 4,5,6
-	if forkBalance != expectedForkBalance {
-		t.Errorf("fork miner balance after reorg = %d, want %d", forkBalance, expectedForkBalance)
-	}
+	assert.Equal(t, expectedForkBalance, forkBalance)
 
-	// Verify orphaned transactions were offered to mempool
-	// Blocks A4 and A5 only had coinbase, so nothing should be re-added
-	// (coinbase txs are excluded from re-add)
-	if len(mpool.added) != 0 {
-		t.Errorf("expected 0 orphaned txs added to mempool, got %d", len(mpool.added))
-	}
+	mpool.AssertExpectations(t)
 }
 
 func TestReorganize_OrphanedTxsReturnToMempool(t *testing.T) {
-	// Verify that non-coinbase transactions from orphaned blocks are re-added to mempool.
-	// Since creating real signed transactions is complex, we test the mechanism by verifying
-	// that the Reorganize method collects non-coinbase txs from orphaned blocks.
 	ctx := context.Background()
 	minerAddr := "miner-orphan-tx"
 
@@ -356,23 +310,17 @@ func TestReorganize_OrphanedTxsReturnToMempool(t *testing.T) {
 	}
 	ch := chain.NewChain(repo, pow, cfg, utxoSet)
 
-	if err := ch.Initialize(ctx, minerAddr); err != nil {
-		t.Fatalf("Initialize failed: %v", err)
-	}
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
 
 	// Mine 3 blocks
 	for i := 0; i < 3; i++ {
 		_, err := ch.MineBlock(ctx, minerAddr, nil)
-		if err != nil {
-			t.Fatalf("MineBlock %d failed: %v", i+1, err)
-		}
+		require.NoError(t, err)
 	}
 
 	// Get fork point at height 2
 	forkBlock, err := repo.GetBlockByHeight(ctx, 2)
-	if err != nil {
-		t.Fatalf("GetBlockByHeight(2) failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Create fork blocks (heights 3, 4) - longer than current chain
 	forkBlocks := make([]*block.Block, 0, 2)
@@ -385,25 +333,19 @@ func TestReorganize_OrphanedTxsReturnToMempool(t *testing.T) {
 		merkleRoot := block.ComputeMerkleRoot(txHashes)
 
 		newBlk, err := block.NewBlock(prevHash, i, uint32(cfg.InitialDifficulty), blockTxs, merkleRoot)
-		if err != nil {
-			t.Fatalf("NewBlock failed: %v", err)
-		}
-		if err := pow.Mine(newBlk); err != nil {
-			t.Fatalf("Mine failed: %v", err)
-		}
+		require.NoError(t, err)
+		require.NoError(t, pow.Mine(newBlk))
 		forkBlocks = append(forkBlocks, newBlk)
 		prevHash = newBlk.Hash()
 	}
 
-	mpool := &mockMempoolAdder{}
-	if err := ch.Reorganize(ctx, 2, forkBlocks, mpool); err != nil {
-		t.Fatalf("Reorganize failed: %v", err)
-	}
+	mpool := new(MockMempoolAdder)
+	require.NoError(t, ch.Reorganize(ctx, 2, forkBlocks, mpool))
 
 	// Verify tip is now at height 4
-	if ch.Height() != 4 {
-		t.Errorf("expected height 4, got %d", ch.Height())
-	}
+	assert.Equal(t, uint64(4), ch.Height())
+
+	mpool.AssertExpectations(t)
 }
 
 func TestReorganize_PreservesBlocksBelowFork(t *testing.T) {
@@ -421,26 +363,21 @@ func TestReorganize_PreservesBlocksBelowFork(t *testing.T) {
 	}
 	ch := chain.NewChain(repo, pow, cfg, utxoSet)
 
-	if err := ch.Initialize(ctx, minerAddr); err != nil {
-		t.Fatalf("Initialize failed: %v", err)
-	}
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
 
 	// Mine 4 blocks
 	for i := 0; i < 4; i++ {
 		_, err := ch.MineBlock(ctx, minerAddr, nil)
-		if err != nil {
-			t.Fatalf("MineBlock %d failed: %v", i+1, err)
-		}
+		require.NoError(t, err)
 	}
 
 	// Remember block at height 2 (should survive reorg)
 	block2, err := repo.GetBlockByHeight(ctx, 2)
-	if err != nil {
-		t.Fatalf("GetBlockByHeight(2) failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Fork at height 2, new blocks 3,4,5
-	forkBlock, _ := repo.GetBlockByHeight(ctx, 2)
+	forkBlock, err := repo.GetBlockByHeight(ctx, 2)
+	require.NoError(t, err)
 	forkBlocks := make([]*block.Block, 0, 3)
 	prevHash := forkBlock.Hash()
 	for i := uint64(3); i <= 5; i++ {
@@ -448,23 +385,20 @@ func TestReorganize_PreservesBlocksBelowFork(t *testing.T) {
 		blockTxs := []any{coinbase}
 		txHashes := []block.Hash{coinbase.ID()}
 		merkleRoot := block.ComputeMerkleRoot(txHashes)
-		newBlk, _ := block.NewBlock(prevHash, i, uint32(cfg.InitialDifficulty), blockTxs, merkleRoot)
-		pow.Mine(newBlk)
+		newBlk, err := block.NewBlock(prevHash, i, uint32(cfg.InitialDifficulty), blockTxs, merkleRoot)
+		require.NoError(t, err)
+		require.NoError(t, pow.Mine(newBlk))
 		forkBlocks = append(forkBlocks, newBlk)
 		prevHash = newBlk.Hash()
 	}
 
-	mpool := &mockMempoolAdder{}
-	if err := ch.Reorganize(ctx, 2, forkBlocks, mpool); err != nil {
-		t.Fatalf("Reorganize failed: %v", err)
-	}
+	mpool := new(MockMempoolAdder)
+	require.NoError(t, ch.Reorganize(ctx, 2, forkBlocks, mpool))
 
 	// Block at height 2 should still exist
 	retrieved, err := repo.GetBlockByHeight(ctx, 2)
-	if err != nil {
-		t.Fatalf("block at height 2 missing after reorg: %v", err)
-	}
-	if retrieved.Hash() != block2.Hash() {
-		t.Errorf("block 2 hash changed after reorg")
-	}
+	require.NoError(t, err)
+	assert.Equal(t, block2.Hash(), retrieved.Hash())
+
+	mpool.AssertExpectations(t)
 }
