@@ -34,8 +34,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Networking
 
-- [ ] **NET-01**: User can start a node that listens on a configurable TCP port on localhost
-- [ ] **NET-02**: Nodes perform a version handshake when connecting to establish protocol compatibility
+- [x] **NET-01**: User can start a node that listens on a configurable TCP port on localhost
+- [x] **NET-02**: Nodes perform a version handshake when connecting to establish protocol compatibility
 - [x] **NET-03**: Mempool holds validated-but-unmined transactions, protected by RWMutex for concurrent access
 - [ ] **NET-04**: When a user creates a transaction, it is broadcast to all connected peers
 - [ ] **NET-05**: When a node mines a block, it is broadcast to all connected peers
@@ -111,8 +111,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TX-08 | Phase 2 | Complete |
 | TX-09 | Phase 6 | Pending |
 | TX-10 | Phase 6 | Pending |
-| NET-01 | Phase 4 | Pending |
-| NET-02 | Phase 4 | Pending |
+| NET-01 | Phase 4 | Complete |
+| NET-02 | Phase 4 | Complete |
 | NET-03 | Phase 3 | Complete |
 | NET-04 | Phase 4 | Pending |
 | NET-05 | Phase 4 | Pending |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-05T15:00:51.878Z"
-last_activity: 2026-03-05 -- Plan 03-02 executed, CLI integration with 7 subcommands complete
+status: in-progress
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-05T15:24:45Z"
+last_activity: 2026-03-05 -- Plan 04-01 executed, P2P protocol layer with TCP server and version handshake
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_plans: 11
+  completed_plans: 8
+  percent: 73
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 3 complete, ready for Phase 4
+**Current focus:** Phase 4 in progress -- P2P networking and consensus
 
 ## Current Position
 
-Phase: 3 of 6 (Mempool, Mining Integration, and CLI) -- COMPLETE
-Plan: 2 of 2 in current phase (all complete)
-Status: Phase 3 Complete
-Last activity: 2026-03-05 -- Plan 03-02 executed, CLI integration with 7 subcommands complete
+Phase: 4 of 6 (P2P Networking and Consensus)
+Plan: 1 of 4 in current phase (04-01 complete)
+Status: In Progress
+Last activity: 2026-03-05 -- Plan 04-01 executed, P2P protocol layer with TCP server and version handshake
 
-Progress: [██████████] 100%
+Progress: [███████---] 73%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 10min
-- Total execution time: 1.2 hours
+- Total plans completed: 8
+- Average duration: 9min
+- Total execution time: 1.3 hours
 
 **By Phase:**
 
@@ -46,14 +46,16 @@ Progress: [██████████] 100%
 | 1. Core Chain Foundation | 2/2 | 32min | 16min |
 | 2. Wallets and Transactions | 3/3 | 26min | 9min |
 | 3. Mempool, Mining, CLI | 2/2 | 9min | 5min |
+| 4. P2P Networking | 1/4 | 6min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (10min), 02-02 (5min), 02-03 (11min), 03-01 (6min), 03-02 (3min)
-- Trend: Accelerating velocity, CLI integration fast due to well-prepared domain packages
+- Last 5 plans: 02-02 (5min), 02-03 (11min), 03-01 (6min), 03-02 (3min), 04-01 (6min)
+- Trend: Consistent velocity, P2P plan leveraged existing chain/config patterns
 
 *Updated after each plan completion*
 | Phase 03 P01 | 6min | 2 tasks | 10 files |
 | Phase 03 P02 | 3min | 2 tasks | 6 files |
+| Phase 04 P01 | 6min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -87,6 +89,11 @@ Recent decisions affecting current work:
 - [Phase 03]: flag.Args() passed to CLI.Run() so -f config flag and subcommands coexist cleanly
 - [Phase 03]: Auto-mine loop uses context.WithCancel + signal.Notify for clean shutdown
 - [Phase 03]: Simple greedy UTXO selection for send command
+- [04-01]: Length-prefixed TCP framing: [4-byte BE length][1-byte command][JSON payload]
+- [04-01]: 10-second handshake deadline via conn.SetDeadline, cleared after completion
+- [04-01]: Non-blocking peer.Send with select/default drops messages when buffer full (cap 64)
+- [04-01]: Genesis hash comparison during handshake rejects incompatible chains
+- [04-01]: Per-node data directories (data/node-{port}/) prevent bbolt lock conflicts
 
 ### Pending Todos
 
@@ -99,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T14:57:27.714Z
-Stopped at: Completed 03-02-PLAN.md
-Resume file: .planning/phases/03-mempool-mining-integration-and-cli/03-02-SUMMARY.md
+Last session: 2026-03-05T15:24:45Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: .planning/phases/04-p2p-networking-and-consensus/04-01-SUMMARY.md

@@ -80,7 +80,7 @@ Plans:
   3. A block mined on one node is received, validated, and added to the chain on all peers
   4. A newly started node synchronizes the full chain from an existing peer before accepting new blocks
   5. When two nodes mine competing blocks, the network converges on the longest valid chain via reorganization, correctly reversing and reapplying UTXO changes
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 - [ ] 04-01-PLAN.md — P2P protocol types, message framing, TCP server, peer manager, version handshake, and per-node data directories
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Core Chain Foundation | 2/2 | Complete   | 2026-03-04 |
 | 2. Wallets and Transactions | 3/3 | Complete   | 2026-03-05 |
 | 3. Mempool, Mining Integration, and CLI | 2/2 | Complete | 2026-03-05 |
-| 4. P2P Networking and Consensus | 0/4 | Planned | - |
+| 4. P2P Networking and Consensus | 1/4 | In Progress|  |
 | 5. Web Dashboard | 0/0 | Not started | - |
 | 6. Advanced Educational Features | 0/0 | Not started | - |
 
