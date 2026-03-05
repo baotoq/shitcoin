@@ -8,20 +8,25 @@ import (
 	"github.com/baotoq/shitcoin/internal/config"
 	"github.com/baotoq/shitcoin/internal/domain/block"
 	"github.com/baotoq/shitcoin/internal/domain/chain"
+	"github.com/baotoq/shitcoin/internal/domain/mempool"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
+	"github.com/baotoq/shitcoin/internal/domain/wallet"
 	boltrepo "github.com/baotoq/shitcoin/internal/infrastructure/persistence/bbolt"
+	"github.com/baotoq/shitcoin/internal/infrastructure/persistence/jsonfile"
 	bolt "go.etcd.io/bbolt"
 )
 
 // ServiceContext holds all dependencies for the shitcoin node.
 // Follows the go-zero ServiceContext pattern for dependency injection.
 type ServiceContext struct {
-	Config    config.Config
-	ChainRepo chain.Repository
-	Chain     *chain.Chain
-	UTXORepo  utxo.Repository
-	UTXOSet   *utxo.Set
-	DB        *bolt.DB
+	Config     config.Config
+	ChainRepo  chain.Repository
+	Chain      *chain.Chain
+	UTXORepo   utxo.Repository
+	UTXOSet    *utxo.Set
+	WalletRepo wallet.Repository
+	Mempool    *mempool.Mempool
+	DB         *bolt.DB
 }
 
 // NewServiceContext creates a new ServiceContext by opening the bbolt database,
@@ -54,6 +59,16 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 	utxoSet := utxo.NewSet(utxoRepo)
 
+	// Create wallet repository
+	walletRepo, err := jsonfile.NewWalletRepo(c.Storage.WalletPath)
+	if err != nil {
+		db.Close()
+		panic(fmt.Sprintf("failed to create wallet repository: %v", err))
+	}
+
+	// Create mempool
+	pool := mempool.New(utxoSet)
+
 	// Create PoW service
 	pow := &block.ProofOfWork{}
 
@@ -68,12 +83,14 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	ch := chain.NewChain(repo, pow, chainConfig, utxoSet)
 
 	return &ServiceContext{
-		Config:    c,
-		ChainRepo: repo,
-		Chain:     ch,
-		UTXORepo:  utxoRepo,
-		UTXOSet:   utxoSet,
-		DB:        db,
+		Config:     c,
+		ChainRepo:  repo,
+		Chain:      ch,
+		UTXORepo:   utxoRepo,
+		UTXOSet:    utxoSet,
+		WalletRepo: walletRepo,
+		Mempool:    pool,
+		DB:         db,
 	}
 }
 

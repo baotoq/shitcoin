@@ -53,4 +53,6 @@ func (c *ConsensusConfig) ApplyDefaults() {
 type StorageConfig struct {
 	// DBPath is the file path for the bbolt database.
 	DBPath string `json:",default=data/shitcoin.db"`
+	// WalletPath is the file path for the JSON wallet file.
+	WalletPath string `json:",default=data/wallets.json"`
 }

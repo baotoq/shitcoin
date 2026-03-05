@@ -10,3 +10,4 @@ Consensus:
 
 Storage:
   DBPath: data/shitcoin.db
+  WalletPath: data/wallets.json
