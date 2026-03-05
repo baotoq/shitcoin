@@ -6,13 +6,19 @@ import (
 	"log/slog"
 	"sync/atomic"
 
+	"github.com/baotoq/shitcoin/internal/domain/block"
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 )
 
-// syncState tracks the state of initial block download.
+// syncState tracks the state of initial block download and fork resolution.
 type syncState struct {
 	syncing    atomic.Bool
 	targetAddr string // address of the peer we're syncing from
+
+	// Fork detection state
+	reorging     bool           // true when we're collecting blocks for reorg
+	forkBlocks   []*block.Block // buffered blocks from peer during fork detection
+	peerHeight   uint64         // the peer's chain height
 }
 
 // IsSyncing returns true if the server is currently performing initial block download.
@@ -38,6 +44,9 @@ func (s *Server) startSync(peer *Peer) {
 
 	s.syncStatus.syncing.Store(true)
 	s.syncStatus.targetAddr = peer.Addr()
+	s.syncStatus.peerHeight = peerHeight
+	s.syncStatus.reorging = false
+	s.syncStatus.forkBlocks = nil
 
 	// Request blocks from local tip + 1 to peer's height
 	s.requestSyncBlocks(peer, localHeight+1)
@@ -94,7 +103,12 @@ func (s *Server) handleSyncBlock(peer *Peer, msg Message) bool {
 		return true
 	}
 
-	// Verify prevHash matches our current chain tip
+	// If we're in reorg mode, buffer the block for fork resolution
+	if s.syncStatus.reorging {
+		return s.handleReorgBlock(peer, blk)
+	}
+
+	// Normal sync: verify prevHash matches our current chain tip
 	latestBlock := s.chain.LatestBlock()
 	if latestBlock == nil {
 		slog.Warn("chain not initialized during sync")
@@ -103,16 +117,110 @@ func (s *Server) handleSyncBlock(peer *Peer, msg Message) bool {
 	}
 
 	if blk.PrevBlockHash() != latestBlock.Hash() {
-		slog.Warn("sync block prevHash mismatch",
-			"expected", latestBlock.Hash().String()[:16],
-			"got", blk.PrevBlockHash().String()[:16],
-			"height", blk.Height(),
+		// PrevHash mismatch: this means the peer has a different chain (fork).
+		// Initiate fork detection by requesting the peer's full chain from the beginning.
+		slog.Info("sync detected fork, initiating fork resolution",
+			"our_tip", latestBlock.Hash().String()[:16],
+			"block_prev", blk.PrevBlockHash().String()[:16],
+			"block_height", blk.Height(),
 		)
-		s.abortSync()
-		s.removePeer(peer.Addr())
+
+		s.syncStatus.reorging = true
+		s.syncStatus.forkBlocks = nil
+
+		// Request blocks from height 1 (after genesis) to find the fork point.
+		// Genesis is the same (verified during handshake).
+		s.requestSyncBlocks(peer, 1)
 		return true
 	}
 
+	// Normal sync: apply block
+	return s.applySyncBlock(peer, blk)
+}
+
+// handleReorgBlock processes a block received during fork resolution.
+// Buffers blocks and performs reorg when all are collected.
+func (s *Server) handleReorgBlock(peer *Peer, blk *block.Block) bool {
+	ctx := context.Background()
+
+	// Find fork point by comparing this block with our chain at the same height
+	ourBlock, err := s.chainRepo.GetBlockByHeight(ctx, blk.Height())
+	if err != nil {
+		// We don't have a block at this height -- this is beyond our chain tip,
+		// so buffer it as a new block
+		s.syncStatus.forkBlocks = append(s.syncStatus.forkBlocks, blk)
+
+		// Check if we've collected all blocks
+		if blk.Height() >= s.syncStatus.peerHeight {
+			return s.executeReorg(peer)
+		}
+		return true
+	}
+
+	if ourBlock.Hash() == blk.Hash() {
+		// Same block at this height -- not yet at the fork point.
+		// Continue receiving. Clear any buffered fork blocks since we haven't
+		// reached the divergence yet.
+		s.syncStatus.forkBlocks = nil
+		return true
+	}
+
+	// Different block at same height: this is the start of the fork.
+	// Buffer this and all subsequent blocks.
+	s.syncStatus.forkBlocks = append(s.syncStatus.forkBlocks, blk)
+
+	// Check if we've collected all blocks
+	if blk.Height() >= s.syncStatus.peerHeight {
+		return s.executeReorg(peer)
+	}
+
+	return true
+}
+
+// executeReorg performs the chain reorganization using the buffered fork blocks.
+func (s *Server) executeReorg(peer *Peer) bool {
+	forkBlocks := s.syncStatus.forkBlocks
+	if len(forkBlocks) == 0 {
+		slog.Warn("no fork blocks collected, aborting reorg")
+		s.abortSync()
+		return true
+	}
+
+	// Fork point is just before the first fork block
+	forkHeight := forkBlocks[0].Height() - 1
+
+	slog.Info("executing chain reorganization",
+		"fork_height", forkHeight,
+		"new_blocks", len(forkBlocks),
+		"new_tip_height", forkBlocks[len(forkBlocks)-1].Height(),
+	)
+
+	ctx := context.Background()
+	if err := s.chain.Reorganize(ctx, forkHeight, forkBlocks, s.mempool); err != nil {
+		slog.Error("chain reorganization failed", "err", err)
+		s.abortSync()
+		return true
+	}
+
+	slog.Info("chain reorganization complete",
+		"new_height", s.chain.Height(),
+		"new_tip", s.chain.LatestBlock().Hash().String()[:16],
+	)
+
+	// Clear sync state
+	s.syncStatus.syncing.Store(false)
+	s.syncStatus.targetAddr = ""
+	s.syncStatus.reorging = false
+	s.syncStatus.forkBlocks = nil
+
+	// Broadcast the new tip to other peers (exclude the source)
+	s.BroadcastBlock(s.chain.LatestBlock(), peer.Addr())
+
+	return true
+}
+
+// applySyncBlock applies a single block during normal (non-fork) sync.
+func (s *Server) applySyncBlock(peer *Peer, blk *block.Block) bool {
 	// Extract transactions
 	txs := make([]*tx.Transaction, 0, len(blk.RawTransactions()))
 	for _, rawTx := range blk.RawTransactions() {
@@ -173,4 +281,6 @@ func (s *Server) abortSync() {
 	slog.Warn("aborting initial block download")
 	s.syncStatus.syncing.Store(false)
 	s.syncStatus.targetAddr = ""
+	s.syncStatus.reorging = false
+	s.syncStatus.forkBlocks = nil
 }

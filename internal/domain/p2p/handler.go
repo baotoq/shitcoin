@@ -183,11 +183,24 @@ func (s *Server) handleBlock(peer *Peer, msg Message) {
 	}
 
 	if blk.PrevBlockHash() != latestBlock.Hash() {
-		slog.Warn("block prevHash does not match chain tip",
-			"addr", peer.Addr(),
-			"block_prev", blk.PrevBlockHash().String()[:16],
-			"our_tip", latestBlock.Hash().String()[:16],
-		)
+		// Block doesn't extend our chain -- possible fork.
+		// If the block height suggests a longer chain, initiate sync/reorg.
+		if blk.Height() > latestBlock.Height() {
+			slog.Info("received block from longer fork, initiating sync",
+				"addr", peer.Addr(),
+				"block_height", blk.Height(),
+				"our_height", latestBlock.Height(),
+			)
+			// Update peer height and trigger sync which will handle fork detection
+			peer.SetHeight(blk.Height())
+			go s.startSync(peer)
+		} else {
+			slog.Debug("block prevHash does not match chain tip (equal or shorter fork, ignoring)",
+				"addr", peer.Addr(),
+				"block_prev", blk.PrevBlockHash().String()[:16],
+				"our_tip", latestBlock.Hash().String()[:16],
+			)
+		}
 		return
 	}
 
