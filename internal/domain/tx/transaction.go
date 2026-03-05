@@ -8,9 +8,11 @@ import (
 
 // hashableTransaction is used for deterministic ID computation.
 // Signature and PubKey are intentionally excluded to avoid the chicken-and-egg problem.
+// CoinbaseData is included for coinbase transactions to make each block's coinbase unique (BIP34).
 type hashableTransaction struct {
-	Inputs  []hashableInput  `json:"inputs"`
-	Outputs []hashableOutput `json:"outputs"`
+	Inputs       []hashableInput  `json:"inputs"`
+	Outputs      []hashableOutput `json:"outputs"`
+	CoinbaseData string           `json:"coinbase_data,omitempty"`
 }
 
 // hashableInput excludes signature and pubkey from the hash.
@@ -29,9 +31,10 @@ type hashableOutput struct {
 // The transaction ID is computed deterministically from inputs (excluding signatures)
 // and outputs using JSON serialization + DoubleSHA256.
 type Transaction struct {
-	id      block.Hash
-	inputs  []TxInput
-	outputs []TxOutput
+	id           block.Hash
+	inputs       []TxInput
+	outputs      []TxOutput
+	coinbaseData string // block height for coinbase uniqueness (BIP34)
 }
 
 // NewTransaction creates a new transaction with the given inputs and outputs,
@@ -104,7 +107,8 @@ func (t *Transaction) hashPayload() hashableTransaction {
 	}
 
 	return hashableTransaction{
-		Inputs:  hashInputs,
-		Outputs: hashOutputs,
+		Inputs:       hashInputs,
+		Outputs:      hashOutputs,
+		CoinbaseData: t.coinbaseData,
 	}
 }

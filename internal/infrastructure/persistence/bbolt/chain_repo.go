@@ -272,6 +272,95 @@ func (r *BboltRepository) GetChainHeight(_ context.Context) (uint64, error) {
 	return height, err
 }
 
+// GetUndoEntry retrieves the UTXO undo entry for a block at the given height.
+func (r *BboltRepository) GetUndoEntry(_ context.Context, blockHeight uint64) (*utxo.UndoEntry, error) {
+	var entry utxo.UndoEntry
+
+	err := r.db.View(func(boltTx *bolt.Tx) error {
+		undoBkt := boltTx.Bucket(undoBucket)
+		key := make([]byte, 8)
+		binary.BigEndian.PutUint64(key, blockHeight)
+		data := undoBkt.Get(key)
+		if data == nil {
+			return utxo.ErrUndoEntryNotFound
+		}
+		dataCopy := make([]byte, len(data))
+		copy(dataCopy, data)
+		return json.Unmarshal(dataCopy, &entry)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &entry, nil
+}
+
+// DeleteBlocksAbove removes all blocks above the given height from storage.
+// Deletes block data, height index entries, undo entries, and updates chain metadata.
+// Uses a single bbolt Update transaction for atomicity.
+func (r *BboltRepository) DeleteBlocksAbove(_ context.Context, height uint64) error {
+	return r.db.Update(func(boltTx *bolt.Tx) error {
+		blocks := boltTx.Bucket(blocksBucket)
+		meta := boltTx.Bucket(chainMetaBucket)
+		undoBkt := boltTx.Bucket(undoBucket)
+
+		// Get current chain height
+		heightData := meta.Get(heightKey)
+		if heightData == nil {
+			return nil // empty chain, nothing to delete
+		}
+		dataCopy := make([]byte, len(heightData))
+		copy(dataCopy, heightData)
+		currentHeight := binary.BigEndian.Uint64(dataCopy)
+
+		// Delete blocks from height+1 to currentHeight
+		for h := height + 1; h <= currentHeight; h++ {
+			hk := heightIndexKey(h)
+
+			// Get hash key from height index
+			hashKey := blocks.Get(hk)
+			if hashKey != nil {
+				hashKeyCopy := make([]byte, len(hashKey))
+				copy(hashKeyCopy, hashKey)
+
+				// Delete block data
+				if err := blocks.Delete(hashKeyCopy); err != nil {
+					return fmt.Errorf("delete block at height %d: %w", h, err)
+				}
+			}
+
+			// Delete height index entry
+			if err := blocks.Delete(hk); err != nil {
+				return fmt.Errorf("delete height index at %d: %w", h, err)
+			}
+
+			// Delete undo entry
+			undoKeyBytes := make([]byte, 8)
+			binary.BigEndian.PutUint64(undoKeyBytes, h)
+			if err := undoBkt.Delete(undoKeyBytes); err != nil {
+				return fmt.Errorf("delete undo entry at height %d: %w", h, err)
+			}
+		}
+
+		// Update chain metadata to reflect new tip
+		if err := meta.Put(heightKey, heightKey8(height)); err != nil {
+			return fmt.Errorf("update height metadata: %w", err)
+		}
+
+		// Update latest hash to the block at the given height
+		hashKey := blocks.Get(heightIndexKey(height))
+		if hashKey != nil {
+			hashKeyCopy := make([]byte, len(hashKey))
+			copy(hashKeyCopy, hashKey)
+			if err := meta.Put(latestHashKey, hashKeyCopy); err != nil {
+				return fmt.Errorf("update latest hash metadata: %w", err)
+			}
+		}
+
+		return nil
+	})
+}
+
 // GetBlocksInRange returns blocks from startHeight to endHeight inclusive.
 func (r *BboltRepository) GetBlocksInRange(_ context.Context, startHeight, endHeight uint64) ([]*block.Block, error) {
 	var models []BlockModel

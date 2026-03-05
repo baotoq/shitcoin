@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -11,6 +12,12 @@ import (
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
 )
+
+// MempoolAdder is a minimal interface for adding transactions back to the mempool.
+// Avoids hard coupling to the mempool package.
+type MempoolAdder interface {
+	Add(transaction *tx.Transaction) error
+}
 
 // ChainConfig holds consensus parameters for the chain aggregate.
 type ChainConfig struct {
@@ -55,7 +62,7 @@ func (c *Chain) Initialize(ctx context.Context, minerAddress string) error {
 		var txs []*tx.Transaction
 		var blockTxs []any
 		if minerAddress != "" && c.config.BlockReward > 0 {
-			coinbase := tx.NewCoinbaseTx(minerAddress, c.config.BlockReward)
+			coinbase := tx.NewCoinbaseTxWithHeight(minerAddress, c.config.BlockReward, 0)
 			txs = []*tx.Transaction{coinbase}
 			blockTxs = make([]any, len(txs))
 			for i, t := range txs {
@@ -125,7 +132,7 @@ func (c *Chain) MineBlock(ctx context.Context, minerAddress string, txs []*tx.Tr
 	}
 
 	// Create coinbase transaction and prepend to transaction list
-	coinbase := tx.NewCoinbaseTx(minerAddress, c.config.BlockReward)
+	coinbase := tx.NewCoinbaseTxWithHeight(minerAddress, c.config.BlockReward, newHeight)
 	allTxs := make([]*tx.Transaction, 0, 1+len(txs))
 	allTxs = append(allTxs, coinbase)
 	allTxs = append(allTxs, txs...)
@@ -230,4 +237,127 @@ func (c *Chain) getCurrentBits(ctx context.Context, newHeight uint64) (uint32, e
 	targetTimeSpan := time.Duration(c.config.BlockTimeTarget) * time.Second * time.Duration(interval)
 
 	return block.AdjustDifficulty(c.latestBlock.Bits(), actualTimeSpan, targetTimeSpan), nil
+}
+
+// Reorganize switches the chain from the current fork to a longer fork.
+// It undoes blocks from the current tip down to forkHeight, then applies newBlocks.
+// Orphaned non-coinbase transactions are offered back to the mempool via mempoolAdder.
+func (c *Chain) Reorganize(ctx context.Context, forkHeight uint64, newBlocks []*block.Block, mempoolAdder MempoolAdder) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.latestBlock == nil {
+		return fmt.Errorf("chain not initialized")
+	}
+
+	currentHeight := c.latestBlock.Height()
+	slog.Info("starting chain reorganization",
+		"fork_height", forkHeight,
+		"current_height", currentHeight,
+		"new_blocks", len(newBlocks),
+	)
+
+	// 1. Get orphaned blocks (from forkHeight+1 to current tip)
+	orphanedBlocks, err := c.repo.GetBlocksInRange(ctx, forkHeight+1, currentHeight)
+	if err != nil {
+		return fmt.Errorf("get orphaned blocks: %w", err)
+	}
+
+	// 2. Collect orphaned non-coinbase transactions
+	orphanedTxs := make(map[string]*tx.Transaction)
+	for _, ob := range orphanedBlocks {
+		for _, rawTx := range ob.RawTransactions() {
+			if t, ok := rawTx.(*tx.Transaction); ok {
+				if !t.IsCoinbase() {
+					orphanedTxs[t.ID().String()] = t
+				}
+			}
+		}
+	}
+
+	// 3. Undo orphaned blocks in reverse order (from tip down to forkHeight+1)
+	if c.utxoSet != nil {
+		for h := currentHeight; h >= forkHeight+1; h-- {
+			undoEntry, err := c.repo.GetUndoEntry(ctx, h)
+			if err != nil {
+				return fmt.Errorf("get undo entry at height %d: %w", h, err)
+			}
+			if err := c.utxoSet.UndoBlock(undoEntry); err != nil {
+				return fmt.Errorf("undo block at height %d: %w", h, err)
+			}
+			slog.Debug("undid block", "height", h)
+		}
+	}
+
+	// 4. Delete orphaned blocks from storage
+	if err := c.repo.DeleteBlocksAbove(ctx, forkHeight); err != nil {
+		return fmt.Errorf("delete blocks above height %d: %w", forkHeight, err)
+	}
+
+	// 5. Apply new blocks in forward order
+	for _, newBlk := range newBlocks {
+		// Validate PoW
+		pow := &block.ProofOfWork{}
+		if !pow.Validate(newBlk) {
+			return fmt.Errorf("invalid PoW for new block at height %d", newBlk.Height())
+		}
+
+		// Extract transactions
+		txs := make([]*tx.Transaction, 0, len(newBlk.RawTransactions()))
+		for _, rawTx := range newBlk.RawTransactions() {
+			if t, ok := rawTx.(*tx.Transaction); ok {
+				txs = append(txs, t)
+			}
+		}
+
+		// Apply UTXO changes and save
+		if c.utxoSet != nil && len(txs) > 0 {
+			undoEntry, err := c.utxoSet.ApplyBlock(newBlk.Height(), txs)
+			if err != nil {
+				return fmt.Errorf("apply UTXO for new block at height %d: %w", newBlk.Height(), err)
+			}
+			if err := c.repo.SaveBlockWithUTXOs(ctx, newBlk, undoEntry); err != nil {
+				return fmt.Errorf("save new block at height %d: %w", newBlk.Height(), err)
+			}
+		} else {
+			if err := c.repo.SaveBlock(ctx, newBlk); err != nil {
+				return fmt.Errorf("save new block at height %d: %w", newBlk.Height(), err)
+			}
+		}
+
+		slog.Debug("applied new block", "height", newBlk.Height(), "hash", newBlk.Hash().String()[:16])
+	}
+
+	// 6. Update chain tip to last new block
+	if len(newBlocks) > 0 {
+		c.latestBlock = newBlocks[len(newBlocks)-1]
+	}
+
+	slog.Info("chain reorganization complete",
+		"new_height", c.latestBlock.Height(),
+		"new_tip", c.latestBlock.Hash().String()[:16],
+	)
+
+	// 7. Re-add orphaned transactions to mempool (exclude those in the new chain)
+	if mempoolAdder != nil {
+		// Collect all tx IDs from new chain blocks
+		newChainTxIDs := make(map[string]bool)
+		for _, nb := range newBlocks {
+			for _, rawTx := range nb.RawTransactions() {
+				if t, ok := rawTx.(*tx.Transaction); ok {
+					newChainTxIDs[t.ID().String()] = true
+				}
+			}
+		}
+
+		for txID, orphanTx := range orphanedTxs {
+			if newChainTxIDs[txID] {
+				continue // tx is in the new chain, skip
+			}
+			// Ignore errors -- some orphaned txs may now be invalid
+			_ = mempoolAdder.Add(orphanTx)
+		}
+	}
+
+	return nil
 }

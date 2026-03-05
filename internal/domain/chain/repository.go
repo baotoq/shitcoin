@@ -32,4 +32,11 @@ type Repository interface {
 
 	// GetBlocksInRange returns blocks from startHeight to endHeight inclusive.
 	GetBlocksInRange(ctx context.Context, startHeight, endHeight uint64) ([]*block.Block, error)
+
+	// GetUndoEntry retrieves the UTXO undo entry for a block at the given height.
+	GetUndoEntry(ctx context.Context, blockHeight uint64) (*utxo.UndoEntry, error)
+
+	// DeleteBlocksAbove removes all blocks above the given height.
+	// Used during reorganization to remove orphaned blocks.
+	DeleteBlocksAbove(ctx context.Context, height uint64) error
 }

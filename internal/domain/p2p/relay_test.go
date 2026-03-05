@@ -90,6 +90,25 @@ func (m *fullMockChainRepo) GetBlocksInRange(_ context.Context, start, end uint6
 	return result, nil
 }
 
+func (m *fullMockChainRepo) GetUndoEntry(_ context.Context, blockHeight uint64) (*utxo.UndoEntry, error) {
+	return nil, utxo.ErrUndoEntryNotFound
+}
+
+func (m *fullMockChainRepo) DeleteBlocksAbove(_ context.Context, height uint64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for h, b := range m.byHeight {
+		if h > height {
+			delete(m.blocks, b.Hash())
+			delete(m.byHeight, h)
+		}
+	}
+	if b, ok := m.byHeight[height]; ok {
+		m.latest = b
+	}
+	return nil
+}
+
 // mockUTXORepo implements utxo.Repository in-memory.
 type mockUTXORepo struct {
 	mu    sync.Mutex

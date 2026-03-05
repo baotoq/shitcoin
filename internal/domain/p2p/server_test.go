@@ -68,6 +68,14 @@ func (m *mockChainRepo) GetBlocksInRange(_ context.Context, _, _ uint64) ([]*blo
 	return nil, nil
 }
 
+func (m *mockChainRepo) GetUndoEntry(_ context.Context, _ uint64) (*utxo.UndoEntry, error) {
+	return nil, utxo.ErrUndoEntryNotFound
+}
+
+func (m *mockChainRepo) DeleteBlocksAbove(_ context.Context, _ uint64) error {
+	return nil
+}
+
 // makeTestServer creates a test P2P server with an initialized in-memory chain.
 // Uses the given miner address to produce a unique genesis block.
 func makeTestServer(t *testing.T, minerAddr string) (*p2p.Server, int) {

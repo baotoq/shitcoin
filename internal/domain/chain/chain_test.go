@@ -8,7 +8,6 @@ import (
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
 	"github.com/baotoq/shitcoin/internal/domain/chain"
-	"github.com/baotoq/shitcoin/internal/domain/mempool"
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
 )
@@ -264,7 +263,7 @@ func TestReorganize_SwitchesToLongerFork(t *testing.T) {
 	prevHash := forkBlock.Hash()
 	forkMiner := "fork-miner"
 	for i := uint64(4); i <= 6; i++ {
-		coinbase := tx.NewCoinbaseTx(forkMiner, cfg.BlockReward)
+		coinbase := tx.NewCoinbaseTxWithHeight(forkMiner, cfg.BlockReward, i)
 		blockTxs := []any{coinbase}
 
 		txHashes := []block.Hash{coinbase.ID()}
@@ -380,7 +379,7 @@ func TestReorganize_OrphanedTxsReturnToMempool(t *testing.T) {
 	prevHash := forkBlock.Hash()
 	forkMiner := "fork-miner-2"
 	for i := uint64(3); i <= 4; i++ {
-		coinbase := tx.NewCoinbaseTx(forkMiner, cfg.BlockReward)
+		coinbase := tx.NewCoinbaseTxWithHeight(forkMiner, cfg.BlockReward, i)
 		blockTxs := []any{coinbase}
 		txHashes := []block.Hash{coinbase.ID()}
 		merkleRoot := block.ComputeMerkleRoot(txHashes)
@@ -445,7 +444,7 @@ func TestReorganize_PreservesBlocksBelowFork(t *testing.T) {
 	forkBlocks := make([]*block.Block, 0, 3)
 	prevHash := forkBlock.Hash()
 	for i := uint64(3); i <= 5; i++ {
-		coinbase := tx.NewCoinbaseTx("fork-miner-3", cfg.BlockReward)
+		coinbase := tx.NewCoinbaseTxWithHeight("fork-miner-3", cfg.BlockReward, i)
 		blockTxs := []any{coinbase}
 		txHashes := []block.Hash{coinbase.ID()}
 		merkleRoot := block.ComputeMerkleRoot(txHashes)
