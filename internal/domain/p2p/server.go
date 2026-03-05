@@ -40,6 +40,9 @@ type Server struct {
 
 	// Callback invoked when a block is received from a peer
 	onBlockReceived func(*block.Block)
+
+	// Sync state for initial block download
+	syncStatus syncState
 }
 
 // NewServer creates a new P2P server.

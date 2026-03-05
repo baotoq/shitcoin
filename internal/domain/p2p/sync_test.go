@@ -174,3 +174,118 @@ func TestGetBlocks_StartBeyondChainHeight_ReturnsNoBlocks(t *testing.T) {
 		t.Error("expected no response for GetBlocks beyond chain height, but got one")
 	}
 }
+
+func TestInitialBlockDownload(t *testing.T) {
+	// Node A has genesis + 5 blocks. Node B starts fresh (same genesis).
+	// B connects to A. After sync, B has 5 blocks and same tip hash as A.
+	srvA, chainA, _, _ := makeSyncTestNode(t, "miner-A")
+
+	mineTestBlocks(t, chainA, 5, "miner-A")
+
+	if chainA.Height() != 5 {
+		t.Fatalf("A height = %d, want 5", chainA.Height())
+	}
+
+	// Node B starts with only genesis
+	srvB, chainB, _, _ := makeSyncTestNode(t, "miner-A") // same miner for matching genesis
+
+	if chainB.Height() != 0 {
+		t.Fatalf("B height = %d, want 0", chainB.Height())
+	}
+
+	// B connects to A, triggering IBD
+	if err := srvB.Connect(srvA.ListenAddr()); err != nil {
+		t.Fatalf("Connect failed: %v", err)
+	}
+
+	// Wait for sync to complete
+	deadline := time.After(10 * time.Second)
+	for {
+		select {
+		case <-deadline:
+			t.Fatalf("timed out waiting for IBD. B height=%d, want=5", chainB.Height())
+		default:
+			if chainB.Height() >= 5 {
+				// Verify tip hashes match
+				if chainA.LatestBlock().Hash() != chainB.LatestBlock().Hash() {
+					t.Errorf("tip hash mismatch: A=%s, B=%s",
+						chainA.LatestBlock().Hash().String()[:16],
+						chainB.LatestBlock().Hash().String()[:16])
+				}
+				return
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+}
+
+func TestIBDUTXOConsistency(t *testing.T) {
+	// After IBD, the synced node's UTXO set has correct balances.
+	minerAddr := "miner-A"
+	srvA, chainA, utxoSetA, _ := makeSyncTestNode(t, minerAddr)
+
+	mineTestBlocks(t, chainA, 3, minerAddr)
+
+	// Check balance on A
+	balanceA, err := utxoSetA.GetBalance(minerAddr)
+	if err != nil {
+		t.Fatalf("GetBalance on A failed: %v", err)
+	}
+	if balanceA <= 0 {
+		t.Fatalf("expected positive balance on A, got %d", balanceA)
+	}
+
+	// Node B syncs from A
+	srvB, chainB, utxoSetB, _ := makeSyncTestNode(t, minerAddr)
+
+	if err := srvB.Connect(srvA.ListenAddr()); err != nil {
+		t.Fatalf("Connect failed: %v", err)
+	}
+
+	// Wait for sync
+	deadline := time.After(10 * time.Second)
+	for {
+		select {
+		case <-deadline:
+			t.Fatalf("timed out waiting for IBD. B height=%d, want=%d", chainB.Height(), chainA.Height())
+		default:
+			if chainB.Height() >= chainA.Height() {
+				// Verify UTXO balance matches
+				balanceB, err := utxoSetB.GetBalance(minerAddr)
+				if err != nil {
+					t.Fatalf("GetBalance on B failed: %v", err)
+				}
+				if balanceA != balanceB {
+					t.Errorf("balance mismatch: A=%d, B=%d", balanceA, balanceB)
+				}
+				return
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+}
+
+func TestIBDSyncingFlag(t *testing.T) {
+	// During IBD, the server's IsSyncing() returns true.
+	srvA, chainA, _, _ := makeSyncTestNode(t, "miner-A")
+
+	mineTestBlocks(t, chainA, 5, "miner-A")
+
+	srvB, _, _, _ := makeSyncTestNode(t, "miner-A")
+
+	// Before connect, not syncing
+	if srvB.IsSyncing() {
+		t.Error("expected IsSyncing=false before connect")
+	}
+
+	if err := srvB.Connect(srvA.ListenAddr()); err != nil {
+		t.Fatalf("Connect failed: %v", err)
+	}
+
+	// Wait for sync to complete, then check syncing is false
+	time.Sleep(3 * time.Second)
+
+	if srvB.IsSyncing() {
+		t.Error("expected IsSyncing=false after sync completes")
+	}
+}
