@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Project scaffold, domain types (Block/Header/Hash), SHA-256d hashing, PoW mining service, and go-zero config
-- [ ] 01-02-PLAN.md — Difficulty adjustment, Chain aggregate, bbolt persistence, and runnable main entry point
+- [x] 01-02-PLAN.md — Difficulty adjustment, Chain aggregate, bbolt persistence, and runnable main entry point
 
 ### Phase 2: Wallets and Transactions
 **Goal**: Users can create wallets, derive addresses, and send coins via UTXO transactions with cryptographic signing and verification
@@ -47,11 +47,12 @@ Plans:
   3. Every mined block includes a coinbase transaction that credits the block reward to the miner's address
   4. Transaction inputs with invalid signatures are rejected during validation
   5. The UTXO set persists across restarts and supports undo operations (reversibility) for future chain reorganization
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Wallet domain with ECDSA key pairs (btcec/v2), hand-rolled Base58Check, P2PKH address derivation, and JSON file persistence
+- [ ] 02-02-PLAN.md — Transaction domain with UTXO inputs/outputs, coinbase factory, ECDSA signing/verification, and structural validation
+- [ ] 02-03-PLAN.md — UTXO set with undo-log, bbolt persistence, and integration of typed transactions into Block/Chain/storage
 
 ### Phase 3: Mempool, Mining Integration, and CLI
 **Goal**: Users can operate a complete single-node blockchain through CLI commands -- creating wallets, sending transactions, mining blocks, and inspecting the chain
@@ -123,7 +124,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Chain Foundation | 2/2 | Complete   | 2026-03-04 |
-| 2. Wallets and Transactions | 0/0 | Not started | - |
+| 2. Wallets and Transactions | 0/3 | Planned | - |
 | 3. Mempool, Mining Integration, and CLI | 0/0 | Not started | - |
 | 4. P2P Networking and Consensus | 0/0 | Not started | - |
 | 5. Web Dashboard | 0/0 | Not started | - |
@@ -131,4 +132,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-05 (01-01 complete)*
+*Last updated: 2026-03-05 (Phase 2 planned)*
