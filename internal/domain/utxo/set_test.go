@@ -262,14 +262,14 @@ func TestGetBalance(t *testing.T) {
 	repo := newMemRepo()
 	set := NewSet(repo)
 
-	// Two coinbase blocks paying same address
+	// Two coinbase blocks paying same address but different rewards to produce unique TX IDs
 	cb1 := tx.NewCoinbaseTx("miner", 5_000_000_000)
 	_, err := set.ApplyBlock(0, []*tx.Transaction{cb1})
 	if err != nil {
 		t.Fatalf("ApplyBlock 0: %v", err)
 	}
 
-	cb2 := tx.NewCoinbaseTx("miner", 5_000_000_000)
+	cb2 := tx.NewCoinbaseTx("miner", 5_000_000_001) // different reward for unique tx ID
 	_, err = set.ApplyBlock(1, []*tx.Transaction{cb2})
 	if err != nil {
 		t.Fatalf("ApplyBlock 1: %v", err)
@@ -279,8 +279,8 @@ func TestGetBalance(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetBalance: %v", err)
 	}
-	if balance != 10_000_000_000 {
-		t.Errorf("balance = %d; want 10000000000", balance)
+	if balance != 10_000_000_001 {
+		t.Errorf("balance = %d; want 10000000001", balance)
 	}
 
 	// Unknown address should have zero balance
