@@ -172,6 +172,12 @@ func (s *Server) Connect(addr string) error {
 
 	s.registerPeer(peer)
 	slog.Info("connected to peer", "addr", addr, "height", peer.Height())
+
+	// Trigger IBD if peer has a longer chain
+	if peer.Height() > s.chain.Height() {
+		go s.startSync(peer)
+	}
+
 	return nil
 }
 
@@ -188,6 +194,11 @@ func (s *Server) handleInbound(conn net.Conn) {
 
 	s.registerPeer(peer)
 	slog.Info("accepted peer", "addr", remoteAddr, "height", peer.Height())
+
+	// Trigger IBD if inbound peer has a longer chain
+	if peer.Height() > s.chain.Height() {
+		go s.startSync(peer)
+	}
 }
 
 // outboundHandshake performs the version handshake as the initiating side.

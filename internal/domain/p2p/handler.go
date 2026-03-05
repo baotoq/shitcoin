@@ -149,8 +149,14 @@ func (s *Server) handleTx(peer *Peer, msg Message) {
 }
 
 // handleBlock processes a received block.
-// Deserializes, validates PoW, checks prev-hash, applies to chain, and re-broadcasts.
+// During IBD, routes to sync handler. Otherwise, validates PoW, checks prev-hash,
+// applies to chain, and re-broadcasts.
 func (s *Server) handleBlock(peer *Peer, msg Message) {
+	// During sync, route blocks from the sync source to the sync handler
+	if s.handleSyncBlock(peer, msg) {
+		return
+	}
+
 	var blockPayload BlockPayload
 	if err := json.Unmarshal(msg.Payload, &blockPayload); err != nil {
 		slog.Warn("invalid block payload", "addr", peer.Addr(), "err", err)
