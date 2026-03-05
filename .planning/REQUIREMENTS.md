@@ -23,10 +23,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **TX-01**: User can create a new wallet with ECDSA key pair (secp256k1 curve)
 - [ ] **TX-02**: Public keys are converted to human-readable addresses via SHA-256 → RIPEMD-160 → Base58Check
-- [ ] **TX-03**: User can send coins from one address to another, creating a UTXO transaction with inputs and outputs
-- [ ] **TX-04**: Every transaction input references a specific unspent output and includes a valid ECDSA signature
-- [ ] **TX-05**: Change outputs are automatically created when input value exceeds payment amount (sum invariant enforced)
-- [ ] **TX-06**: Each mined block includes a coinbase transaction that creates the block reward for the miner
+- [x] **TX-03**: User can send coins from one address to another, creating a UTXO transaction with inputs and outputs
+- [x] **TX-04**: Every transaction input references a specific unspent output and includes a valid ECDSA signature
+- [x] **TX-05**: Change outputs are automatically created when input value exceeds payment amount (sum invariant enforced)
+- [x] **TX-06**: Each mined block includes a coinbase transaction that creates the block reward for the miner
 - [ ] **TX-07**: System maintains a persistent UTXO set for efficient balance queries and transaction validation
 - [ ] **TX-08**: UTXO set supports reversibility (undo-log) to enable chain reorganization
 - [ ] **TX-09**: Transaction fees are computed as the difference between input and output sums, collected by the miner
@@ -103,10 +103,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MINE-09 | Phase 1 | Complete |
 | TX-01 | Phase 2 | Pending |
 | TX-02 | Phase 2 | Pending |
-| TX-03 | Phase 2 | Pending |
-| TX-04 | Phase 2 | Pending |
-| TX-05 | Phase 2 | Pending |
-| TX-06 | Phase 2 | Pending |
+| TX-03 | Phase 2 | Complete |
+| TX-04 | Phase 2 | Complete |
+| TX-05 | Phase 2 | Complete |
+| TX-06 | Phase 2 | Complete |
 | TX-07 | Phase 2 | Pending |
 | TX-08 | Phase 2 | Pending |
 | TX-09 | Phase 6 | Pending |

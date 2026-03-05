@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-05T12:43:14.126Z"
-last_activity: 2026-03-05 -- Plan 01-02 executed, Phase 1 complete
+status: in-progress
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-05T13:03:58.243Z"
+last_activity: 2026-03-05 -- Plan 02-02 executed, transaction domain complete
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 17
+  total_plans: 5
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -21,36 +21,37 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 1: Core Chain Foundation
+**Current focus:** Phase 2: Wallets and Transactions
 
 ## Current Position
 
-Phase: 1 of 6 (Core Chain Foundation) -- COMPLETE
-Plan: 2 of 2 in current phase (01-02 complete)
-Status: Phase 1 Complete
-Last activity: 2026-03-05 -- Plan 01-02 executed, Phase 1 complete
+Phase: 2 of 6 (Wallets and Transactions) -- IN PROGRESS
+Plan: 2 of 3 in current phase (02-02 complete)
+Status: Executing Phase 2
+Last activity: 2026-03-05 -- Plan 02-02 executed, transaction domain complete
 
-Progress: [██░░░░░░░░] 17%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 16min
-- Total execution time: 0.5 hours
+- Total plans completed: 4
+- Average duration: 12min
+- Total execution time: 0.8 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Core Chain Foundation | 2/2 | 32min | 16min |
+| 2. Wallets and Transactions | 2/3 | 15min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6min), 01-02 (26min)
-- Trend: Ramping up (larger plans take longer as expected)
+- Last 5 plans: 01-01 (6min), 01-02 (26min), 02-01 (10min), 02-02 (5min)
+- Trend: Steady velocity, clean domain packages completing quickly
 
 *Updated after each plan completion*
-| Phase 01 P02 | 26min | 2 tasks | 13 files |
+| Phase 02 P02 | 5min | 1 task | 8 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,9 @@ Recent decisions affecting current work:
 - [01-02]: Copy byte slices inside bolt tx callbacks (bbolt pitfall #4)
 - [01-02]: Demo config InitialDifficulty=5 for practical CPU mining demo
 - [01-02]: go-zero stat/logx disabled in main.go for clean demo output
+- [02-02]: Hashable struct pattern for TX ID: JSON-serialize inputs (without sig/pubkey) and outputs, then DoubleSHA256
+- [02-02]: Coinbase marker: zero hash + 0xFFFFFFFF vout (Bitcoin convention)
+- [02-02]: Simplified SIGHASH_ALL: sign full transaction hash rather than per-input signing
 
 ### Pending Todos
 
@@ -81,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T12:43:14.118Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-wallets-and-transactions/02-CONTEXT.md
+Last session: 2026-03-05T13:03:00.000Z
+Stopped at: Completed 02-02-PLAN.md
+Resume file: .planning/phases/02-wallets-and-transactions/02-02-SUMMARY.md

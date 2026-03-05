@@ -47,7 +47,7 @@ Plans:
   3. Every mined block includes a coinbase transaction that credits the block reward to the miner's address
   4. Transaction inputs with invalid signatures are rejected during validation
   5. The UTXO set persists across restarts and supports undo operations (reversibility) for future chain reorganization
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 02-01-PLAN.md — Wallet domain with ECDSA key pairs (btcec/v2), hand-rolled Base58Check, P2PKH address derivation, and JSON file persistence
@@ -124,7 +124,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Chain Foundation | 2/2 | Complete   | 2026-03-04 |
-| 2. Wallets and Transactions | 0/3 | Planned | - |
+| 2. Wallets and Transactions | 2/3 | In Progress|  |
 | 3. Mempool, Mining Integration, and CLI | 0/0 | Not started | - |
 | 4. P2P Networking and Consensus | 0/0 | Not started | - |
 | 5. Web Dashboard | 0/0 | Not started | - |
