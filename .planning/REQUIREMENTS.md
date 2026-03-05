@@ -21,8 +21,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Transactions & Wallets
 
-- [ ] **TX-01**: User can create a new wallet with ECDSA key pair (secp256k1 curve)
-- [ ] **TX-02**: Public keys are converted to human-readable addresses via SHA-256 → RIPEMD-160 → Base58Check
+- [x] **TX-01**: User can create a new wallet with ECDSA key pair (secp256k1 curve)
+- [x] **TX-02**: Public keys are converted to human-readable addresses via SHA-256 → RIPEMD-160 → Base58Check
 - [x] **TX-03**: User can send coins from one address to another, creating a UTXO transaction with inputs and outputs
 - [x] **TX-04**: Every transaction input references a specific unspent output and includes a valid ECDSA signature
 - [x] **TX-05**: Change outputs are automatically created when input value exceeds payment amount (sum invariant enforced)
@@ -101,8 +101,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MINE-07 | Phase 3 | Pending |
 | MINE-08 | Phase 6 | Pending |
 | MINE-09 | Phase 1 | Complete |
-| TX-01 | Phase 2 | Pending |
-| TX-02 | Phase 2 | Pending |
+| TX-01 | Phase 2 | Complete |
+| TX-02 | Phase 2 | Complete |
 | TX-03 | Phase 2 | Complete |
 | TX-04 | Phase 2 | Complete |
 | TX-05 | Phase 2 | Complete |

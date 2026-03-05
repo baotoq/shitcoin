@@ -50,7 +50,7 @@ Plans:
 **Plans:** 2/3 plans executed
 
 Plans:
-- [ ] 02-01-PLAN.md — Wallet domain with ECDSA key pairs (btcec/v2), hand-rolled Base58Check, P2PKH address derivation, and JSON file persistence
+- [x] 02-01-PLAN.md — Wallet domain with ECDSA key pairs (btcec/v2), hand-rolled Base58Check, P2PKH address derivation, and JSON file persistence
 - [ ] 02-02-PLAN.md — Transaction domain with UTXO inputs/outputs, coinbase factory, ECDSA signing/verification, and structural validation
 - [ ] 02-03-PLAN.md — UTXO set with undo-log, bbolt persistence, and integration of typed transactions into Block/Chain/storage
 

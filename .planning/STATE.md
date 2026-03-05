@@ -70,6 +70,9 @@ Recent decisions affecting current work:
 - [01-02]: Copy byte slices inside bolt tx callbacks (bbolt pitfall #4)
 - [01-02]: Demo config InitialDifficulty=5 for practical CPU mining demo
 - [01-02]: go-zero stat/logx disabled in main.go for clean demo output
+- [02-01]: btcec/v2 for secp256k1 ECDSA key generation (per user constraint)
+- [02-01]: Hand-rolled Base58Check encoding for educational value (per user constraint)
+- [02-01]: Atomic JSON file writes via temp file + rename for crash safety
 - [02-02]: Hashable struct pattern for TX ID: JSON-serialize inputs (without sig/pubkey) and outputs, then DoubleSHA256
 - [02-02]: Coinbase marker: zero hash + 0xFFFFFFFF vout (Bitcoin convention)
 - [02-02]: Simplified SIGHASH_ALL: sign full transaction hash rather than per-input signing
