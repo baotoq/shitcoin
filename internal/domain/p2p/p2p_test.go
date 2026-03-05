@@ -6,6 +6,9 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWriteReadMessageRoundTrip(t *testing.T) {
@@ -24,20 +27,12 @@ func TestWriteReadMessageRoundTrip(t *testing.T) {
 	}()
 
 	got, err := ReadMessage(server)
-	if err != nil {
-		t.Fatalf("ReadMessage failed: %v", err)
-	}
+	require.NoError(t, err)
 
-	if err := <-errCh; err != nil {
-		t.Fatalf("WriteMessage failed: %v", err)
-	}
+	require.NoError(t, <-errCh)
 
-	if got.Command != original.Command {
-		t.Errorf("Command = %d; want %d", got.Command, original.Command)
-	}
-	if string(got.Payload) != string(original.Payload) {
-		t.Errorf("Payload = %q; want %q", got.Payload, original.Payload)
-	}
+	assert.Equal(t, original.Command, got.Command)
+	assert.Equal(t, string(original.Payload), string(got.Payload))
 }
 
 func TestReadMessageTooLarge(t *testing.T) {
@@ -53,12 +48,7 @@ func TestReadMessageTooLarge(t *testing.T) {
 	}()
 
 	_, err := ReadMessage(server)
-	if err == nil {
-		t.Fatal("expected ErrMessageTooLarge, got nil")
-	}
-	if err != ErrMessageTooLarge {
-		t.Errorf("expected ErrMessageTooLarge, got: %v", err)
-	}
+	assert.ErrorIs(t, err, ErrMessageTooLarge)
 }
 
 func TestReadMessageTruncated(t *testing.T) {
@@ -74,9 +64,7 @@ func TestReadMessageTruncated(t *testing.T) {
 	}()
 
 	_, err := ReadMessage(server)
-	if err == nil {
-		t.Fatal("expected error on truncated frame, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestVersionPayloadSerialization(t *testing.T) {
@@ -88,18 +76,12 @@ func TestVersionPayloadSerialization(t *testing.T) {
 	}
 
 	data, err := json.Marshal(original)
-	if err != nil {
-		t.Fatalf("Marshal failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	var decoded VersionPayload
-	if err := json.Unmarshal(data, &decoded); err != nil {
-		t.Fatalf("Unmarshal failed: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(data, &decoded))
 
-	if decoded != original {
-		t.Errorf("round-trip mismatch: got %+v, want %+v", decoded, original)
-	}
+	assert.Equal(t, original, decoded)
 }
 
 func TestPeerStartSendStop(t *testing.T) {
@@ -119,26 +101,18 @@ func TestPeerStartSendStop(t *testing.T) {
 
 	// Read what the peer wrote to its connection
 	got, err := ReadMessage(client)
-	if err != nil {
-		t.Fatalf("ReadMessage from peer's connection failed: %v", err)
-	}
+	require.NoError(t, err)
 
-	if got.Command != CmdVerack {
-		t.Errorf("Command = %d; want %d", got.Command, CmdVerack)
-	}
+	assert.Equal(t, CmdVerack, got.Command)
 
 	// Now write a message to the peer's connection (simulating remote)
 	testMsg := Message{Command: CmdVersion, Payload: []byte(`{"version":1}`)}
-	if err := WriteMessage(client, testMsg); err != nil {
-		t.Fatalf("WriteMessage to peer's connection failed: %v", err)
-	}
+	require.NoError(t, WriteMessage(client, testMsg))
 
 	// The peer's read loop should invoke the handler
 	select {
 	case r := <-received:
-		if r.Command != CmdVersion {
-			t.Errorf("received Command = %d; want %d", r.Command, CmdVersion)
-		}
+		assert.Equal(t, CmdVersion, r.Command)
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for handler callback")
 	}

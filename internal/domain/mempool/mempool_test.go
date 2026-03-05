@@ -1,11 +1,12 @@
 package mempool
 
 import (
-	"errors"
 	"sync"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
 	"github.com/baotoq/shitcoin/internal/domain/tx"
@@ -87,9 +88,7 @@ func buildSignedTx(t *testing.T, utxoSet *utxo.Set, privKey *btcec.PrivateKey, a
 	// Create coinbase to fund the UTXO set
 	coinbase := tx.NewCoinbaseTx(address, 5_000_000_000)
 	_, err := utxoSet.ApplyBlock(0, []*tx.Transaction{coinbase})
-	if err != nil {
-		t.Fatalf("ApplyBlock coinbase: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Build spending TX
 	input := tx.NewTxInput(coinbase.ID(), 0)
@@ -97,9 +96,7 @@ func buildSignedTx(t *testing.T, utxoSet *utxo.Set, privKey *btcec.PrivateKey, a
 	spendTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{output})
 
 	// Sign it
-	if err := tx.SignTransaction(spendTx, privKey); err != nil {
-		t.Fatalf("SignTransaction: %v", err)
-	}
+	require.NoError(t, tx.SignTransaction(spendTx, privKey))
 
 	return spendTx
 }
@@ -113,13 +110,8 @@ func TestAdd_ValidTransaction(t *testing.T) {
 	spendTx := buildSignedTx(t, utxoSet, privKey, address)
 
 	mp := New(utxoSet)
-	err := mp.Add(spendTx)
-	if err != nil {
-		t.Fatalf("Add valid tx: %v", err)
-	}
-	if mp.Count() != 1 {
-		t.Errorf("Count() = %d; want 1", mp.Count())
-	}
+	require.NoError(t, mp.Add(spendTx))
+	assert.Equal(t, 1, mp.Count())
 }
 
 func TestAdd_Duplicate(t *testing.T) {
@@ -133,9 +125,7 @@ func TestAdd_Duplicate(t *testing.T) {
 	_ = mp.Add(spendTx)
 
 	err := mp.Add(spendTx)
-	if !errors.Is(err, ErrDuplicate) {
-		t.Errorf("expected ErrDuplicate, got: %v", err)
-	}
+	assert.ErrorIs(t, err, ErrDuplicate)
 }
 
 func TestAdd_DoubleSpend(t *testing.T) {
@@ -147,9 +137,7 @@ func TestAdd_DoubleSpend(t *testing.T) {
 	// Create a coinbase to fund the UTXO set
 	coinbase := tx.NewCoinbaseTx(address, 5_000_000_000)
 	_, err := utxoSet.ApplyBlock(0, []*tx.Transaction{coinbase})
-	if err != nil {
-		t.Fatalf("ApplyBlock: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Create two TXs spending the same UTXO
 	input := tx.NewTxInput(coinbase.ID(), 0)
@@ -164,9 +152,7 @@ func TestAdd_DoubleSpend(t *testing.T) {
 	_ = mp.Add(spendTx1)
 
 	err = mp.Add(spendTx2)
-	if !errors.Is(err, ErrDoubleSpend) {
-		t.Errorf("expected ErrDoubleSpend, got: %v", err)
-	}
+	assert.ErrorIs(t, err, ErrDoubleSpend)
 }
 
 func TestAdd_InvalidSignature(t *testing.T) {
@@ -183,9 +169,7 @@ func TestAdd_InvalidSignature(t *testing.T) {
 
 	mp := New(utxoSet)
 	err := mp.Add(unsignedTx)
-	if !errors.Is(err, ErrInvalidSignature) {
-		t.Errorf("expected ErrInvalidSignature, got: %v", err)
-	}
+	assert.ErrorIs(t, err, ErrInvalidSignature)
 }
 
 func TestAdd_UTXONotFound(t *testing.T) {
@@ -201,9 +185,7 @@ func TestAdd_UTXONotFound(t *testing.T) {
 
 	mp := New(utxoSet)
 	err := mp.Add(fakeTx)
-	if !errors.Is(err, ErrUTXONotFound) {
-		t.Errorf("expected ErrUTXONotFound, got: %v", err)
-	}
+	assert.ErrorIs(t, err, ErrUTXONotFound)
 }
 
 func TestDrainAll(t *testing.T) {
@@ -225,18 +207,12 @@ func TestDrainAll(t *testing.T) {
 
 	mp := New(utxoSet)
 	for _, transaction := range txs {
-		if err := mp.Add(transaction); err != nil {
-			t.Fatalf("Add: %v", err)
-		}
+		require.NoError(t, mp.Add(transaction))
 	}
 
 	drained := mp.DrainAll()
-	if len(drained) != 3 {
-		t.Errorf("DrainAll returned %d txs; want 3", len(drained))
-	}
-	if mp.Count() != 0 {
-		t.Errorf("Count after DrainAll = %d; want 0", mp.Count())
-	}
+	assert.Len(t, drained, 3)
+	assert.Equal(t, 0, mp.Count())
 }
 
 func TestRemove(t *testing.T) {
@@ -264,9 +240,7 @@ func TestRemove(t *testing.T) {
 	// Remove the first tx
 	mp.Remove([]block.Hash{txs[0].ID()})
 
-	if mp.Count() != 1 {
-		t.Errorf("Count after Remove = %d; want 1", mp.Count())
-	}
+	assert.Equal(t, 1, mp.Count())
 }
 
 func TestTransactions(t *testing.T) {
@@ -291,9 +265,7 @@ func TestTransactions(t *testing.T) {
 	}
 
 	all := mp.Transactions()
-	if len(all) != 2 {
-		t.Errorf("Transactions() returned %d; want 2", len(all))
-	}
+	assert.Len(t, all, 2)
 }
 
 func TestConcurrentAccess(t *testing.T) {
@@ -325,7 +297,5 @@ func TestConcurrentAccess(t *testing.T) {
 	}
 	wg.Wait()
 
-	if mp.Count() != 10 {
-		t.Errorf("Count after concurrent Add = %d; want 10", mp.Count())
-	}
+	assert.Equal(t, 10, mp.Count())
 }

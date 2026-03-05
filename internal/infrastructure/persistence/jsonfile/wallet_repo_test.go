@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/baotoq/shitcoin/internal/domain/wallet"
 )
 
@@ -14,30 +17,18 @@ func TestWalletRepo_SaveAndGet(t *testing.T) {
 	filePath := filepath.Join(tmpDir, "wallets.json")
 
 	repo, err := NewWalletRepo(filePath)
-	if err != nil {
-		t.Fatalf("NewWalletRepo failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	w, err := wallet.NewWallet()
-	if err != nil {
-		t.Fatalf("NewWallet failed: %v", err)
-	}
+	require.NoError(t, err)
 
-	if err := repo.Save(w); err != nil {
-		t.Fatalf("Save failed: %v", err)
-	}
+	require.NoError(t, repo.Save(w))
 
 	got, err := repo.GetByAddress(w.Address())
-	if err != nil {
-		t.Fatalf("GetByAddress failed: %v", err)
-	}
+	require.NoError(t, err)
 
-	if got.Address() != w.Address() {
-		t.Errorf("address = %q; want %q", got.Address(), w.Address())
-	}
-	if got.PrivateKeyHex() != w.PrivateKeyHex() {
-		t.Errorf("private key hex mismatch")
-	}
+	assert.Equal(t, w.Address(), got.Address())
+	assert.Equal(t, w.PrivateKeyHex(), got.PrivateKeyHex())
 }
 
 func TestWalletRepo_ListAddresses(t *testing.T) {
@@ -45,9 +36,7 @@ func TestWalletRepo_ListAddresses(t *testing.T) {
 	filePath := filepath.Join(tmpDir, "wallets.json")
 
 	repo, err := NewWalletRepo(filePath)
-	if err != nil {
-		t.Fatalf("NewWalletRepo failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	w1, _ := wallet.NewWallet()
 	w2, _ := wallet.NewWallet()
@@ -58,13 +47,9 @@ func TestWalletRepo_ListAddresses(t *testing.T) {
 	_ = repo.Save(w3)
 
 	addresses, err := repo.ListAddresses()
-	if err != nil {
-		t.Fatalf("ListAddresses failed: %v", err)
-	}
+	require.NoError(t, err)
 
-	if len(addresses) != 3 {
-		t.Errorf("got %d addresses; want 3", len(addresses))
-	}
+	assert.Len(t, addresses, 3)
 
 	// Check all addresses are present.
 	addrMap := make(map[string]bool)
@@ -72,9 +57,7 @@ func TestWalletRepo_ListAddresses(t *testing.T) {
 		addrMap[a] = true
 	}
 	for _, w := range []*wallet.Wallet{w1, w2, w3} {
-		if !addrMap[w.Address()] {
-			t.Errorf("address %q not found in list", w.Address())
-		}
+		assert.True(t, addrMap[w.Address()], "address %q not found in list", w.Address())
 	}
 }
 
@@ -83,14 +66,10 @@ func TestWalletRepo_GetByAddress_NotFound(t *testing.T) {
 	filePath := filepath.Join(tmpDir, "wallets.json")
 
 	repo, err := NewWalletRepo(filePath)
-	if err != nil {
-		t.Fatalf("NewWalletRepo failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	_, err = repo.GetByAddress("1NonExistentAddress")
-	if err != wallet.ErrWalletNotFound {
-		t.Errorf("err = %v; want ErrWalletNotFound", err)
-	}
+	assert.ErrorIs(t, err, wallet.ErrWalletNotFound)
 }
 
 func TestWalletRepo_Persistence(t *testing.T) {
@@ -99,29 +78,19 @@ func TestWalletRepo_Persistence(t *testing.T) {
 
 	// Create repo and save a wallet.
 	repo1, err := NewWalletRepo(filePath)
-	if err != nil {
-		t.Fatalf("NewWalletRepo failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	w, _ := wallet.NewWallet()
 	_ = repo1.Save(w)
 
 	// Create a new repo from the same file (simulates close/reopen).
 	repo2, err := NewWalletRepo(filePath)
-	if err != nil {
-		t.Fatalf("NewWalletRepo (reopen) failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	got, err := repo2.GetByAddress(w.Address())
-	if err != nil {
-		t.Fatalf("GetByAddress after reopen failed: %v", err)
-	}
-	if got.Address() != w.Address() {
-		t.Errorf("address = %q; want %q", got.Address(), w.Address())
-	}
-	if got.PrivateKeyHex() != w.PrivateKeyHex() {
-		t.Errorf("private key hex mismatch after reopen")
-	}
+	require.NoError(t, err)
+	assert.Equal(t, w.Address(), got.Address())
+	assert.Equal(t, w.PrivateKeyHex(), got.PrivateKeyHex())
 }
 
 func TestWalletRepo_FileFormatIsReadableJSON(t *testing.T) {
@@ -129,47 +98,29 @@ func TestWalletRepo_FileFormatIsReadableJSON(t *testing.T) {
 	filePath := filepath.Join(tmpDir, "wallets.json")
 
 	repo, err := NewWalletRepo(filePath)
-	if err != nil {
-		t.Fatalf("NewWalletRepo failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	w, _ := wallet.NewWallet()
 	_ = repo.Save(w)
 
 	// Read the raw file and verify it's valid JSON.
 	data, err := os.ReadFile(filePath)
-	if err != nil {
-		t.Fatalf("ReadFile failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	var parsed map[string]interface{}
-	if err := json.Unmarshal(data, &parsed); err != nil {
-		t.Fatalf("file is not valid JSON: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(data, &parsed))
 
 	// Verify the structure has a wallets array.
 	wallets, ok := parsed["wallets"]
-	if !ok {
-		t.Fatal("JSON missing 'wallets' key")
-	}
+	require.True(t, ok, "JSON missing 'wallets' key")
 
 	arr, ok := wallets.([]interface{})
-	if !ok {
-		t.Fatal("'wallets' is not an array")
-	}
-	if len(arr) != 1 {
-		t.Errorf("wallets array length = %d; want 1", len(arr))
-	}
+	require.True(t, ok, "'wallets' is not an array")
+	assert.Len(t, arr, 1)
 
 	// Verify each entry has address and private_key_hex fields.
 	entry, ok := arr[0].(map[string]interface{})
-	if !ok {
-		t.Fatal("wallet entry is not an object")
-	}
-	if _, ok := entry["address"]; !ok {
-		t.Error("wallet entry missing 'address' field")
-	}
-	if _, ok := entry["private_key_hex"]; !ok {
-		t.Error("wallet entry missing 'private_key_hex' field")
-	}
+	require.True(t, ok, "wallet entry is not an object")
+	assert.Contains(t, entry, "address")
+	assert.Contains(t, entry, "private_key_hex")
 }
