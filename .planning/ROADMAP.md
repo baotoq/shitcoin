@@ -67,7 +67,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Mempool domain package (RWMutex-protected, validates duplicates/double-spends/signatures/UTXOs) and Merkle root computation integrated into block construction
+- [x] 03-01-PLAN.md — Mempool domain package (RWMutex-protected, validates duplicates/double-spends/signatures/UTXOs) and Merkle root computation integrated into block construction
 - [ ] 03-02-PLAN.md — CLI dispatch with 7 subcommands (createwallet, listaddresses, getbalance, send, mine, printchain, startnode), auto-mining background loop, and ServiceContext wiring
 
 ### Phase 4: P2P Networking and Consensus
@@ -125,7 +125,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Core Chain Foundation | 2/2 | Complete   | 2026-03-04 |
 | 2. Wallets and Transactions | 3/3 | Complete   | 2026-03-05 |
-| 3. Mempool, Mining Integration, and CLI | 0/2 | Planned | - |
+| 3. Mempool, Mining Integration, and CLI | 1/2 | In Progress | - |
 | 4. P2P Networking and Consensus | 0/0 | Not started | - |
 | 5. Web Dashboard | 0/0 | Not started | - |
 | 6. Advanced Educational Features | 0/0 | Not started | - |

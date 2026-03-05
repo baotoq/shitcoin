@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-03-05T13:22:34.516Z"
-last_activity: 2026-03-05 -- Plan 02-03 executed, UTXO set and typed transactions complete
+status: in_progress
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-05T14:51:00.000Z"
+last_activity: 2026-03-05 -- Plan 03-01 executed, mempool domain and Merkle root complete
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_plans: 7
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 2: Wallets and Transactions
+**Current focus:** Phase 3: Mempool, Mining Integration, and CLI
 
 ## Current Position
 
-Phase: 2 of 6 (Wallets and Transactions) -- IN PROGRESS
-Plan: 3 of 3 in current phase (02-03 complete)
-Status: Phase 2 Complete
-Last activity: 2026-03-05 -- Plan 02-03 executed, UTXO set and typed transactions complete
+Phase: 3 of 6 (Mempool, Mining Integration, and CLI) -- IN PROGRESS
+Plan: 1 of 2 in current phase (03-01 complete)
+Status: Phase 3 In Progress
+Last activity: 2026-03-05 -- Plan 03-01 executed, mempool domain and Merkle root complete
 
-Progress: [██████████] 100%
+Progress: [████████░░] 86%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 12min
-- Total execution time: 0.8 hours
+- Total plans completed: 6
+- Average duration: 11min
+- Total execution time: 1.1 hours
 
 **By Phase:**
 
@@ -45,13 +45,14 @@ Progress: [██████████] 100%
 |-------|-------|-------|----------|
 | 1. Core Chain Foundation | 2/2 | 32min | 16min |
 | 2. Wallets and Transactions | 3/3 | 26min | 9min |
+| 3. Mempool, Mining, CLI | 1/2 | 6min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6min), 01-02 (26min), 02-01 (10min), 02-02 (5min), 02-03 (11min)
-- Trend: Steady velocity, UTXO plan slightly longer due to import cycle resolution
+- Last 5 plans: 01-02 (26min), 02-01 (10min), 02-02 (5min), 02-03 (11min), 03-01 (6min)
+- Trend: Steady velocity, mempool/merkle plan fast due to well-scoped domain work
 
 *Updated after each plan completion*
-| Phase 02 P03 | 11min | 2 tasks | 20 files |
+| Phase 03 P01 | 6min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [02-03]: 36-byte composite UTXO key (32-byte txid + 4-byte big-endian vout)
 - [02-03]: Atomic multi-bucket bbolt writes for block + UTXO + undo consistency
 - [02-03]: SatoshiPerCoin constant and 50-coin default block reward (5B satoshis)
+- [03-01]: Bitcoin Merkle convention: single leaf hashed with itself (not returned directly)
+- [03-01]: Mempool tracks spentOutputs map separately for O(1) double-spend detection against pool
 
 ### Pending Todos
 
@@ -92,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T13:17:00.000Z
-Stopped at: Completed 02-03-PLAN.md
-Resume file: .planning/phases/02-wallets-and-transactions/02-03-SUMMARY.md
+Last session: 2026-03-05T14:51:00.000Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: .planning/phases/03-mempool-mining-integration-and-cli/03-01-SUMMARY.md

@@ -15,7 +15,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **MINE-04**: User can mine a block manually via CLI command
 - [ ] **MINE-05**: Node can auto-mine blocks continuously in the background with context-based cancellation
 - [x] **MINE-06**: Difficulty adjusts automatically every N blocks based on actual vs target block time (window-based, clamped)
-- [ ] **MINE-07**: Block headers include a Merkle root computed from the block's transaction hashes
+- [x] **MINE-07**: Block headers include a Merkle root computed from the block's transaction hashes
 - [ ] **MINE-08**: Block reward halves every N blocks (configurable interval)
 - [x] **MINE-09**: Consensus parameters (block time target, difficulty interval, initial reward, halving interval) are configurable
 
@@ -36,7 +36,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **NET-01**: User can start a node that listens on a configurable TCP port on localhost
 - [ ] **NET-02**: Nodes perform a version handshake when connecting to establish protocol compatibility
-- [ ] **NET-03**: Mempool holds validated-but-unmined transactions, protected by RWMutex for concurrent access
+- [x] **NET-03**: Mempool holds validated-but-unmined transactions, protected by RWMutex for concurrent access
 - [ ] **NET-04**: When a user creates a transaction, it is broadcast to all connected peers
 - [ ] **NET-05**: When a node mines a block, it is broadcast to all connected peers
 - [ ] **NET-06**: Peers validate received blocks and transactions before accepting and re-broadcasting
@@ -98,7 +98,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MINE-04 | Phase 3 | Pending |
 | MINE-05 | Phase 3 | Pending |
 | MINE-06 | Phase 1 | Complete |
-| MINE-07 | Phase 3 | Pending |
+| MINE-07 | Phase 3 | Complete |
 | MINE-08 | Phase 6 | Pending |
 | MINE-09 | Phase 1 | Complete |
 | TX-01 | Phase 2 | Complete |
@@ -113,7 +113,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TX-10 | Phase 6 | Pending |
 | NET-01 | Phase 4 | Pending |
 | NET-02 | Phase 4 | Pending |
-| NET-03 | Phase 3 | Pending |
+| NET-03 | Phase 3 | Complete |
 | NET-04 | Phase 4 | Pending |
 | NET-05 | Phase 4 | Pending |
 | NET-06 | Phase 4 | Pending |
