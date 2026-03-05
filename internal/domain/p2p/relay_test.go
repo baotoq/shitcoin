@@ -12,6 +12,8 @@ import (
 	"github.com/baotoq/shitcoin/internal/domain/mempool"
 	"github.com/baotoq/shitcoin/internal/domain/p2p"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // fullMockChainRepo stores all blocks for relay test scenarios.
@@ -180,16 +182,12 @@ func makeRelayTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chai
 	ch := chain.NewChain(repo, pow, cfg, utxoSet)
 
 	ctx := context.Background()
-	if err := ch.Initialize(ctx, minerAddr); err != nil {
-		t.Fatalf("chain.Initialize failed: %v", err)
-	}
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
 
 	pool := mempool.New(utxoSet)
 
 	srv := p2p.NewServer(ch, pool, utxoSet, repo, 0)
-	if err := srv.Start(ctx); err != nil {
-		t.Fatalf("server.Start failed: %v", err)
-	}
+	require.NoError(t, srv.Start(ctx))
 
 	t.Cleanup(func() {
 		srv.Stop()
@@ -201,9 +199,7 @@ func makeRelayTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chai
 // connectNodes connects two servers and waits for the handshake to complete.
 func connectNodes(t *testing.T, from, to *p2p.Server) {
 	t.Helper()
-	if err := from.Connect(to.ListenAddr()); err != nil {
-		t.Fatalf("Connect failed: %v", err)
-	}
+	require.NoError(t, from.Connect(to.ListenAddr()))
 	// Brief wait for inbound handling
 	time.Sleep(200 * time.Millisecond)
 }
@@ -216,9 +212,7 @@ func dialAndHandshake(t *testing.T, srv *p2p.Server, ch *chain.Chain) net.Conn {
 	t.Helper()
 
 	conn, err := net.DialTimeout("tcp", srv.ListenAddr(), 2*time.Second)
-	if err != nil {
-		t.Fatalf("dial failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	conn.SetDeadline(time.Now().Add(5 * time.Second))
 
@@ -228,49 +222,25 @@ func dialAndHandshake(t *testing.T, srv *p2p.Server, ch *chain.Chain) net.Conn {
 		Height:     ch.Height(),
 		ListenPort: 0,
 	}
-	// We need the genesis hash. Get it from the chain.
-	// Since ch is *chain.Chain, we can't easily get genesis hash without the repo.
-	// Use empty genesis hash -- the server allows empty genesis (skip check).
 	versionPayload.GenesisHash = ""
 
 	versionMsg, err := p2p.NewMessage(p2p.CmdVersion, versionPayload)
-	if err != nil {
-		conn.Close()
-		t.Fatalf("create version message failed: %v", err)
-	}
-	if err := p2p.WriteMessage(conn, versionMsg); err != nil {
-		conn.Close()
-		t.Fatalf("write version failed: %v", err)
-	}
+	require.NoError(t, err)
+	require.NoError(t, p2p.WriteMessage(conn, versionMsg))
 
 	// Receive server's version
 	msg, err := p2p.ReadMessage(conn)
-	if err != nil {
-		conn.Close()
-		t.Fatalf("read server version failed: %v", err)
-	}
-	if msg.Command != p2p.CmdVersion {
-		conn.Close()
-		t.Fatalf("expected CmdVersion, got %d", msg.Command)
-	}
+	require.NoError(t, err)
+	require.Equal(t, p2p.CmdVersion, msg.Command)
 
 	// Receive server's verack
 	msg, err = p2p.ReadMessage(conn)
-	if err != nil {
-		conn.Close()
-		t.Fatalf("read server verack failed: %v", err)
-	}
-	if msg.Command != p2p.CmdVerack {
-		conn.Close()
-		t.Fatalf("expected CmdVerack, got %d", msg.Command)
-	}
+	require.NoError(t, err)
+	require.Equal(t, p2p.CmdVerack, msg.Command)
 
 	// Send our verack
 	verack := p2p.Message{Command: p2p.CmdVerack, Payload: []byte("{}")}
-	if err := p2p.WriteMessage(conn, verack); err != nil {
-		conn.Close()
-		t.Fatalf("write verack failed: %v", err)
-	}
+	require.NoError(t, p2p.WriteMessage(conn, verack))
 
 	// Clear deadline
 	conn.SetDeadline(time.Time{})
@@ -288,9 +258,7 @@ func TestBlockBroadcast(t *testing.T) {
 	// Mine a block on node A
 	ctx := context.Background()
 	blk, err := chainA.MineBlock(ctx, "miner-A", nil)
-	if err != nil {
-		t.Fatalf("MineBlock failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Broadcast the mined block
 	srvA.BroadcastBlock(blk, "")
@@ -300,7 +268,8 @@ func TestBlockBroadcast(t *testing.T) {
 	for {
 		select {
 		case <-deadline:
-			t.Fatalf("timed out waiting for block propagation. B height=%d, want=%d", chainB.Height(), blk.Height())
+			require.FailNow(t, "timed out waiting for block propagation",
+				"B height=%d, want=%d", chainB.Height(), blk.Height())
 		default:
 			if chainB.Height() >= blk.Height() {
 				return // success
@@ -321,30 +290,22 @@ func TestBlockValidation_RejectInvalidPoW(t *testing.T) {
 	// Create a block with extremely high difficulty (bits=255) so nonce=0 won't pass PoW
 	fakeTxs := make([]any, 0)
 	badBlock, err := block.NewBlock(genesis.Hash(), 1, 255, fakeTxs, block.Hash{})
-	if err != nil {
-		t.Fatalf("NewBlock failed: %v", err)
-	}
+	require.NoError(t, err)
 	// Don't mine it -- PoW is invalid
 
 	// Send the invalid block directly via raw connection
 	payload := p2p.BlockPayloadFromDomain(badBlock)
 	msg, err := p2p.NewMessage(p2p.CmdBlock, payload)
-	if err != nil {
-		t.Fatalf("NewMessage failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	conn := dialAndHandshake(t, srvB, chainA)
 	defer conn.Close()
 
-	if err := p2p.WriteMessage(conn, msg); err != nil {
-		t.Fatalf("WriteMessage failed: %v", err)
-	}
+	require.NoError(t, p2p.WriteMessage(conn, msg))
 
 	// Wait briefly and verify B's height did NOT increase
 	time.Sleep(500 * time.Millisecond)
-	if chainB.Height() != 0 {
-		t.Errorf("chain height = %d; want 0 (block should have been rejected)", chainB.Height())
-	}
+	assert.Equal(t, uint64(0), chainB.Height(), "block should have been rejected")
 }
 
 func TestSeenTracking(t *testing.T) {
@@ -360,35 +321,23 @@ func TestSeenTracking(t *testing.T) {
 		Hashes: []string{fakeBlockHash},
 	}
 	invMsg, err := p2p.NewMessage(p2p.CmdInv, inv)
-	if err != nil {
-		t.Fatalf("NewMessage failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Send first inv
-	if err := p2p.WriteMessage(conn, invMsg); err != nil {
-		t.Fatalf("first WriteMessage failed: %v", err)
-	}
+	require.NoError(t, p2p.WriteMessage(conn, invMsg))
 
 	// Read the getdata response
 	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
 	resp, err := p2p.ReadMessage(conn)
-	if err != nil {
-		t.Fatalf("expected getdata response, got error: %v", err)
-	}
-	if resp.Command != p2p.CmdGetData {
-		t.Fatalf("expected CmdGetData (%d), got command %d", p2p.CmdGetData, resp.Command)
-	}
+	require.NoError(t, err)
+	require.Equal(t, p2p.CmdGetData, resp.Command)
 
 	// Send second identical inv
-	if err := p2p.WriteMessage(conn, invMsg); err != nil {
-		t.Fatalf("second WriteMessage failed: %v", err)
-	}
+	require.NoError(t, p2p.WriteMessage(conn, invMsg))
 
 	// Should NOT get another getdata (already seen)
 	conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 	_, err = p2p.ReadMessage(conn)
-	if err == nil {
-		t.Error("expected no response for second inv (already seen), but got one")
-	}
+	assert.Error(t, err, "expected no response for second inv (already seen)")
 	// timeout error is expected -- means no message was sent
 }

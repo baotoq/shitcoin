@@ -11,6 +11,8 @@ import (
 	"github.com/baotoq/shitcoin/internal/domain/p2p"
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // makeReorgTestNode creates a fully wired test node with undo-entry support for reorg tests.
@@ -29,16 +31,12 @@ func makeReorgTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chai
 	ch := chain.NewChain(repo, pow, cfg, utxoSet)
 
 	ctx := context.Background()
-	if err := ch.Initialize(ctx, minerAddr); err != nil {
-		t.Fatalf("chain.Initialize failed: %v", err)
-	}
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
 
 	pool := mempool.New(utxoSet)
 
 	srv := p2p.NewServer(ch, pool, utxoSet, repo, 0)
-	if err := srv.Start(ctx); err != nil {
-		t.Fatalf("server.Start failed: %v", err)
-	}
+	require.NoError(t, srv.Start(ctx))
 
 	t.Cleanup(func() {
 		srv.Stop()
@@ -107,20 +105,13 @@ func mineReorgTestBlocks(t *testing.T, ch *chain.Chain, n int, minerAddr string)
 	blocks := make([]*block.Block, 0, n)
 	for i := 0; i < n; i++ {
 		blk, err := ch.MineBlock(ctx, minerAddr, nil)
-		if err != nil {
-			t.Fatalf("MineBlock %d failed: %v", i+1, err)
-		}
+		require.NoError(t, err)
 		blocks = append(blocks, blk)
 	}
 	return blocks
 }
 
 func TestLongerChainReorg(t *testing.T) {
-	// Two nodes A and B start with same genesis.
-	// Both mine 3 shared blocks (same miner = identical blocks at heights 1-3).
-	// Then A mines 1 block with miner-A (height 4A), B mines 2 blocks with miner-B (heights 4B, 5B).
-	// The different miners produce different coinbase txs, creating a real fork.
-	// When A connects to B and B has a longer chain, A should reorganize to B's chain.
 	sharedMiner := "miner-shared"
 
 	srvA, chainA, _, _, _ := makeReorgTestNode(t, sharedMiner)
@@ -131,47 +122,34 @@ func TestLongerChainReorg(t *testing.T) {
 	mineReorgTestBlocks(t, chainB, 3, sharedMiner)
 
 	// Verify they have identical chains so far
-	if chainA.LatestBlock().Hash() != chainB.LatestBlock().Hash() {
-		t.Fatalf("chains should be identical at height 3: A=%s B=%s",
-			chainA.LatestBlock().Hash().String()[:16],
-			chainB.LatestBlock().Hash().String()[:16])
-	}
+	require.Equal(t, chainA.LatestBlock().Hash(), chainB.LatestBlock().Hash(),
+		"chains should be identical at height 3")
 
 	// Diverge: different miners produce different coinbase txs -> different blocks
 	mineReorgTestBlocks(t, chainA, 1, "miner-A") // A at height 4, different coinbase
 	mineReorgTestBlocks(t, chainB, 2, "miner-B") // B at heights 4,5, different coinbase
 
-	if chainA.Height() != 4 {
-		t.Fatalf("expected A at height 4, got %d", chainA.Height())
-	}
-	if chainB.Height() != 5 {
-		t.Fatalf("expected B at height 5, got %d", chainB.Height())
-	}
+	require.Equal(t, uint64(4), chainA.Height())
+	require.Equal(t, uint64(5), chainB.Height())
 
 	// Verify fork: blocks at height 4 should be different
-	if chainA.LatestBlock().Hash() == chainB.LatestBlock().Hash() {
-		t.Fatal("expected different tips after divergence")
-	}
+	require.NotEqual(t, chainA.LatestBlock().Hash(), chainB.LatestBlock().Hash(),
+		"expected different tips after divergence")
 
 	// Connect A to B -- B has longer chain, A should detect fork and reorg
-	if err := srvA.Connect(srvB.ListenAddr()); err != nil {
-		t.Fatalf("Connect failed: %v", err)
-	}
+	require.NoError(t, srvA.Connect(srvB.ListenAddr()))
 
 	// Wait for reorg to complete
 	deadline := time.After(10 * time.Second)
 	for {
 		select {
 		case <-deadline:
-			t.Fatalf("timed out waiting for reorg. A height=%d, want 5", chainA.Height())
+			require.FailNow(t, "timed out waiting for reorg",
+				"A height=%d, want 5", chainA.Height())
 		default:
 			if chainA.Height() >= 5 {
 				// Verify A's tip matches B's tip
-				if chainA.LatestBlock().Hash() != chainB.LatestBlock().Hash() {
-					t.Errorf("tip hash mismatch after reorg: A=%s, B=%s",
-						chainA.LatestBlock().Hash().String()[:16],
-						chainB.LatestBlock().Hash().String()[:16])
-				}
+				assert.Equal(t, chainB.LatestBlock().Hash(), chainA.LatestBlock().Hash())
 				return
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -180,7 +158,6 @@ func TestLongerChainReorg(t *testing.T) {
 }
 
 func TestReorgUTXOBalances(t *testing.T) {
-	// Same fork setup as above. After reorg, verify UTXO balances reflect the new chain.
 	sharedMiner := "miner-shared-utxo"
 
 	_, chainA, utxoSetA, _, _ := makeReorgTestNode(t, sharedMiner)
@@ -195,10 +172,9 @@ func TestReorgUTXOBalances(t *testing.T) {
 	mineReorgTestBlocks(t, chainB, 2, "miner-B-utxo")
 
 	// Check A's balance before reorg
-	balMinerA, _ := utxoSetA.GetBalance("miner-A-utxo")
-	if balMinerA <= 0 {
-		t.Fatalf("miner-A-utxo should have balance before reorg, got %d", balMinerA)
-	}
+	balMinerA, err := utxoSetA.GetBalance("miner-A-utxo")
+	require.NoError(t, err)
+	require.Greater(t, balMinerA, int64(0))
 
 	// Create a P2P server for A to connect to B
 	srvA := p2p.NewServer(chainA, nil, utxoSetA, nil, 0)
@@ -211,8 +187,6 @@ func TestReorgUTXOBalances(t *testing.T) {
 }
 
 func TestEqualLengthNoReorg(t *testing.T) {
-	// Two nodes mine competing blocks at the same height.
-	// Neither should reorg (same chain length).
 	sharedMiner := "miner-equal"
 
 	_, chainA, _, _, _ := makeReorgTestNode(t, sharedMiner)
@@ -227,14 +201,12 @@ func TestEqualLengthNoReorg(t *testing.T) {
 	mineReorgTestBlocks(t, chainB, 1, "miner-B-eq")
 
 	// Both at height 4 with different tips
-	if chainA.Height() != 4 || chainB.Height() != 4 {
-		t.Fatalf("expected both at height 4, A=%d B=%d", chainA.Height(), chainB.Height())
-	}
+	require.Equal(t, uint64(4), chainA.Height())
+	require.Equal(t, uint64(4), chainB.Height())
 
 	// Tips should be different
-	if chainA.LatestBlock().Hash() == chainB.LatestBlock().Hash() {
-		t.Fatal("expected different tips with different miners")
-	}
+	require.NotEqual(t, chainA.LatestBlock().Hash(), chainB.LatestBlock().Hash(),
+		"expected different tips with different miners")
 
 	// Equal length: connecting should NOT trigger reorg (IBD only triggers when peer is taller)
 	t.Log("Equal length chains with different tips: no reorg (correct)")
@@ -254,12 +226,8 @@ func createForkBlocks(t *testing.T, parentHash block.Hash, startHeight uint64, c
 		merkleRoot := block.ComputeMerkleRoot(txHashes)
 
 		blk, err := block.NewBlock(prevHash, h, uint32(difficulty), blockTxs, merkleRoot)
-		if err != nil {
-			t.Fatalf("NewBlock (height %d) failed: %v", h, err)
-		}
-		if err := pow.Mine(blk); err != nil {
-			t.Fatalf("Mine (height %d) failed: %v", h, err)
-		}
+		require.NoError(t, err)
+		require.NoError(t, pow.Mine(blk))
 		blocks = append(blocks, blk)
 		prevHash = blk.Hash()
 	}
