@@ -12,6 +12,7 @@ type Config struct {
 	rest.RestConf
 	Consensus ConsensusConfig `json:"Consensus"`
 	Storage   StorageConfig   `json:"Storage"`
+	P2P       P2PConfig       `json:"P2P"`
 }
 
 // SatoshiPerCoin is the number of satoshis in one coin.
@@ -47,6 +48,14 @@ func (c *ConsensusConfig) ApplyDefaults() {
 	if c.GenesisMessage == "" {
 		c.GenesisMessage = DefaultGenesisMessage
 	}
+}
+
+// P2PConfig holds peer-to-peer networking settings.
+type P2PConfig struct {
+	// Port is the TCP port for the P2P server.
+	Port int `json:",default=3000"`
+	// Peers is a comma-separated list of seed peer addresses (host:port).
+	Peers string `json:",optional"`
 }
 
 // StorageConfig holds storage-related settings.

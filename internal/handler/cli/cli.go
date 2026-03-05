@@ -5,7 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/baotoq/shitcoin/internal/config"
+	"github.com/baotoq/shitcoin/internal/domain/p2p"
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/domain/wallet"
 	"github.com/baotoq/shitcoin/internal/svc"
@@ -13,12 +16,13 @@ import (
 
 // CLI handles command-line dispatch for all shitcoin subcommands.
 type CLI struct {
-	svc *svc.ServiceContext
+	svc    *svc.ServiceContext
+	config config.Config
 }
 
 // New creates a new CLI instance with the given service context.
 func New(svc *svc.ServiceContext) *CLI {
-	return &CLI{svc: svc}
+	return &CLI{svc: svc, config: svc.Config}
 }
 
 // Run dispatches to the appropriate subcommand based on args.
@@ -59,7 +63,7 @@ func (c *CLI) printUsage() {
 	fmt.Println("  getbalance -address ADDR  - Get balance for address")
 	fmt.Println("  send -from ADDR -to ADDR -amount AMOUNT - Send coins")
 	fmt.Println("  mine -address ADDR        - Mine a new block")
-	fmt.Println("  startnode [-port PORT] [-mine ADDR] - Start a node")
+	fmt.Println("  startnode [-port PORT] [-mine ADDR] [-peers HOST:PORT,...] [-datadir DIR] - Start a node")
 	fmt.Println("  printchain                - Print all blocks in the chain")
 }
 
@@ -229,14 +233,28 @@ func (c *CLI) mine(args []string) {
 	fmt.Printf("Chain height: %d\n", c.svc.Chain.Height())
 }
 
-// startNode starts the node with optional auto-mining.
+// startNode starts the node with P2P server and optional auto-mining.
 func (c *CLI) startNode(args []string) {
 	fs := flag.NewFlagSet("startnode", flag.ExitOnError)
-	port := fs.Int("port", 0, "Port for future P2P use")
+	port := fs.Int("port", c.config.P2P.Port, "TCP port for P2P server")
 	mineAddr := fs.String("mine", "", "Miner address for auto-mining")
+	peers := fs.String("peers", c.config.P2P.Peers, "Comma-separated seed peer addresses (host:port)")
+	datadir := fs.String("datadir", "", "Data directory (default: data/node-{port}/)")
 	fs.Parse(args)
 
-	_ = port // stored for future P2P use
+	// Derive data directory from port if not specified
+	nodeDataDir := *datadir
+	if nodeDataDir == "" {
+		nodeDataDir = fmt.Sprintf("data/node-%d", *port)
+	}
+
+	// Override storage paths for per-node data isolation
+	c.config.Storage.DBPath = fmt.Sprintf("%s/shitcoin.db", nodeDataDir)
+	c.config.Storage.WalletPath = fmt.Sprintf("%s/wallets.json", nodeDataDir)
+
+	// Create a new ServiceContext with per-node storage paths
+	nodeSvc := svc.NewServiceContext(c.config)
+	defer nodeSvc.Close()
 
 	ctx := context.Background()
 
@@ -245,15 +263,48 @@ func (c *CLI) startNode(args []string) {
 		initAddr = *mineAddr
 	}
 
-	if err := c.svc.Chain.Initialize(ctx, initAddr); err != nil {
+	if err := nodeSvc.Chain.Initialize(ctx, initAddr); err != nil {
 		fmt.Printf("Error initializing chain: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Node started. Chain height: %d\n", c.svc.Chain.Height())
+	fmt.Printf("Node data directory: %s\n", nodeDataDir)
+	fmt.Printf("Chain height: %d\n", nodeSvc.Chain.Height())
+
+	// Create and start P2P server
+	srv := p2p.NewServer(nodeSvc.Chain, nodeSvc.Mempool, nodeSvc.UTXOSet, nodeSvc.ChainRepo, *port)
+	if err := srv.Start(ctx); err != nil {
+		fmt.Printf("Error starting P2P server: %v\n", err)
+		os.Exit(1)
+	}
+	defer srv.Stop()
+
+	fmt.Printf("P2P server listening on port %d\n", *port)
+
+	// Connect to seed peers
+	if *peers != "" {
+		for _, peerAddr := range strings.Split(*peers, ",") {
+			peerAddr = strings.TrimSpace(peerAddr)
+			if peerAddr == "" {
+				continue
+			}
+			fmt.Printf("Connecting to peer %s...\n", peerAddr)
+			if err := srv.Connect(peerAddr); err != nil {
+				fmt.Printf("Warning: failed to connect to %s: %v\n", peerAddr, err)
+			} else {
+				fmt.Printf("Connected to %s\n", peerAddr)
+			}
+		}
+	}
+
+	fmt.Printf("Connected peers: %d\n", srv.PeerCount())
 
 	if *mineAddr != "" {
+		// Use the node's service context for mining
+		origSvc := c.svc
+		c.svc = nodeSvc
 		c.autoMine(*mineAddr)
+		c.svc = origSvc
 	} else {
 		fmt.Println("No mining address provided. Node running idle. Press Ctrl+C to stop.")
 		c.waitForSignal()
