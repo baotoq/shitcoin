@@ -88,6 +88,17 @@ Plans:
 - [ ] 04-03-PLAN.md — Initial block download (IBD) sync from peers after handshake
 - [ ] 04-04-PLAN.md — Fork detection and chain reorganization with UTXO undo-log reversal
 
+### Phase 04.1: use test assert (INSERTED)
+
+**Goal:** Migrate all 19 test files from raw stdlib assertions to stretchr/testify (assert, require, suite, mock) with no mixed styles remaining
+**Requirements**: TEST-MIGRATE-01, TEST-MIGRATE-02
+**Depends on:** Phase 4
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04.1-01-PLAN.md — Add testify dependency, migrate 12 simple unit test files to assert/require
+- [ ] 04.1-02-PLAN.md — Migrate 7 complex test files with testify/suite for bbolt/P2P and testify/mock for stub mocks
+
 ### Phase 5: Web Dashboard
 **Goal**: Users can visually explore the blockchain, monitor node health, and watch mining in real-time through a web browser
 **Depends on**: Phase 4
@@ -121,7 +132,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -129,9 +140,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Wallets and Transactions | 3/3 | Complete   | 2026-03-05 |
 | 3. Mempool, Mining Integration, and CLI | 2/2 | Complete | 2026-03-05 |
 | 4. P2P Networking and Consensus | 4/4 | Complete   | 2026-03-05 |
+| 4.1 Use Test Assert | 0/2 | Not started | - |
 | 5. Web Dashboard | 0/0 | Not started | - |
 | 6. Advanced Educational Features | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-05 (Phase 4 planned)*
+*Last updated: 2026-03-05 (Phase 04.1 planned)*
