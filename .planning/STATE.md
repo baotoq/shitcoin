@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-05T15:24:45Z"
-last_activity: 2026-03-05 -- Plan 04-01 executed, P2P protocol layer with TCP server and version handshake
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-05T15:36:09Z"
+last_activity: 2026-03-05 -- Plan 04-02 executed, transaction and block relay with validation
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 11
-  completed_plans: 8
-  percent: 73
+  completed_plans: 9
+  percent: 82
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 ## Current Position
 
 Phase: 4 of 6 (P2P Networking and Consensus)
-Plan: 1 of 4 in current phase (04-01 complete)
+Plan: 2 of 4 in current phase (04-02 complete)
 Status: In Progress
-Last activity: 2026-03-05 -- Plan 04-01 executed, P2P protocol layer with TCP server and version handshake
+Last activity: 2026-03-05 -- Plan 04-02 executed, transaction and block relay with validation
 
-Progress: [███████---] 73%
+Progress: [████████--] 82%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 9min
-- Total execution time: 1.3 hours
+- Total execution time: 1.4 hours
 
 **By Phase:**
 
@@ -46,16 +46,17 @@ Progress: [███████---] 73%
 | 1. Core Chain Foundation | 2/2 | 32min | 16min |
 | 2. Wallets and Transactions | 3/3 | 26min | 9min |
 | 3. Mempool, Mining, CLI | 2/2 | 9min | 5min |
-| 4. P2P Networking | 1/4 | 6min | 6min |
+| 4. P2P Networking | 2/4 | 15min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (5min), 02-03 (11min), 03-01 (6min), 03-02 (3min), 04-01 (6min)
-- Trend: Consistent velocity, P2P plan leveraged existing chain/config patterns
+- Last 5 plans: 02-03 (11min), 03-01 (6min), 03-02 (3min), 04-01 (6min), 04-02 (9min)
+- Trend: Consistent velocity, relay plan added thread safety to chain aggregate
 
 *Updated after each plan completion*
 | Phase 03 P01 | 6min | 2 tasks | 10 files |
 | Phase 03 P02 | 3min | 2 tasks | 6 files |
 | Phase 04 P01 | 6min | 2 tasks | 10 files |
+| Phase 04 P02 | 9min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,10 @@ Recent decisions affecting current work:
 - [04-01]: Non-blocking peer.Send with select/default drops messages when buffer full (cap 64)
 - [04-01]: Genesis hash comparison during handshake rejects incompatible chains
 - [04-01]: Per-node data directories (data/node-{port}/) prevent bbolt lock conflicts
+- [04-02]: Inv-getdata relay pattern: announce hashes via CmdInv, request data via CmdGetData
+- [04-02]: Seen-hash maps (seenBlocks/seenTxs) with mutex prevent infinite broadcast loops
+- [04-02]: RWMutex on Chain aggregate for thread-safe P2P block acceptance
+- [04-02]: autoMineWithP2P cancels mining context via OnBlockReceived callback
 
 ### Pending Todos
 
@@ -106,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T15:24:45Z
-Stopped at: Completed 04-01-PLAN.md
-Resume file: .planning/phases/04-p2p-networking-and-consensus/04-01-SUMMARY.md
+Last session: 2026-03-05T15:36:09Z
+Stopped at: Completed 04-02-PLAN.md
+Resume file: .planning/phases/04-p2p-networking-and-consensus/04-02-SUMMARY.md

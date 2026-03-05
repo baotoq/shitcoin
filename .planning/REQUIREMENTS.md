@@ -37,9 +37,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **NET-01**: User can start a node that listens on a configurable TCP port on localhost
 - [x] **NET-02**: Nodes perform a version handshake when connecting to establish protocol compatibility
 - [x] **NET-03**: Mempool holds validated-but-unmined transactions, protected by RWMutex for concurrent access
-- [ ] **NET-04**: When a user creates a transaction, it is broadcast to all connected peers
-- [ ] **NET-05**: When a node mines a block, it is broadcast to all connected peers
-- [ ] **NET-06**: Peers validate received blocks and transactions before accepting and re-broadcasting
+- [x] **NET-04**: When a user creates a transaction, it is broadcast to all connected peers
+- [x] **NET-05**: When a node mines a block, it is broadcast to all connected peers
+- [x] **NET-06**: Peers validate received blocks and transactions before accepting and re-broadcasting
 - [ ] **NET-07**: When a new node connects, it synchronizes the full chain from peers (initial block download)
 - [ ] **NET-08**: Node detects when a peer has a longer valid chain and reorganizes to the longest chain
 - [ ] **NET-09**: Chain reorganization reverses UTXO changes from orphaned blocks and applies the new chain's changes
@@ -114,9 +114,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NET-01 | Phase 4 | Complete |
 | NET-02 | Phase 4 | Complete |
 | NET-03 | Phase 3 | Complete |
-| NET-04 | Phase 4 | Pending |
-| NET-05 | Phase 4 | Pending |
-| NET-06 | Phase 4 | Pending |
+| NET-04 | Phase 4 | Complete |
+| NET-05 | Phase 4 | Complete |
+| NET-06 | Phase 4 | Complete |
 | NET-07 | Phase 4 | Pending |
 | NET-08 | Phase 4 | Pending |
 | NET-09 | Phase 4 | Pending |
