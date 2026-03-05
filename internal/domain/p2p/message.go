@@ -53,3 +53,43 @@ type GetBlocksPayload struct {
 	StartHeight uint64 `json:"start_height"`
 	EndHeight   uint64 `json:"end_height"`
 }
+
+// BlockPayload is a JSON-serializable P2P payload for transmitting blocks.
+// Mirrors domain block fields with exported JSON fields for network serialization.
+type BlockPayload struct {
+	Hash   string         `json:"hash"`
+	Header HeaderPayload  `json:"header"`
+	Height uint64         `json:"height"`
+	Txs    []TxPayload    `json:"transactions"`
+}
+
+// HeaderPayload is a JSON-serializable P2P payload for block headers.
+type HeaderPayload struct {
+	Version       uint32 `json:"version"`
+	PrevBlockHash string `json:"prev_block_hash"`
+	MerkleRoot    string `json:"merkle_root"`
+	Timestamp     int64  `json:"timestamp"`
+	Bits          uint32 `json:"bits"`
+	Nonce         uint32 `json:"nonce"`
+}
+
+// TxPayload is a JSON-serializable P2P payload for transmitting transactions.
+type TxPayload struct {
+	ID      string           `json:"id"`
+	Inputs  []TxInputPayload `json:"inputs"`
+	Outputs []TxOutputPayload `json:"outputs"`
+}
+
+// TxInputPayload is a JSON-serializable P2P payload for transaction inputs.
+type TxInputPayload struct {
+	TxID      string `json:"txid"`
+	Vout      uint32 `json:"vout"`
+	Signature string `json:"signature,omitempty"` // hex-encoded
+	PubKey    string `json:"pubkey,omitempty"`    // hex-encoded
+}
+
+// TxOutputPayload is a JSON-serializable P2P payload for transaction outputs.
+type TxOutputPayload struct {
+	Value   int64  `json:"value"`
+	Address string `json:"address"`
+}

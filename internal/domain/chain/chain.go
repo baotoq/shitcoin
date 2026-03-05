@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
@@ -22,6 +23,7 @@ type ChainConfig struct {
 
 // Chain is the aggregate root that manages the block sequence, mining, and difficulty.
 type Chain struct {
+	mu          sync.RWMutex
 	repo        Repository
 	pow         *block.ProofOfWork
 	latestBlock *block.Block
@@ -109,6 +111,9 @@ func (c *Chain) Initialize(ctx context.Context, minerAddress string) error {
 // Creates a coinbase transaction crediting the miner. Adjusts difficulty every
 // DifficultyAdjustInterval blocks. Atomically updates block storage and UTXO set.
 func (c *Chain) MineBlock(ctx context.Context, minerAddress string, txs []*tx.Transaction) (*block.Block, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.latestBlock == nil {
 		return nil, fmt.Errorf("chain not initialized: call Initialize first")
 	}
@@ -169,11 +174,23 @@ func (c *Chain) MineBlock(ctx context.Context, minerAddress string, txs []*tx.Tr
 
 // LatestBlock returns the current tip of the chain.
 func (c *Chain) LatestBlock() *block.Block {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.latestBlock
+}
+
+// SetLatestBlock sets the chain tip to the given block.
+// Used by P2P when accepting a valid block from a peer.
+func (c *Chain) SetLatestBlock(b *block.Block) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.latestBlock = b
 }
 
 // Height returns the height of the latest block.
 func (c *Chain) Height() uint64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	if c.latestBlock == nil {
 		return 0
 	}

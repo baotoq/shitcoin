@@ -9,8 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/baotoq/shitcoin/internal/domain/block"
 	"github.com/baotoq/shitcoin/internal/domain/chain"
 	"github.com/baotoq/shitcoin/internal/domain/mempool"
+	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
 )
 
@@ -26,9 +28,18 @@ type Server struct {
 	mempool   *mempool.Mempool
 	utxoSet   *utxo.Set
 	chainRepo chain.Repository
+	pow       *block.ProofOfWork
 	listenPort int
 	ctx       context.Context
 	cancel    context.CancelFunc
+
+	// Seen-hash tracking to prevent infinite relay loops
+	seenMu     sync.Mutex
+	seenBlocks map[string]bool
+	seenTxs    map[string]bool
+
+	// Callback invoked when a block is received from a peer
+	onBlockReceived func(*block.Block)
 }
 
 // NewServer creates a new P2P server.
@@ -39,8 +50,73 @@ func NewServer(ch *chain.Chain, pool *mempool.Mempool, us *utxo.Set, repo chain.
 		mempool:    pool,
 		utxoSet:    us,
 		chainRepo:  repo,
+		pow:        &block.ProofOfWork{},
 		listenPort: port,
+		seenBlocks: make(map[string]bool),
+		seenTxs:    make(map[string]bool),
 	}
+}
+
+// MarkSeen marks a hash as seen for the given type ("block" or "tx").
+// Returns true if the hash was already seen, false if it was newly added.
+func (s *Server) MarkSeen(typ string, hash string) bool {
+	s.seenMu.Lock()
+	defer s.seenMu.Unlock()
+
+	var m map[string]bool
+	switch typ {
+	case "block":
+		m = s.seenBlocks
+	case "tx":
+		m = s.seenTxs
+	default:
+		return false
+	}
+
+	if m[hash] {
+		return true
+	}
+	m[hash] = true
+	return false
+}
+
+// BroadcastBlock creates an inv message with the block hash and broadcasts to all peers.
+func (s *Server) BroadcastBlock(blk *block.Block, excludeAddr string) {
+	hash := blk.Hash().String()
+	s.MarkSeen("block", hash)
+
+	inv := InvPayload{
+		Type:   "block",
+		Hashes: []string{hash},
+	}
+	msg, err := NewMessage(CmdInv, inv)
+	if err != nil {
+		slog.Error("failed to create block inv message", "err", err)
+		return
+	}
+	s.Broadcast(msg, excludeAddr)
+}
+
+// BroadcastTx creates an inv message with the transaction hash and broadcasts to all peers.
+func (s *Server) BroadcastTx(transaction *tx.Transaction, excludeAddr string) {
+	hash := transaction.ID().String()
+	s.MarkSeen("tx", hash)
+
+	inv := InvPayload{
+		Type:   "tx",
+		Hashes: []string{hash},
+	}
+	msg, err := NewMessage(CmdInv, inv)
+	if err != nil {
+		slog.Error("failed to create tx inv message", "err", err)
+		return
+	}
+	s.Broadcast(msg, excludeAddr)
+}
+
+// OnBlockReceived registers a callback that is invoked when a valid block is received from a peer.
+func (s *Server) OnBlockReceived(fn func(*block.Block)) {
+	s.onBlockReceived = fn
 }
 
 // Start begins listening for incoming TCP connections on localhost:{port}.

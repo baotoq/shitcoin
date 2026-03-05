@@ -111,6 +111,14 @@ func (m *Mempool) Remove(txIDs []block.Hash) {
 	}
 }
 
+// GetByID returns a transaction from the mempool by its hash, or nil if not found.
+func (m *Mempool) GetByID(id block.Hash) *tx.Transaction {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	return m.txs[id]
+}
+
 // Count returns the number of transactions in the mempool.
 func (m *Mempool) Count() int {
 	m.mu.RLock()
