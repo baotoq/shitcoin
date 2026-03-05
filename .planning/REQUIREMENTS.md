@@ -27,8 +27,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **TX-04**: Every transaction input references a specific unspent output and includes a valid ECDSA signature
 - [x] **TX-05**: Change outputs are automatically created when input value exceeds payment amount (sum invariant enforced)
 - [x] **TX-06**: Each mined block includes a coinbase transaction that creates the block reward for the miner
-- [ ] **TX-07**: System maintains a persistent UTXO set for efficient balance queries and transaction validation
-- [ ] **TX-08**: UTXO set supports reversibility (undo-log) to enable chain reorganization
+- [x] **TX-07**: System maintains a persistent UTXO set for efficient balance queries and transaction validation
+- [x] **TX-08**: UTXO set supports reversibility (undo-log) to enable chain reorganization
 - [ ] **TX-09**: Transaction fees are computed as the difference between input and output sums, collected by the miner
 - [ ] **TX-10**: Miner prioritizes transactions in block construction by fee rate
 
@@ -107,8 +107,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TX-04 | Phase 2 | Complete |
 | TX-05 | Phase 2 | Complete |
 | TX-06 | Phase 2 | Complete |
-| TX-07 | Phase 2 | Pending |
-| TX-08 | Phase 2 | Pending |
+| TX-07 | Phase 2 | Complete |
+| TX-08 | Phase 2 | Complete |
 | TX-09 | Phase 6 | Pending |
 | TX-10 | Phase 6 | Pending |
 | NET-01 | Phase 4 | Pending |

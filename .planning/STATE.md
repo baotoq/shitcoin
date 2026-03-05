@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 02-02-PLAN.md
+stopped_at: Completed 02-03-PLAN.md
 last_updated: "2026-03-05T13:03:58.243Z"
-last_activity: 2026-03-05 -- Plan 02-02 executed, transaction domain complete
+last_activity: 2026-03-05 -- Plan 02-03 executed, UTXO set and typed transactions complete
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
-  percent: 80
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 ## Current Position
 
 Phase: 2 of 6 (Wallets and Transactions) -- IN PROGRESS
-Plan: 2 of 3 in current phase (02-02 complete)
-Status: Executing Phase 2
-Last activity: 2026-03-05 -- Plan 02-02 executed, transaction domain complete
+Plan: 3 of 3 in current phase (02-03 complete)
+Status: Phase 2 Complete
+Last activity: 2026-03-05 -- Plan 02-03 executed, UTXO set and typed transactions complete
 
-Progress: [████████░░] 80%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -44,14 +44,14 @@ Progress: [████████░░] 80%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Core Chain Foundation | 2/2 | 32min | 16min |
-| 2. Wallets and Transactions | 2/3 | 15min | 8min |
+| 2. Wallets and Transactions | 3/3 | 26min | 9min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6min), 01-02 (26min), 02-01 (10min), 02-02 (5min)
-- Trend: Steady velocity, clean domain packages completing quickly
+- Last 5 plans: 01-01 (6min), 01-02 (26min), 02-01 (10min), 02-02 (5min), 02-03 (11min)
+- Trend: Steady velocity, UTXO plan slightly longer due to import cycle resolution
 
 *Updated after each plan completion*
-| Phase 02 P02 | 5min | 1 task | 8 files |
+| Phase 02 P03 | 11min | 2 tasks | 20 files |
 
 ## Accumulated Context
 
@@ -76,6 +76,10 @@ Recent decisions affecting current work:
 - [02-02]: Hashable struct pattern for TX ID: JSON-serialize inputs (without sig/pubkey) and outputs, then DoubleSHA256
 - [02-02]: Coinbase marker: zero hash + 0xFFFFFFFF vout (Bitcoin convention)
 - [02-02]: Simplified SIGHASH_ALL: sign full transaction hash rather than per-input signing
+- [02-03]: []any for Block.transactions to break block->tx->block import cycle
+- [02-03]: 36-byte composite UTXO key (32-byte txid + 4-byte big-endian vout)
+- [02-03]: Atomic multi-bucket bbolt writes for block + UTXO + undo consistency
+- [02-03]: SatoshiPerCoin constant and 50-coin default block reward (5B satoshis)
 
 ### Pending Todos
 
@@ -88,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T13:03:00.000Z
-Stopped at: Completed 02-02-PLAN.md
-Resume file: .planning/phases/02-wallets-and-transactions/02-02-SUMMARY.md
+Last session: 2026-03-05T13:17:00.000Z
+Stopped at: Completed 02-03-PLAN.md
+Resume file: .planning/phases/02-wallets-and-transactions/02-03-SUMMARY.md

@@ -13,7 +13,7 @@ This roadmap takes the project from zero to a working multi-node blockchain with
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Core Chain Foundation** - Block structure, SHA-256d hashing, PoW mining, difficulty adjustment, and persistent storage (completed 2026-03-04)
-- [ ] **Phase 2: Wallets and Transactions** - ECDSA keys, Bitcoin-style addresses, UTXO transaction model with signing and reversible UTXO set
+- [x] **Phase 2: Wallets and Transactions** - ECDSA keys, Bitcoin-style addresses, UTXO transaction model with signing and reversible UTXO set (completed 2026-03-05)
 - [ ] **Phase 3: Mempool, Mining Integration, and CLI** - Transaction mempool, Merkle tree, full mining pipeline, and complete CLI for exercising all local functionality
 - [ ] **Phase 4: P2P Networking and Consensus** - TCP peer connections, block/transaction broadcasting, chain synchronization, and fork resolution
 - [ ] **Phase 5: Web Dashboard** - Block explorer, node status panel, real-time mining visualization, and mempool view
@@ -47,7 +47,7 @@ Plans:
   3. Every mined block includes a coinbase transaction that credits the block reward to the miner's address
   4. Transaction inputs with invalid signatures are rejected during validation
   5. The UTXO set persists across restarts and supports undo operations (reversibility) for future chain reorganization
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 02-01-PLAN.md — Wallet domain with ECDSA key pairs (btcec/v2), hand-rolled Base58Check, P2PKH address derivation, and JSON file persistence
@@ -124,7 +124,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Chain Foundation | 2/2 | Complete   | 2026-03-04 |
-| 2. Wallets and Transactions | 2/3 | In Progress|  |
+| 2. Wallets and Transactions | 3/3 | Complete   | 2026-03-05 |
 | 3. Mempool, Mining Integration, and CLI | 0/0 | Not started | - |
 | 4. P2P Networking and Consensus | 0/0 | Not started | - |
 | 5. Web Dashboard | 0/0 | Not started | - |
