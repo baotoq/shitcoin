@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-03-05T16:02:26.259Z"
+stopped_at: Phase 04.1 context gathered
+last_updated: "2026-03-05T16:16:47.726Z"
 last_activity: 2026-03-05 -- Plan 04-04 executed, fork detection and chain reorganization
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 4
   total_plans: 11
   completed_plans: 11
@@ -110,6 +110,10 @@ Recent decisions affecting current work:
 - [04-04]: BIP34 coinbase uniqueness: block height in coinbaseData field for unique tx IDs
 - [04-04]: Reorg pattern: undo reverse order, delete orphans, apply forward, re-add orphan txs
 
+### Roadmap Evolution
+
+- Phase 04.1 inserted after Phase 4: use test assert (URGENT)
+
 ### Pending Todos
 
 None yet.
@@ -121,6 +125,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T15:57:16Z
-Stopped at: Completed 04-04-PLAN.md
-Resume file: .planning/phases/04-p2p-networking-and-consensus/04-04-SUMMARY.md
+Last session: 2026-03-05T16:16:47.723Z
+Stopped at: Phase 04.1 context gathered
+Resume file: .planning/phases/04.1-use-test-assert/04.1-CONTEXT.md
