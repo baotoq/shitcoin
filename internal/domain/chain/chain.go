@@ -61,7 +61,17 @@ func (c *Chain) Initialize(ctx context.Context, minerAddress string) error {
 			}
 		}
 
-		genesis, err := block.NewGenesisBlock(c.config.GenesisMessage, uint32(c.config.InitialDifficulty), blockTxs)
+		// Compute Merkle root from transaction hashes
+		var merkleRoot block.Hash
+		if len(txs) > 0 {
+			txHashes := make([]block.Hash, len(txs))
+			for i, t := range txs {
+				txHashes[i] = t.ID()
+			}
+			merkleRoot = block.ComputeMerkleRoot(txHashes)
+		}
+
+		genesis, err := block.NewGenesisBlock(c.config.GenesisMessage, uint32(c.config.InitialDifficulty), blockTxs, merkleRoot)
 		if err != nil {
 			return fmt.Errorf("create genesis block: %w", err)
 		}
@@ -121,7 +131,14 @@ func (c *Chain) MineBlock(ctx context.Context, minerAddress string, txs []*tx.Tr
 		blockTxs[i] = t
 	}
 
-	newBlock, err := block.NewBlock(c.latestBlock.Hash(), newHeight, bits, blockTxs)
+	// Compute Merkle root from all transaction hashes (coinbase + user txs)
+	txHashes := make([]block.Hash, len(allTxs))
+	for i, t := range allTxs {
+		txHashes[i] = t.ID()
+	}
+	merkleRoot := block.ComputeMerkleRoot(txHashes)
+
+	newBlock, err := block.NewBlock(c.latestBlock.Hash(), newHeight, bits, blockTxs, merkleRoot)
 	if err != nil {
 		return nil, fmt.Errorf("create block: %w", err)
 	}

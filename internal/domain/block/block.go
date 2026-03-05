@@ -19,11 +19,11 @@ type Block struct {
 // NewGenesisBlock creates the genesis block (height=0, zero prevHash).
 // The block is created unmined -- use ProofOfWork.Mine() to find a valid nonce.
 // Accepts transactions as []any (typically []*tx.Transaction cast to any).
-func NewGenesisBlock(message string, bits uint32, txs []any) (*Block, error) {
+func NewGenesisBlock(message string, bits uint32, txs []any, merkleRoot Hash) (*Block, error) {
 	header := NewHeader(
 		1,      // version
 		Hash{}, // zero prevBlockHash
-		Hash{}, // zero merkleRoot (Phase 1)
+		merkleRoot,
 		time.Now().Unix(),
 		bits,
 	)
@@ -43,11 +43,11 @@ func NewGenesisBlock(message string, bits uint32, txs []any) (*Block, error) {
 // NewBlock creates a new block with the given previous hash, height, and difficulty bits.
 // The block is created unmined -- use ProofOfWork.Mine() to find a valid nonce.
 // Accepts transactions as []any (typically []*tx.Transaction cast to any).
-func NewBlock(prevHash Hash, height uint64, bits uint32, txs []any) (*Block, error) {
+func NewBlock(prevHash Hash, height uint64, bits uint32, txs []any, merkleRoot Hash) (*Block, error) {
 	header := NewHeader(
 		1, // version
 		prevHash,
-		Hash{}, // zero merkleRoot (Phase 1)
+		merkleRoot,
 		time.Now().Unix(),
 		bits,
 	)

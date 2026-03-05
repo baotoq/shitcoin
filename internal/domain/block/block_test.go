@@ -240,7 +240,7 @@ func TestHeaderSetNonce(t *testing.T) {
 // --- Block entity tests ---
 
 func TestNewGenesisBlock(t *testing.T) {
-	b, err := NewGenesisBlock("Hello, Shitcoin!", 16, nil)
+	b, err := NewGenesisBlock("Hello, Shitcoin!", 16, nil, Hash{})
 	if err != nil {
 		t.Fatalf("NewGenesisBlock failed: %v", err)
 	}
@@ -272,7 +272,7 @@ func TestNewBlock(t *testing.T) {
 	var prevHash Hash
 	prevHash[0] = 0xab
 
-	b, err := NewBlock(prevHash, 1, 16, nil)
+	b, err := NewBlock(prevHash, 1, 16, nil, Hash{})
 	if err != nil {
 		t.Fatalf("NewBlock failed: %v", err)
 	}
@@ -292,7 +292,7 @@ func TestNewBlock(t *testing.T) {
 }
 
 func TestBlockSetHashAndNonce(t *testing.T) {
-	b, err := NewGenesisBlock("test", 16, nil)
+	b, err := NewGenesisBlock("test", 16, nil, Hash{})
 	if err != nil {
 		t.Fatalf("NewGenesisBlock failed: %v", err)
 	}
