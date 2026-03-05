@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: "Completed 04.1-01-PLAN.md"
-last_updated: "2026-03-05T16:35:00Z"
-last_activity: 2026-03-05 -- Plan 04.1-01 executed, testify migration of 12 simple test files
+stopped_at: "Completed 04.1-02-PLAN.md"
+last_updated: "2026-03-05T16:45:00Z"
+last_activity: 2026-03-05 -- Plan 04.1-02 executed, complex test migration (suites, mocks)
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 12
-  percent: 92
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 04.1 in progress -- testify test migration
+**Current focus:** Phase 04.1 complete -- all test files migrated to testify
 
 ## Current Position
 
 Phase: 04.1 of 6 (Use Test Assert)
-Plan: 1 of 2 in current phase (04.1-01 complete)
-Status: Phase 04.1 In Progress
-Last activity: 2026-03-05 -- Plan 04.1-01 executed, testify migration of 12 simple test files
+Plan: 2 of 2 in current phase (04.1-02 complete)
+Status: Phase 04.1 Complete
+Last activity: 2026-03-05 -- Plan 04.1-02 executed, complex test migration (suites, mocks)
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -49,7 +49,7 @@ Progress: [█████████░] 92%
 | 4. P2P Networking | 4/4 | 31min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (6min), 04-02 (9min), 04-03 (5min), 04-04 (11min), 04.1-01 (7min)
+- Last 5 plans: 04-02 (9min), 04-03 (5min), 04-04 (11min), 04.1-01 (7min), 04.1-02 (7min)
 - Trend: Consistent velocity, test migration fast mechanical work
 
 *Updated after each plan completion*
@@ -60,6 +60,7 @@ Progress: [█████████░] 92%
 | Phase 04 P03 | 5min | 2 tasks | 4 files |
 | Phase 04 P04 | 11min | 2 tasks | 11 files |
 | Phase 04.1 P01 | 7min | 2 tasks | 14 files |
+| Phase 04.1 P02 | 7min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,8 @@ Recent decisions affecting current work:
 - [04.1-01]: require for setup/preconditions, assert for value comparisons
 - [04.1-01]: assert.New(t) pattern in table-driven subtests for cleaner syntax
 - [04.1-01]: assert.ErrorIs for sentinel error checks
+- [04.1-02]: testify/suite for bbolt repos (per-test DB via SetupTest), plain functions for P2P tests
+- [04.1-02]: testify/mock only for simple stub mocks; hand-rolled fakes for stateful stores with maps/mutexes
 
 ### Roadmap Evolution
 
@@ -129,6 +132,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T16:35:00Z
-Stopped at: Completed 04.1-01-PLAN.md
-Resume file: .planning/phases/04.1-use-test-assert/04.1-01-SUMMARY.md
+Last session: 2026-03-05T16:45:00Z
+Stopped at: Completed 04.1-02-PLAN.md
+Resume file: .planning/phases/04.1-use-test-assert/04.1-02-SUMMARY.md

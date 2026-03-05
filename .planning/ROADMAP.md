@@ -93,11 +93,11 @@ Plans:
 **Goal:** Migrate all 19 test files from raw stdlib assertions to stretchr/testify (assert, require, suite, mock) with no mixed styles remaining
 **Requirements**: TEST-MIGRATE-01, TEST-MIGRATE-02
 **Depends on:** Phase 4
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 04.1-01-PLAN.md — Add testify dependency, migrate 12 simple unit test files to assert/require
-- [ ] 04.1-02-PLAN.md — Migrate 7 complex test files with testify/suite for bbolt/P2P and testify/mock for stub mocks
+- [x] 04.1-02-PLAN.md — Migrate 7 complex test files with testify/suite for bbolt/P2P and testify/mock for stub mocks
 
 ### Phase 5: Web Dashboard
 **Goal**: Users can visually explore the blockchain, monitor node health, and watch mining in real-time through a web browser
@@ -140,7 +140,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 6
 | 2. Wallets and Transactions | 3/3 | Complete   | 2026-03-05 |
 | 3. Mempool, Mining Integration, and CLI | 2/2 | Complete | 2026-03-05 |
 | 4. P2P Networking and Consensus | 4/4 | Complete   | 2026-03-05 |
-| 4.1 Use Test Assert | 1/2 | In progress | - |
+| 4.1 Use Test Assert | 2/2 | Complete | 2026-03-05 |
 | 5. Web Dashboard | 0/0 | Not started | - |
 | 6. Advanced Educational Features | 0/0 | Not started | - |
 
