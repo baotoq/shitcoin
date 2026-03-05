@@ -2,8 +2,10 @@ package block
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // --- Hash value object tests ---
@@ -33,13 +35,11 @@ func TestHashString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
 			got := tt.hash.String()
-			if len(got) != 64 {
-				t.Errorf("String() length = %d; want 64", len(got))
-			}
-			if got != tt.want {
-				t.Errorf("String() = %q; want %q", got, tt.want)
-			}
+			assert.Len(got, 64)
+			assert.Equal(tt.want, got)
 		})
 	}
 }
@@ -68,10 +68,7 @@ func TestHashIsZero(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.hash.IsZero()
-			if got != tt.want {
-				t.Errorf("IsZero() = %v; want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, tt.hash.IsZero())
 		})
 	}
 }
@@ -82,15 +79,9 @@ func TestHashBytes(t *testing.T) {
 	h[31] = 0x01
 
 	b := h.Bytes()
-	if len(b) != 32 {
-		t.Errorf("Bytes() length = %d; want 32", len(b))
-	}
-	if b[0] != 0xff {
-		t.Errorf("Bytes()[0] = %x; want ff", b[0])
-	}
-	if b[31] != 0x01 {
-		t.Errorf("Bytes()[31] = %x; want 01", b[31])
-	}
+	assert.Len(t, b, 32)
+	assert.Equal(t, byte(0xff), b[0])
+	assert.Equal(t, byte(0x01), b[31])
 }
 
 func TestDoubleSHA256(t *testing.T) {
@@ -103,10 +94,7 @@ func TestDoubleSHA256(t *testing.T) {
 
 	got := DoubleSHA256(data)
 
-	if got != Hash(expectedBytes) {
-		t.Errorf("DoubleSHA256(\"hello\") = %s; want %s",
-			got.String(), hex.EncodeToString(expectedBytes[:]))
-	}
+	assert.Equal(t, Hash(expectedBytes), got)
 }
 
 func TestDoubleSHA256Deterministic(t *testing.T) {
@@ -114,9 +102,7 @@ func TestDoubleSHA256Deterministic(t *testing.T) {
 	hash1 := DoubleSHA256(data)
 	hash2 := DoubleSHA256(data)
 
-	if hash1 != hash2 {
-		t.Errorf("DoubleSHA256 not deterministic: %s != %s", hash1.String(), hash2.String())
-	}
+	assert.Equal(t, hash1, hash2)
 }
 
 func TestHashFromHex(t *testing.T) {
@@ -146,18 +132,12 @@ func TestHashFromHex(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h, err := HashFromHex(tt.input)
 			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
+				require.Error(t, err)
 				return
 			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
+			require.NoError(t, err)
 			// Roundtrip: hex -> Hash -> hex should match
-			if h.String() != tt.input {
-				t.Errorf("roundtrip failed: got %q; want %q", h.String(), tt.input)
-			}
+			assert.Equal(t, tt.input, h.String())
 		})
 	}
 }
@@ -175,9 +155,7 @@ func TestHeaderHashPayloadDeterministic(t *testing.T) {
 	payload1 := h.HashPayload()
 	payload2 := h.HashPayload()
 
-	if string(payload1) != string(payload2) {
-		t.Error("HashPayload() not deterministic: two calls produced different results")
-	}
+	assert.Equal(t, string(payload1), string(payload2))
 }
 
 func TestHeaderHashDeterministic(t *testing.T) {
@@ -186,9 +164,7 @@ func TestHeaderHashDeterministic(t *testing.T) {
 	hash1 := h.Hash()
 	hash2 := h.Hash()
 
-	if hash1 != hash2 {
-		t.Errorf("Header.Hash() not deterministic: %s != %s", hash1.String(), hash2.String())
-	}
+	assert.Equal(t, hash1, hash2)
 }
 
 func TestHeaderGetters(t *testing.T) {
@@ -199,73 +175,40 @@ func TestHeaderGetters(t *testing.T) {
 
 	h := NewHeader(1, prevHash, merkleRoot, 1700000000, 16)
 
-	if h.Version() != 1 {
-		t.Errorf("Version() = %d; want 1", h.Version())
-	}
-	if h.PrevBlockHash() != prevHash {
-		t.Error("PrevBlockHash() mismatch")
-	}
-	if h.MerkleRoot() != merkleRoot {
-		t.Error("MerkleRoot() mismatch")
-	}
-	if h.Timestamp() != 1700000000 {
-		t.Errorf("Timestamp() = %d; want 1700000000", h.Timestamp())
-	}
-	if h.Bits() != 16 {
-		t.Errorf("Bits() = %d; want 16", h.Bits())
-	}
-	if h.Nonce() != 0 {
-		t.Errorf("Nonce() = %d; want 0", h.Nonce())
-	}
+	assert.Equal(t, uint32(1), h.Version())
+	assert.Equal(t, prevHash, h.PrevBlockHash())
+	assert.Equal(t, merkleRoot, h.MerkleRoot())
+	assert.Equal(t, int64(1700000000), h.Timestamp())
+	assert.Equal(t, uint32(16), h.Bits())
+	assert.Equal(t, uint32(0), h.Nonce())
 }
 
 func TestHeaderSetNonce(t *testing.T) {
 	h := NewHeader(1, Hash{}, Hash{}, 1700000000, 16)
 
 	h.SetNonce(42)
-	if h.Nonce() != 42 {
-		t.Errorf("after SetNonce(42), Nonce() = %d; want 42", h.Nonce())
-	}
+	assert.Equal(t, uint32(42), h.Nonce())
 
 	// Different nonce should produce different hash
 	hash1 := h.Hash()
 	h.SetNonce(43)
 	hash2 := h.Hash()
 
-	if hash1 == hash2 {
-		t.Error("different nonces should produce different hashes")
-	}
+	assert.NotEqual(t, hash1, hash2)
 }
 
 // --- Block entity tests ---
 
 func TestNewGenesisBlock(t *testing.T) {
 	b, err := NewGenesisBlock("Hello, Shitcoin!", 16, nil, Hash{})
-	if err != nil {
-		t.Fatalf("NewGenesisBlock failed: %v", err)
-	}
+	require.NoError(t, err)
 
-	if b.Height() != 0 {
-		t.Errorf("genesis Height() = %d; want 0", b.Height())
-	}
-	if !b.PrevBlockHash().IsZero() {
-		t.Error("genesis PrevBlockHash() should be zero")
-	}
-	if b.Message() != "Hello, Shitcoin!" {
-		t.Errorf("genesis Message() = %q; want %q", b.Message(), "Hello, Shitcoin!")
-	}
-	if b.Bits() != 16 {
-		t.Errorf("genesis Bits() = %d; want 16", b.Bits())
-	}
-	if b.Timestamp() == 0 {
-		t.Error("genesis Timestamp() should not be zero")
-	}
-	if b.Hash().IsZero() == false {
-		// Hash should be zero before mining
-	}
-	if len(b.RawTransactions()) != 0 {
-		t.Errorf("genesis Transactions() length = %d; want 0", len(b.RawTransactions()))
-	}
+	assert.Equal(t, uint64(0), b.Height())
+	assert.True(t, b.PrevBlockHash().IsZero())
+	assert.Equal(t, "Hello, Shitcoin!", b.Message())
+	assert.Equal(t, uint32(16), b.Bits())
+	assert.NotZero(t, b.Timestamp())
+	assert.Empty(t, b.RawTransactions())
 }
 
 func TestNewBlock(t *testing.T) {
@@ -273,43 +216,27 @@ func TestNewBlock(t *testing.T) {
 	prevHash[0] = 0xab
 
 	b, err := NewBlock(prevHash, 1, 16, nil, Hash{})
-	if err != nil {
-		t.Fatalf("NewBlock failed: %v", err)
-	}
+	require.NoError(t, err)
 
-	if b.Height() != 1 {
-		t.Errorf("Height() = %d; want 1", b.Height())
-	}
-	if b.PrevBlockHash() != prevHash {
-		t.Error("PrevBlockHash() mismatch")
-	}
-	if b.Bits() != 16 {
-		t.Errorf("Bits() = %d; want 16", b.Bits())
-	}
-	if b.Timestamp() == 0 {
-		t.Error("Timestamp() should not be zero")
-	}
+	assert.Equal(t, uint64(1), b.Height())
+	assert.Equal(t, prevHash, b.PrevBlockHash())
+	assert.Equal(t, uint32(16), b.Bits())
+	assert.NotZero(t, b.Timestamp())
 }
 
 func TestBlockSetHashAndNonce(t *testing.T) {
 	b, err := NewGenesisBlock("test", 16, nil, Hash{})
-	if err != nil {
-		t.Fatalf("NewGenesisBlock failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	var h Hash
 	h[0] = 0xde
 	h[1] = 0xad
 
 	b.SetHash(h)
-	if b.Hash() != h {
-		t.Error("SetHash did not set hash correctly")
-	}
+	assert.Equal(t, h, b.Hash())
 
 	b.SetHeaderNonce(12345)
-	if b.Header().Nonce() != 12345 {
-		t.Errorf("SetHeaderNonce(12345): got Nonce() = %d; want 12345", b.Header().Nonce())
-	}
+	assert.Equal(t, uint32(12345), b.Header().Nonce())
 }
 
 func TestReconstructBlock(t *testing.T) {
@@ -321,16 +248,8 @@ func TestReconstructBlock(t *testing.T) {
 
 	b := ReconstructBlock(header, hash, 5, "genesis msg", nil)
 
-	if b.Height() != 5 {
-		t.Errorf("Height() = %d; want 5", b.Height())
-	}
-	if b.Hash() != hash {
-		t.Error("Hash() mismatch")
-	}
-	if b.Message() != "genesis msg" {
-		t.Errorf("Message() = %q; want %q", b.Message(), "genesis msg")
-	}
-	if b.Header().Nonce() != 42 {
-		t.Errorf("Header().Nonce() = %d; want 42", b.Header().Nonce())
-	}
+	assert.Equal(t, uint64(5), b.Height())
+	assert.Equal(t, hash, b.Hash())
+	assert.Equal(t, "genesis msg", b.Message())
+	assert.Equal(t, uint32(42), b.Header().Nonce())
 }

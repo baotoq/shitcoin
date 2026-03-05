@@ -1,12 +1,14 @@
 package block
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestMerkleRoot_Empty(t *testing.T) {
 	root := ComputeMerkleRoot(nil)
-	if root != (Hash{}) {
-		t.Errorf("MerkleRoot of empty = %x; want zero hash", root)
-	}
+	assert.Equal(t, Hash{}, root)
 }
 
 func TestMerkleRoot_Single(t *testing.T) {
@@ -19,9 +21,7 @@ func TestMerkleRoot_Single(t *testing.T) {
 	combined = append(combined, h.Bytes()...)
 	expected := DoubleSHA256(combined)
 
-	if root != expected {
-		t.Errorf("MerkleRoot of single = %x; want %x", root, expected)
-	}
+	assert.Equal(t, expected, root)
 }
 
 func TestMerkleRoot_Two(t *testing.T) {
@@ -34,9 +34,7 @@ func TestMerkleRoot_Two(t *testing.T) {
 	combined = append(combined, h2.Bytes()...)
 	expected := DoubleSHA256(combined)
 
-	if root != expected {
-		t.Errorf("MerkleRoot of two = %x; want %x", root, expected)
-	}
+	assert.Equal(t, expected, root)
 }
 
 func TestMerkleRoot_Odd(t *testing.T) {
@@ -63,9 +61,7 @@ func TestMerkleRoot_Odd(t *testing.T) {
 	cRoot = append(cRoot, h33.Bytes()...)
 	expected := DoubleSHA256(cRoot)
 
-	if root != expected {
-		t.Errorf("MerkleRoot of odd(3) = %x; want %x", root, expected)
-	}
+	assert.Equal(t, expected, root)
 }
 
 func TestMerkleRoot_Even(t *testing.T) {
@@ -92,9 +88,7 @@ func TestMerkleRoot_Even(t *testing.T) {
 	cRoot = append(cRoot, h34.Bytes()...)
 	expected := DoubleSHA256(cRoot)
 
-	if root != expected {
-		t.Errorf("MerkleRoot of even(4) = %x; want %x", root, expected)
-	}
+	assert.Equal(t, expected, root)
 }
 
 func TestMerkleRoot_Deterministic(t *testing.T) {
@@ -107,7 +101,5 @@ func TestMerkleRoot_Deterministic(t *testing.T) {
 	root1 := ComputeMerkleRoot(hashes)
 	root2 := ComputeMerkleRoot(hashes)
 
-	if root1 != root2 {
-		t.Errorf("MerkleRoot not deterministic: %x != %x", root1, root2)
-	}
+	assert.Equal(t, root1, root2)
 }

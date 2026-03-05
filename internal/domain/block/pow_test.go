@@ -3,6 +3,9 @@ package block
 import (
 	"math/big"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBitsToTarget(t *testing.T) {
@@ -31,52 +34,36 @@ func TestBitsToTarget(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := BitsToTarget(tt.bits)
-			if got.Cmp(tt.want) != 0 {
-				t.Errorf("BitsToTarget(%d) = %s; want %s", tt.bits, got.String(), tt.want.String())
-			}
+			assert.Equal(t, 0, got.Cmp(tt.want), "BitsToTarget(%d) = %s; want %s", tt.bits, got.String(), tt.want.String())
 		})
 	}
 }
 
 func TestMineGenesisBlock(t *testing.T) {
 	b, err := NewGenesisBlock("Test Genesis", 16, nil, Hash{})
-	if err != nil {
-		t.Fatalf("NewGenesisBlock failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	pow := &ProofOfWork{}
-	if err := pow.Mine(b); err != nil {
-		t.Fatalf("Mine failed: %v", err)
-	}
+	require.NoError(t, pow.Mine(b))
 
 	// Hash should be set (non-zero)
-	if b.Hash().IsZero() {
-		t.Error("mined block hash should not be zero")
-	}
+	assert.False(t, b.Hash().IsZero(), "mined block hash should not be zero")
 
 	// Hash should be below target
 	target := BitsToTarget(16)
 	hashInt := new(big.Int).SetBytes(b.Hash().Bytes())
-	if hashInt.Cmp(target) >= 0 {
-		t.Errorf("mined hash %s is not below target", b.Hash().String())
-	}
+	assert.Equal(t, -1, hashInt.Cmp(target), "mined hash should be below target")
 }
 
 func TestMineValidation(t *testing.T) {
 	b, err := NewGenesisBlock("Validation Test", 16, nil, Hash{})
-	if err != nil {
-		t.Fatalf("NewGenesisBlock failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	pow := &ProofOfWork{}
-	if err := pow.Mine(b); err != nil {
-		t.Fatalf("Mine failed: %v", err)
-	}
+	require.NoError(t, pow.Mine(b))
 
 	// Valid mined block should pass validation
-	if !pow.Validate(b) {
-		t.Error("Validate should return true for a properly mined block")
-	}
+	assert.True(t, pow.Validate(b), "Validate should return true for a properly mined block")
 
 	// Tamper with the nonce -- validation should fail
 	originalNonce := b.Header().Nonce()
@@ -103,15 +90,11 @@ func TestMineValidation(t *testing.T) {
 
 	// Tamper nonce to something invalid
 	b2.SetHeaderNonce(goodNonce + 7)
-	if pow.Validate(b2) {
-		t.Error("Validate should return false after tampering nonce")
-	}
+	assert.False(t, pow.Validate(b2), "Validate should return false after tampering nonce")
 
 	// Restore the good nonce -- should validate again
 	b2.SetHeaderNonce(goodNonce)
-	if !pow.Validate(b2) {
-		t.Error("Validate should return true after restoring correct nonce")
-	}
+	assert.True(t, pow.Validate(b2), "Validate should return true after restoring correct nonce")
 }
 
 func TestMineDeterministic(t *testing.T) {
@@ -124,10 +107,7 @@ func TestMineDeterministic(t *testing.T) {
 	h.SetNonce(42)
 	hash2 := h.Hash()
 
-	if hash1 != hash2 {
-		t.Errorf("same header+nonce produced different hashes: %s != %s",
-			hash1.String(), hash2.String())
-	}
+	assert.Equal(t, hash1, hash2)
 }
 
 func TestMineNonceExhausted(t *testing.T) {
@@ -135,15 +115,11 @@ func TestMineNonceExhausted(t *testing.T) {
 	// (hash must be < 1, meaning all zeros)
 	// Use MineWithMaxNonce to limit search space and avoid 4B iterations
 	b, err := NewGenesisBlock("Impossible", 256, nil, Hash{})
-	if err != nil {
-		t.Fatalf("NewGenesisBlock failed: %v", err)
-	}
+	require.NoError(t, err)
 
 	pow := &ProofOfWork{}
 	err = pow.MineWithMaxNonce(b, 1000)
-	if err != ErrNonceExhausted {
-		t.Errorf("expected ErrNonceExhausted, got: %v", err)
-	}
+	assert.ErrorIs(t, err, ErrNonceExhausted)
 }
 
 func TestMineMultipleBlocks(t *testing.T) {
@@ -151,53 +127,27 @@ func TestMineMultipleBlocks(t *testing.T) {
 
 	// Mine genesis
 	genesis, err := NewGenesisBlock("Multi-block test", 16, nil, Hash{})
-	if err != nil {
-		t.Fatalf("NewGenesisBlock failed: %v", err)
-	}
-	if err := pow.Mine(genesis); err != nil {
-		t.Fatalf("Mine genesis failed: %v", err)
-	}
-	if !pow.Validate(genesis) {
-		t.Fatal("genesis block validation failed")
-	}
+	require.NoError(t, err)
+	require.NoError(t, pow.Mine(genesis))
+	require.True(t, pow.Validate(genesis))
 
 	// Mine block 1
 	block1, err := NewBlock(genesis.Hash(), 1, 16, nil, Hash{})
-	if err != nil {
-		t.Fatalf("NewBlock(1) failed: %v", err)
-	}
-	if err := pow.Mine(block1); err != nil {
-		t.Fatalf("Mine block 1 failed: %v", err)
-	}
-	if !pow.Validate(block1) {
-		t.Fatal("block 1 validation failed")
-	}
+	require.NoError(t, err)
+	require.NoError(t, pow.Mine(block1))
+	require.True(t, pow.Validate(block1))
 
 	// Mine block 2
 	block2, err := NewBlock(block1.Hash(), 2, 16, nil, Hash{})
-	if err != nil {
-		t.Fatalf("NewBlock(2) failed: %v", err)
-	}
-	if err := pow.Mine(block2); err != nil {
-		t.Fatalf("Mine block 2 failed: %v", err)
-	}
-	if !pow.Validate(block2) {
-		t.Fatal("block 2 validation failed")
-	}
+	require.NoError(t, err)
+	require.NoError(t, pow.Mine(block2))
+	require.True(t, pow.Validate(block2))
 
 	// Verify chain links
-	if block1.PrevBlockHash() != genesis.Hash() {
-		t.Error("block 1 should reference genesis hash")
-	}
-	if block2.PrevBlockHash() != block1.Hash() {
-		t.Error("block 2 should reference block 1 hash")
-	}
+	assert.Equal(t, genesis.Hash(), block1.PrevBlockHash())
+	assert.Equal(t, block1.Hash(), block2.PrevBlockHash())
 
 	// All blocks should have unique hashes
-	if genesis.Hash() == block1.Hash() {
-		t.Error("genesis and block 1 should have different hashes")
-	}
-	if block1.Hash() == block2.Hash() {
-		t.Error("block 1 and block 2 should have different hashes")
-	}
+	assert.NotEqual(t, genesis.Hash(), block1.Hash())
+	assert.NotEqual(t, block1.Hash(), block2.Hash())
 }

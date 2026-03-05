@@ -3,6 +3,9 @@ package wallet
 import (
 	"encoding/hex"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBase58Encode(t *testing.T) {
@@ -30,14 +33,13 @@ func TestBase58Encode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+			assert := assert.New(t)
+
 			input, err := hex.DecodeString(tt.inputHex)
-			if err != nil {
-				t.Fatalf("invalid test hex: %v", err)
-			}
+			require.NoError(err)
 			got := Base58Encode(input)
-			if got != tt.expected {
-				t.Errorf("Base58Encode(%s) = %q; want %q", tt.inputHex, got, tt.expected)
-			}
+			assert.Equal(tt.expected, got)
 		})
 	}
 }
@@ -55,18 +57,16 @@ func TestBase58Decode_RoundTrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+			assert := assert.New(t)
+
 			input, err := hex.DecodeString(tt.inputHex)
-			if err != nil {
-				t.Fatalf("invalid test hex: %v", err)
-			}
+			require.NoError(err)
 			encoded := Base58Encode(input)
 			decoded := Base58Decode(encoded)
 			decodedHex := hex.EncodeToString(decoded)
 			inputHexLower := hex.EncodeToString(input)
-			if decodedHex != inputHexLower {
-				t.Errorf("round-trip failed: input=%s, encoded=%s, decoded=%s",
-					inputHexLower, encoded, decodedHex)
-			}
+			assert.Equal(inputHexLower, decodedHex)
 		})
 	}
 }
@@ -80,34 +80,23 @@ func TestBase58CheckEncode(t *testing.T) {
 
 	// The expected address for this payload with version 0x00
 	expected := "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"
-	if got != expected {
-		t.Errorf("Base58CheckEncode(0x00, %s) = %q; want %q", payloadHex, got, expected)
-	}
+	assert.Equal(t, expected, got)
 }
 
 func TestBase58CheckDecode(t *testing.T) {
 	t.Run("valid address decodes correctly", func(t *testing.T) {
 		address := "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"
 		version, payload, err := Base58CheckDecode(address)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if version != 0x00 {
-			t.Errorf("version = 0x%02x; want 0x00", version)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, byte(0x00), version)
 		expectedPayloadHex := "010966776006953d5567439e5e39f86a0d273bee"
-		gotPayloadHex := hex.EncodeToString(payload)
-		if gotPayloadHex != expectedPayloadHex {
-			t.Errorf("payload = %s; want %s", gotPayloadHex, expectedPayloadHex)
-		}
+		assert.Equal(t, expectedPayloadHex, hex.EncodeToString(payload))
 	})
 
 	t.Run("invalid checksum returns error", func(t *testing.T) {
 		// Corrupt the last character of a valid address
 		address := "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvN"
 		_, _, err := Base58CheckDecode(address)
-		if err == nil {
-			t.Error("expected error for invalid checksum, got nil")
-		}
+		require.Error(t, err)
 	})
 }

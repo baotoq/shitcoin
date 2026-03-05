@@ -3,6 +3,8 @@ package block
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAdjustDifficulty(t *testing.T) {
@@ -77,34 +79,29 @@ func TestAdjustDifficulty(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
 			got := AdjustDifficulty(tt.currentBits, tt.actualTimeSpan, tt.targetTimeSpan)
 
 			if tt.wantExact != 0 {
-				if got != tt.wantExact {
-					t.Errorf("AdjustDifficulty(%d, %v, %v) = %d; want %d",
-						tt.currentBits, tt.actualTimeSpan, tt.targetTimeSpan, got, tt.wantExact)
-				}
+				assert.Equal(tt.wantExact, got)
 			}
 
-			if tt.wantHigher && got <= tt.currentBits {
-				t.Errorf("AdjustDifficulty(%d, %v, %v) = %d; want > %d (harder)",
-					tt.currentBits, tt.actualTimeSpan, tt.targetTimeSpan, got, tt.currentBits)
+			if tt.wantHigher {
+				assert.Greater(got, tt.currentBits)
 			}
 
-			if tt.wantLower && got >= tt.currentBits {
-				t.Errorf("AdjustDifficulty(%d, %v, %v) = %d; want < %d (easier)",
-					tt.currentBits, tt.actualTimeSpan, tt.targetTimeSpan, got, tt.currentBits)
+			if tt.wantLower {
+				assert.Less(got, tt.currentBits)
 			}
 
-			if tt.wantEqual && got != tt.currentBits {
-				t.Errorf("AdjustDifficulty(%d, %v, %v) = %d; want = %d (unchanged)",
-					tt.currentBits, tt.actualTimeSpan, tt.targetTimeSpan, got, tt.currentBits)
+			if tt.wantEqual {
+				assert.Equal(tt.currentBits, got)
 			}
 
 			// Invariant: result always in [1, 255]
-			if got < 1 || got > 255 {
-				t.Errorf("AdjustDifficulty result %d out of range [1, 255]", got)
-			}
+			assert.GreaterOrEqual(got, uint32(1))
+			assert.LessOrEqual(got, uint32(255))
 		})
 	}
 }
