@@ -18,6 +18,7 @@ import (
 type CLI struct {
 	svc    *svc.ServiceContext
 	config config.Config
+	server *p2p.Server // non-nil when running in startnode mode
 }
 
 // New creates a new CLI instance with the given service context.
@@ -197,6 +198,11 @@ func (c *CLI) send(args []string) {
 		os.Exit(1)
 	}
 
+	// Broadcast to P2P peers if server is running
+	if c.server != nil {
+		c.server.BroadcastTx(transaction, "")
+	}
+
 	txID := transaction.ID().String()
 	fmt.Printf("Transaction %s... added to mempool\n", txID[:16])
 }
@@ -299,11 +305,14 @@ func (c *CLI) startNode(args []string) {
 
 	fmt.Printf("Connected peers: %d\n", srv.PeerCount())
 
+	// Store server reference for send command broadcasting
+	c.server = srv
+
 	if *mineAddr != "" {
 		// Use the node's service context for mining
 		origSvc := c.svc
 		c.svc = nodeSvc
-		c.autoMine(*mineAddr)
+		c.autoMineWithP2P(*mineAddr, srv)
 		c.svc = origSvc
 	} else {
 		fmt.Println("No mining address provided. Node running idle. Press Ctrl+C to stop.")
