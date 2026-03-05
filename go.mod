@@ -6,6 +6,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.6
 	github.com/zeromicro/go-zero v1.10.0
 	go.etcd.io/bbolt v1.4.3
+	golang.org/x/crypto v0.47.0
 )
 
 require (
