@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 04.1 context gathered
-last_updated: "2026-03-05T16:16:47.726Z"
-last_activity: 2026-03-05 -- Plan 04-04 executed, fork detection and chain reorganization
+status: in-progress
+stopped_at: "Completed 04.1-01-PLAN.md"
+last_updated: "2026-03-05T16:35:00Z"
+last_activity: 2026-03-05 -- Plan 04.1-01 executed, testify migration of 12 simple test files
 progress:
   total_phases: 7
   completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_plans: 13
+  completed_plans: 12
+  percent: 92
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 4 in progress -- P2P networking and consensus
+**Current focus:** Phase 04.1 in progress -- testify test migration
 
 ## Current Position
 
-Phase: 4 of 6 (P2P Networking and Consensus)
-Plan: 4 of 4 in current phase (04-04 complete)
-Status: Phase 4 Complete
-Last activity: 2026-03-05 -- Plan 04-04 executed, fork detection and chain reorganization
+Phase: 04.1 of 6 (Use Test Assert)
+Plan: 1 of 2 in current phase (04.1-01 complete)
+Status: Phase 04.1 In Progress
+Last activity: 2026-03-05 -- Plan 04.1-01 executed, testify migration of 12 simple test files
 
-Progress: [██████████] 100%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: 9min
-- Total execution time: 1.7 hours
+- Total execution time: 1.8 hours
 
 **By Phase:**
 
@@ -49,8 +49,8 @@ Progress: [██████████] 100%
 | 4. P2P Networking | 4/4 | 31min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (3min), 04-01 (6min), 04-02 (9min), 04-03 (5min), 04-04 (11min)
-- Trend: Consistent velocity, reorg most complex plan in project
+- Last 5 plans: 04-01 (6min), 04-02 (9min), 04-03 (5min), 04-04 (11min), 04.1-01 (7min)
+- Trend: Consistent velocity, test migration fast mechanical work
 
 *Updated after each plan completion*
 | Phase 03 P01 | 6min | 2 tasks | 10 files |
@@ -59,6 +59,7 @@ Progress: [██████████] 100%
 | Phase 04 P02 | 9min | 2 tasks | 9 files |
 | Phase 04 P03 | 5min | 2 tasks | 4 files |
 | Phase 04 P04 | 11min | 2 tasks | 11 files |
+| Phase 04.1 P01 | 7min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,9 @@ Recent decisions affecting current work:
 - [04-04]: MempoolAdder interface decouples chain from mempool package
 - [04-04]: BIP34 coinbase uniqueness: block height in coinbaseData field for unique tx IDs
 - [04-04]: Reorg pattern: undo reverse order, delete orphans, apply forward, re-add orphan txs
+- [04.1-01]: require for setup/preconditions, assert for value comparisons
+- [04.1-01]: assert.New(t) pattern in table-driven subtests for cleaner syntax
+- [04.1-01]: assert.ErrorIs for sentinel error checks
 
 ### Roadmap Evolution
 
@@ -125,6 +129,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T16:16:47.723Z
-Stopped at: Phase 04.1 context gathered
-Resume file: .planning/phases/04.1-use-test-assert/04.1-CONTEXT.md
+Last session: 2026-03-05T16:35:00Z
+Stopped at: Completed 04.1-01-PLAN.md
+Resume file: .planning/phases/04.1-use-test-assert/04.1-01-SUMMARY.md

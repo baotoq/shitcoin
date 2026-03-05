@@ -96,7 +96,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04.1-01-PLAN.md — Add testify dependency, migrate 12 simple unit test files to assert/require
+- [x] 04.1-01-PLAN.md — Add testify dependency, migrate 12 simple unit test files to assert/require
 - [ ] 04.1-02-PLAN.md — Migrate 7 complex test files with testify/suite for bbolt/P2P and testify/mock for stub mocks
 
 ### Phase 5: Web Dashboard
@@ -140,7 +140,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 6
 | 2. Wallets and Transactions | 3/3 | Complete   | 2026-03-05 |
 | 3. Mempool, Mining Integration, and CLI | 2/2 | Complete | 2026-03-05 |
 | 4. P2P Networking and Consensus | 4/4 | Complete   | 2026-03-05 |
-| 4.1 Use Test Assert | 0/2 | Not started | - |
+| 4.1 Use Test Assert | 1/2 | In progress | - |
 | 5. Web Dashboard | 0/0 | Not started | - |
 | 6. Advanced Educational Features | 0/0 | Not started | - |
 
