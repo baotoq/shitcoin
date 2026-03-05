@@ -41,8 +41,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **NET-05**: When a node mines a block, it is broadcast to all connected peers
 - [x] **NET-06**: Peers validate received blocks and transactions before accepting and re-broadcasting
 - [x] **NET-07**: When a new node connects, it synchronizes the full chain from peers (initial block download)
-- [ ] **NET-08**: Node detects when a peer has a longer valid chain and reorganizes to the longest chain
-- [ ] **NET-09**: Chain reorganization reverses UTXO changes from orphaned blocks and applies the new chain's changes
+- [x] **NET-08**: Node detects when a peer has a longer valid chain and reorganizes to the longest chain
+- [x] **NET-09**: Chain reorganization reverses UTXO changes from orphaned blocks and applies the new chain's changes
 
 ### Interface
 
@@ -118,8 +118,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NET-05 | Phase 4 | Complete |
 | NET-06 | Phase 4 | Complete |
 | NET-07 | Phase 4 | Complete |
-| NET-08 | Phase 4 | Pending |
-| NET-09 | Phase 4 | Pending |
+| NET-08 | Phase 4 | Complete |
+| NET-09 | Phase 4 | Complete |
 | CLI-01 | Phase 3 | Complete |
 | CLI-02 | Phase 3 | Complete |
 | CLI-03 | Phase 3 | Complete |

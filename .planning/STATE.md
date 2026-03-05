@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-03-05T15:43:32Z"
-last_activity: 2026-03-05 -- Plan 04-03 executed, initial block download sync
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-03-05T15:57:16Z"
+last_activity: 2026-03-05 -- Plan 04-04 executed, fork detection and chain reorganization
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 11
-  completed_plans: 10
-  percent: 91
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 ## Current Position
 
 Phase: 4 of 6 (P2P Networking and Consensus)
-Plan: 3 of 4 in current phase (04-03 complete)
-Status: In Progress
-Last activity: 2026-03-05 -- Plan 04-03 executed, initial block download sync
+Plan: 4 of 4 in current phase (04-04 complete)
+Status: Phase 4 Complete
+Last activity: 2026-03-05 -- Plan 04-04 executed, fork detection and chain reorganization
 
-Progress: [█████████-] 91%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
+- Total plans completed: 11
 - Average duration: 9min
-- Total execution time: 1.5 hours
+- Total execution time: 1.7 hours
 
 **By Phase:**
 
@@ -46,11 +46,11 @@ Progress: [█████████-] 91%
 | 1. Core Chain Foundation | 2/2 | 32min | 16min |
 | 2. Wallets and Transactions | 3/3 | 26min | 9min |
 | 3. Mempool, Mining, CLI | 2/2 | 9min | 5min |
-| 4. P2P Networking | 3/4 | 20min | 7min |
+| 4. P2P Networking | 4/4 | 31min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (6min), 03-02 (3min), 04-01 (6min), 04-02 (9min), 04-03 (5min)
-- Trend: Consistent velocity, IBD sync with TDD pattern
+- Last 5 plans: 03-02 (3min), 04-01 (6min), 04-02 (9min), 04-03 (5min), 04-04 (11min)
+- Trend: Consistent velocity, reorg most complex plan in project
 
 *Updated after each plan completion*
 | Phase 03 P01 | 6min | 2 tasks | 10 files |
@@ -58,6 +58,7 @@ Progress: [█████████-] 91%
 | Phase 04 P01 | 6min | 2 tasks | 10 files |
 | Phase 04 P02 | 9min | 2 tasks | 9 files |
 | Phase 04 P03 | 5min | 2 tasks | 4 files |
+| Phase 04 P04 | 11min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -104,6 +105,10 @@ Recent decisions affecting current work:
 - [04-03]: IBD triggered automatically after handshake when peer height > local height
 - [04-03]: Sync blocks routed separately from live relay via handleSyncBlock
 - [04-03]: Invalid block during sync aborts IBD and disconnects the peer
+- [04-04]: Fork detection via full-chain hash comparison (educational, clear approach)
+- [04-04]: MempoolAdder interface decouples chain from mempool package
+- [04-04]: BIP34 coinbase uniqueness: block height in coinbaseData field for unique tx IDs
+- [04-04]: Reorg pattern: undo reverse order, delete orphans, apply forward, re-add orphan txs
 
 ### Pending Todos
 
@@ -116,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T15:43:32Z
-Stopped at: Completed 04-03-PLAN.md
-Resume file: .planning/phases/04-p2p-networking-and-consensus/04-03-SUMMARY.md
+Last session: 2026-03-05T15:57:16Z
+Stopped at: Completed 04-04-PLAN.md
+Resume file: .planning/phases/04-p2p-networking-and-consensus/04-04-SUMMARY.md

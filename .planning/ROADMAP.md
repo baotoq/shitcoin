@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Core Chain Foundation** - Block structure, SHA-256d hashing, PoW mining, difficulty adjustment, and persistent storage (completed 2026-03-04)
 - [x] **Phase 2: Wallets and Transactions** - ECDSA keys, Bitcoin-style addresses, UTXO transaction model with signing and reversible UTXO set (completed 2026-03-05)
 - [ ] **Phase 3: Mempool, Mining Integration, and CLI** - Transaction mempool, Merkle tree, full mining pipeline, and complete CLI for exercising all local functionality
-- [ ] **Phase 4: P2P Networking and Consensus** - TCP peer connections, block/transaction broadcasting, chain synchronization, and fork resolution
+- [x] **Phase 4: P2P Networking and Consensus** - TCP peer connections, block/transaction broadcasting, chain synchronization, and fork resolution (completed 2026-03-05)
 - [ ] **Phase 5: Web Dashboard** - Block explorer, node status panel, real-time mining visualization, and mempool view
 - [ ] **Phase 6: Advanced Educational Features** - Block reward halving, transaction fees, multi-node orchestration, and double-spend demo
 
@@ -80,7 +80,7 @@ Plans:
   3. A block mined on one node is received, validated, and added to the chain on all peers
   4. A newly started node synchronizes the full chain from an existing peer before accepting new blocks
   5. When two nodes mine competing blocks, the network converges on the longest valid chain via reorganization, correctly reversing and reapplying UTXO changes
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 04-01-PLAN.md — P2P protocol types, message framing, TCP server, peer manager, version handshake, and per-node data directories
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Core Chain Foundation | 2/2 | Complete   | 2026-03-04 |
 | 2. Wallets and Transactions | 3/3 | Complete   | 2026-03-05 |
 | 3. Mempool, Mining Integration, and CLI | 2/2 | Complete | 2026-03-05 |
-| 4. P2P Networking and Consensus | 3/4 | In Progress|  |
+| 4. P2P Networking and Consensus | 4/4 | Complete   | 2026-03-05 |
 | 5. Web Dashboard | 0/0 | Not started | - |
 | 6. Advanced Educational Features | 0/0 | Not started | - |
 
