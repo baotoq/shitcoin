@@ -289,7 +289,7 @@ func (c *CLI) startNode(args []string) {
 
 	// Connect to seed peers
 	if *peers != "" {
-		for _, peerAddr := range strings.Split(*peers, ",") {
+		for peerAddr := range strings.SplitSeq(*peers, ",") {
 			peerAddr = strings.TrimSpace(peerAddr)
 			if peerAddr == "" {
 				continue

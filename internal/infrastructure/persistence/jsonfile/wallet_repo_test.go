@@ -107,19 +107,19 @@ func TestWalletRepo_FileFormatIsReadableJSON(t *testing.T) {
 	data, err := os.ReadFile(filePath)
 	require.NoError(t, err)
 
-	var parsed map[string]interface{}
+	var parsed map[string]any
 	require.NoError(t, json.Unmarshal(data, &parsed))
 
 	// Verify the structure has a wallets array.
 	wallets, ok := parsed["wallets"]
 	require.True(t, ok, "JSON missing 'wallets' key")
 
-	arr, ok := wallets.([]interface{})
+	arr, ok := wallets.([]any)
 	require.True(t, ok, "'wallets' is not an array")
 	assert.Len(t, arr, 1)
 
 	// Verify each entry has address and private_key_hex fields.
-	entry, ok := arr[0].(map[string]interface{})
+	entry, ok := arr[0].(map[string]any)
 	require.True(t, ok, "wallet entry is not an object")
 	assert.Contains(t, entry, "address")
 	assert.Contains(t, entry, "private_key_hex")

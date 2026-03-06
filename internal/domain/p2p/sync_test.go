@@ -50,7 +50,7 @@ func mineTestBlocks(t *testing.T, ch *chain.Chain, n int, minerAddr string) []*b
 	t.Helper()
 	ctx := context.Background()
 	blocks := make([]*block.Block, 0, n)
-	for i := 0; i < n; i++ {
+	for range n {
 		blk, err := ch.MineBlock(ctx, minerAddr, nil)
 		require.NoError(t, err)
 		blocks = append(blocks, blk)
@@ -79,7 +79,7 @@ func TestGetBlocks_ReturnsRequestedRange(t *testing.T) {
 	// Read 5 CmdBlock responses
 	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	var receivedHeights []uint64
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		resp, err := p2p.ReadMessage(conn)
 		require.NoError(t, err, "reading block %d", i+1)
 		require.Equal(t, p2p.CmdBlock, resp.Command)
@@ -113,7 +113,7 @@ func TestGetBlocks_EndHeightZero_ReturnsTillTip(t *testing.T) {
 	// Should receive 3 blocks (heights 1, 2, 3)
 	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	count := 0
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		resp, err := p2p.ReadMessage(conn)
 		require.NoError(t, err, "reading block %d", i+1)
 		require.Equal(t, p2p.CmdBlock, resp.Command)

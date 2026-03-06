@@ -114,7 +114,7 @@ func Base58CheckDecode(input string) (version byte, payload []byte, err error) {
 	secondHash := sha256.Sum256(firstHash[:])
 	expectedChecksum := secondHash[:4]
 
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		if checksum[i] != expectedChecksum[i] {
 			return 0, nil, ErrInvalidChecksum
 		}

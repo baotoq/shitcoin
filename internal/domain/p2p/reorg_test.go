@@ -103,7 +103,7 @@ func mineReorgTestBlocks(t *testing.T, ch *chain.Chain, n int, minerAddr string)
 	t.Helper()
 	ctx := context.Background()
 	blocks := make([]*block.Block, 0, n)
-	for i := 0; i < n; i++ {
+	for range n {
 		blk, err := ch.MineBlock(ctx, minerAddr, nil)
 		require.NoError(t, err)
 		blocks = append(blocks, blk)
@@ -218,7 +218,7 @@ func createForkBlocks(t *testing.T, parentHash block.Hash, startHeight uint64, c
 	pow := &block.ProofOfWork{}
 	blocks := make([]*block.Block, 0, count)
 	prevHash := parentHash
-	for i := 0; i < count; i++ {
+	for i := range count {
 		h := startHeight + uint64(i)
 		coinbase := tx.NewCoinbaseTxWithHeight(minerAddr, reward, h)
 		blockTxs := []any{coinbase}

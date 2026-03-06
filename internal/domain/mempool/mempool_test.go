@@ -195,7 +195,7 @@ func TestDrainAll(t *testing.T) {
 
 	// Create 3 coinbases with different rewards for unique TX IDs
 	var txs []*tx.Transaction
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		coinbase := tx.NewCoinbaseTx("addr", int64(5_000_000_000+i))
 		_, _ = utxoSet.ApplyBlock(uint64(i), []*tx.Transaction{coinbase})
 
@@ -222,7 +222,7 @@ func TestRemove(t *testing.T) {
 
 	// Create 2 distinct txs
 	var txs []*tx.Transaction
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		coinbase := tx.NewCoinbaseTx("addr", int64(5_000_000_000+i))
 		_, _ = utxoSet.ApplyBlock(uint64(i), []*tx.Transaction{coinbase})
 
@@ -249,7 +249,7 @@ func TestTransactions(t *testing.T) {
 	privKey, _ := btcec.NewPrivateKey()
 
 	var txs []*tx.Transaction
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		coinbase := tx.NewCoinbaseTx("addr", int64(5_000_000_000+i))
 		_, _ = utxoSet.ApplyBlock(uint64(i), []*tx.Transaction{coinbase})
 
@@ -275,7 +275,7 @@ func TestConcurrentAccess(t *testing.T) {
 
 	// Pre-create 10 coinbases each funding a unique UTXO
 	var txs []*tx.Transaction
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		coinbase := tx.NewCoinbaseTx("addr", int64(5_000_000_000+i))
 		_, _ = utxoSet.ApplyBlock(uint64(i), []*tx.Transaction{coinbase})
 
@@ -288,7 +288,7 @@ func TestConcurrentAccess(t *testing.T) {
 	mp := New(utxoSet)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()

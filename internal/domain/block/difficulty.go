@@ -26,10 +26,7 @@ func AdjustDifficulty(currentBits uint32, actualTimeSpan, targetTimeSpan time.Du
 	newBits := float64(currentBits) / ratio
 
 	// Clamp result to [1, 255]
-	result := uint32(math.Round(newBits))
-	if result < 1 {
-		result = 1
-	}
+	result := max(uint32(math.Round(newBits)), 1)
 	if result > 255 {
 		result = 255
 	}
