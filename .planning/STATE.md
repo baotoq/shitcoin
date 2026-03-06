@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-05T17:06:42.134Z"
+stopped_at: Completed 05.1-01-PLAN.md
+last_updated: "2026-03-06T16:49:16.523Z"
 last_activity: 2026-03-05 -- Plan 04.1-02 executed, complex test migration (suites, mocks)
 progress:
-  total_phases: 7
-  completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
+  total_phases: 8
+  completed_phases: 6
+  total_plans: 17
+  completed_plans: 14
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 04.1 complete -- all test files migrated to testify
+**Current focus:** Phase 05.1 complete -- Go upgraded to 1.26.1 with modernizers
 
 ## Current Position
 
-Phase: 04.1 of 6 (Use Test Assert)
-Plan: 2 of 2 in current phase (04.1-02 complete)
-Status: Phase 04.1 Complete
-Last activity: 2026-03-05 -- Plan 04.1-02 executed, complex test migration (suites, mocks)
+Phase: 05.1 of 8 (Upgrade to Go 1.26.1)
+Plan: 1 of 1 in current phase (05.1-01 complete)
+Status: Phase 05.1 Complete
+Last activity: 2026-03-06 -- Plan 05.1-01 executed, Go 1.26.1 upgrade with go fix modernizers
 
-Progress: [██████████] 100%
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Progress: [██████████] 100%
 | Phase 04 P04 | 11min | 2 tasks | 11 files |
 | Phase 04.1 P01 | 7min | 2 tasks | 14 files |
 | Phase 04.1 P02 | 7min | 2 tasks | 7 files |
+| Phase 05.1 P01 | 3min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -116,10 +117,13 @@ Recent decisions affecting current work:
 - [04.1-01]: assert.ErrorIs for sentinel error checks
 - [04.1-02]: testify/suite for bbolt repos (per-test DB via SetupTest), plain functions for P2P tests
 - [04.1-02]: testify/mock only for simple stub mocks; hand-rolled fakes for stateful stores with maps/mutexes
+- [Phase 05.1]: go fix correctly skipped merkle.go loop where len(level) changes during iteration
+- [Phase 05.1]: SplitSeq modernization in cli.go automatically applied by go fix (iterator-based split)
 
 ### Roadmap Evolution
 
 - Phase 04.1 inserted after Phase 4: use test assert (URGENT)
+- Phase 05.1 inserted after Phase 5: upgrade to go 1.26.1 (URGENT)
 
 ### Pending Todos
 
@@ -132,6 +136,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T17:06:42.130Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-web-dashboard/05-CONTEXT.md
+Last session: 2026-03-06T16:49:16.520Z
+Stopped at: Completed 05.1-01-PLAN.md
+Resume file: None
