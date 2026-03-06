@@ -115,6 +115,16 @@ Plans:
 - [ ] 05-01: TBD
 - [ ] 05-02: TBD
 
+### Phase 05.1: upgrade to go 1.26.1 (INSERTED)
+
+**Goal:** Upgrade Go from 1.24.0 to 1.26.1, apply code modernizers via go fix, and verify all tests pass
+**Requirements**: UPGRADE-01, UPGRADE-02, UPGRADE-03, UPGRADE-04
+**Depends on:** Phase 5
+**Plans:** 1 plan
+
+Plans:
+- [ ] 05.1-01-PLAN.md — Update go.mod to Go 1.26.1, run go fix modernizers, verify all tests pass
+
 ### Phase 6: Advanced Educational Features
 **Goal**: The blockchain demonstrates economic mechanics (halving, fees) and provides turnkey demo scenarios (multi-node testnet, double-spend attack)
 **Depends on**: Phase 5
@@ -132,7 +142,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 5.1 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -142,8 +152,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 6
 | 4. P2P Networking and Consensus | 4/4 | Complete   | 2026-03-05 |
 | 4.1 Use Test Assert | 2/2 | Complete | 2026-03-05 |
 | 5. Web Dashboard | 0/0 | Not started | - |
+| 5.1 Upgrade to Go 1.26.1 | 0/1 | Not started | - |
 | 6. Advanced Educational Features | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-05 (Phase 04.1 planned)*
+*Last updated: 2026-03-06 (Phase 05.1 planned)*
