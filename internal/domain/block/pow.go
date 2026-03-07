@@ -1,6 +1,7 @@
 package block
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 )
@@ -47,6 +48,49 @@ func (pow *ProofOfWork) MineWithMaxNonce(b *Block, maxNonce uint32) error {
 		}
 
 		if nonce == maxNonce {
+			break
+		}
+		nonce++
+	}
+	return ErrNonceExhausted
+}
+
+// MiningProgress holds sampled mining state for progress reporting.
+type MiningProgress struct {
+	Nonce      uint32
+	Hash       string
+	Target     string
+	Difficulty uint32
+}
+
+// MineWithProgress is like Mine but calls onProgress every sampleRate nonce
+// attempts with the current mining state. If onProgress is nil, callbacks are
+// skipped (safe to call without a dashboard).
+func (pow *ProofOfWork) MineWithProgress(b *Block, sampleRate uint32, onProgress func(MiningProgress)) error {
+	target := BitsToTarget(b.header.bits)
+	targetHex := fmt.Sprintf("%064x", target)
+
+	var nonce uint32
+	for nonce <= math.MaxUint32 {
+		b.header.SetNonce(nonce)
+		hash := b.header.Hash()
+		hashInt := new(big.Int).SetBytes(hash[:])
+
+		if onProgress != nil && nonce%sampleRate == 0 {
+			onProgress(MiningProgress{
+				Nonce:      nonce,
+				Hash:       hash.String(),
+				Target:     targetHex,
+				Difficulty: b.header.bits,
+			})
+		}
+
+		if hashInt.Cmp(target) == -1 {
+			b.hash = hash
+			return nil
+		}
+
+		if nonce == math.MaxUint32 {
 			break
 		}
 		nonce++
