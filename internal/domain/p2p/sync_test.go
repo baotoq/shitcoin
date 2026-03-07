@@ -11,16 +11,17 @@ import (
 	"github.com/baotoq/shitcoin/internal/domain/mempool"
 	"github.com/baotoq/shitcoin/internal/domain/p2p"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
+	"github.com/baotoq/shitcoin/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // makeSyncTestNode creates a fully wired test node with UTXO support for sync tests.
-func makeSyncTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chain, *utxo.Set, *fullMockChainRepo) {
+func makeSyncTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chain, *utxo.Set, *testutil.MockChainRepo) {
 	t.Helper()
 
-	repo := newFullMockChainRepo()
-	utxoRepo := newMockUTXORepo()
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(utxoRepo)
 	pow := &block.ProofOfWork{}
 	cfg := chain.ChainConfig{

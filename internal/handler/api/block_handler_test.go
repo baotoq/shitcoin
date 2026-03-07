@@ -1,115 +1,29 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
-	"github.com/baotoq/shitcoin/internal/domain/tx"
-	"github.com/baotoq/shitcoin/internal/domain/utxo"
 	"github.com/baotoq/shitcoin/internal/infrastructure/persistence/bbolt"
 	"github.com/baotoq/shitcoin/internal/svc"
+	"github.com/baotoq/shitcoin/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zeromicro/go-zero/rest/pathvar"
 )
 
-// mockChainRepo is a mock implementation of chain.Repository for testing.
-type mockChainRepo struct {
-	blocks       map[uint64]*block.Block
-	blocksByHash map[block.Hash]*block.Block
-	chainHeight  uint64
-}
-
-func newMockChainRepo() *mockChainRepo {
-	return &mockChainRepo{
-		blocks:       make(map[uint64]*block.Block),
-		blocksByHash: make(map[block.Hash]*block.Block),
-	}
-}
-
-func (m *mockChainRepo) SaveBlock(_ context.Context, _ *block.Block) error { return nil }
-func (m *mockChainRepo) SaveBlockWithUTXOs(_ context.Context, _ *block.Block, _ *utxo.UndoEntry) error {
-	return nil
-}
-func (m *mockChainRepo) GetBlock(_ context.Context, hash block.Hash) (*block.Block, error) {
-	b, ok := m.blocksByHash[hash]
-	if !ok {
-		return nil, ErrBlockNotFound
-	}
-	return b, nil
-}
-func (m *mockChainRepo) GetBlockByHeight(_ context.Context, height uint64) (*block.Block, error) {
-	b, ok := m.blocks[height]
-	if !ok {
-		return nil, ErrBlockNotFound
-	}
-	return b, nil
-}
-func (m *mockChainRepo) GetLatestBlock(_ context.Context) (*block.Block, error) {
-	if len(m.blocks) == 0 {
-		return nil, ErrBlockNotFound
-	}
-	return m.blocks[m.chainHeight], nil
-}
-func (m *mockChainRepo) GetChainHeight(_ context.Context) (uint64, error) {
-	return m.chainHeight, nil
-}
-func (m *mockChainRepo) GetBlocksInRange(_ context.Context, start, end uint64) ([]*block.Block, error) {
-	var result []*block.Block
-	for h := start; h <= end; h++ {
-		if b, ok := m.blocks[h]; ok {
-			result = append(result, b)
-		}
-	}
-	return result, nil
-}
-func (m *mockChainRepo) GetUndoEntry(_ context.Context, _ uint64) (*utxo.UndoEntry, error) {
-	return nil, nil
-}
-func (m *mockChainRepo) DeleteBlocksAbove(_ context.Context, _ uint64) error { return nil }
-
-func (m *mockChainRepo) addBlock(b *block.Block) {
-	m.blocks[b.Height()] = b
-	m.blocksByHash[b.Hash()] = b
-	if b.Height() > m.chainHeight || len(m.blocks) == 1 {
-		m.chainHeight = b.Height()
-	}
-}
-
-// createTestBlock creates a mined test block at given height.
-func createTestBlock(t *testing.T, height uint64, prevHash block.Hash) *block.Block {
-	t.Helper()
-	coinbase := tx.NewCoinbaseTxWithHeight("1TestAddr", 5000000000, height)
-	blockTxs := []any{coinbase}
-	merkleRoot := block.ComputeMerkleRoot([]block.Hash{coinbase.ID()})
-
-	var b *block.Block
-	var err error
-	if height == 0 {
-		b, err = block.NewGenesisBlock("test genesis", 1, blockTxs, merkleRoot)
-	} else {
-		b, err = block.NewBlock(prevHash, height, 1, blockTxs, merkleRoot)
-	}
-	require.NoError(t, err)
-
-	pow := &block.ProofOfWork{}
-	require.NoError(t, pow.Mine(b))
-	return b
-}
-
 func TestBlocksHandler_PaginatedNewestFirst(t *testing.T) {
-	repo := newMockChainRepo()
+	repo := testutil.NewMockChainRepo()
 
-	genesis := createTestBlock(t, 0, block.Hash{})
-	repo.addBlock(genesis)
+	genesis := testutil.MustCreateBlock(t, 0, block.Hash{})
+	repo.AddBlock(genesis)
 	prev := genesis.Hash()
 	for h := uint64(1); h <= 4; h++ {
-		b := createTestBlock(t, h, prev)
-		repo.addBlock(b)
+		b := testutil.MustCreateBlock(t, h, prev)
+		repo.AddBlock(b)
 		prev = b.Hash()
 	}
 
@@ -136,9 +50,9 @@ func TestBlocksHandler_PaginatedNewestFirst(t *testing.T) {
 }
 
 func TestBlockByHeightHandler_ValidHeight(t *testing.T) {
-	repo := newMockChainRepo()
-	genesis := createTestBlock(t, 0, block.Hash{})
-	repo.addBlock(genesis)
+	repo := testutil.NewMockChainRepo()
+	genesis := testutil.MustCreateBlock(t, 0, block.Hash{})
+	repo.AddBlock(genesis)
 
 	svcCtx := &svc.ServiceContext{ChainRepo: repo}
 	handler := BlockByHeightHandler(svcCtx)
@@ -157,7 +71,7 @@ func TestBlockByHeightHandler_ValidHeight(t *testing.T) {
 }
 
 func TestBlockByHeightHandler_NotFound(t *testing.T) {
-	repo := newMockChainRepo()
+	repo := testutil.NewMockChainRepo()
 	svcCtx := &svc.ServiceContext{ChainRepo: repo}
 
 	handler := BlockByHeightHandler(svcCtx)

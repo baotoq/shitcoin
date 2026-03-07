@@ -11,16 +11,17 @@ import (
 	"github.com/baotoq/shitcoin/internal/domain/p2p"
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
+	"github.com/baotoq/shitcoin/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // makeReorgTestNode creates a fully wired test node with undo-entry support for reorg tests.
-func makeReorgTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chain, *utxo.Set, *mempool.Mempool, *reorgMockChainRepo) {
+func makeReorgTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chain, *utxo.Set, *mempool.Mempool, *testutil.MockChainRepo) {
 	t.Helper()
 
-	repo := newReorgMockChainRepo()
-	utxoRepo := newMockUTXORepo()
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(utxoRepo)
 	pow := &block.ProofOfWork{}
 	cfg := chain.ChainConfig{
@@ -43,59 +44,6 @@ func makeReorgTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chai
 	})
 
 	return srv, ch, utxoSet, pool, repo
-}
-
-// reorgMockChainRepo extends fullMockChainRepo with undo entry storage for reorg tests.
-type reorgMockChainRepo struct {
-	fullMockChainRepo
-	undos map[uint64]*utxo.UndoEntry
-}
-
-func newReorgMockChainRepo() *reorgMockChainRepo {
-	return &reorgMockChainRepo{
-		fullMockChainRepo: fullMockChainRepo{
-			blocks:   make(map[block.Hash]*block.Block),
-			byHeight: make(map[uint64]*block.Block),
-		},
-		undos: make(map[uint64]*utxo.UndoEntry),
-	}
-}
-
-func (m *reorgMockChainRepo) SaveBlockWithUTXOs(_ context.Context, b *block.Block, undo *utxo.UndoEntry) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.blocks[b.Hash()] = b
-	m.byHeight[b.Height()] = b
-	m.latest = b
-	if undo != nil {
-		m.undos[undo.BlockHeight] = undo
-	}
-	return nil
-}
-
-func (m *reorgMockChainRepo) GetUndoEntry(_ context.Context, blockHeight uint64) (*utxo.UndoEntry, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if e, ok := m.undos[blockHeight]; ok {
-		return e, nil
-	}
-	return nil, utxo.ErrUndoEntryNotFound
-}
-
-func (m *reorgMockChainRepo) DeleteBlocksAbove(_ context.Context, height uint64) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for h, b := range m.byHeight {
-		if h > height {
-			delete(m.blocks, b.Hash())
-			delete(m.byHeight, h)
-			delete(m.undos, h)
-		}
-	}
-	if b, ok := m.byHeight[height]; ok {
-		m.latest = b
-	}
-	return nil
 }
 
 // mineReorgTestBlocks mines N blocks on the given chain, returning all mined blocks.

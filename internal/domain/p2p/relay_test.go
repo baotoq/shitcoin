@@ -3,7 +3,6 @@ package p2p_test
 import (
 	"context"
 	"net"
-	"sync"
 	"testing"
 	"time"
 
@@ -12,166 +11,17 @@ import (
 	"github.com/baotoq/shitcoin/internal/domain/mempool"
 	"github.com/baotoq/shitcoin/internal/domain/p2p"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
+	"github.com/baotoq/shitcoin/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// fullMockChainRepo stores all blocks for relay test scenarios.
-type fullMockChainRepo struct {
-	mu       sync.RWMutex
-	blocks   map[block.Hash]*block.Block
-	byHeight map[uint64]*block.Block
-	latest   *block.Block
-}
-
-func newFullMockChainRepo() *fullMockChainRepo {
-	return &fullMockChainRepo{
-		blocks:   make(map[block.Hash]*block.Block),
-		byHeight: make(map[uint64]*block.Block),
-	}
-}
-
-func (m *fullMockChainRepo) SaveBlock(_ context.Context, b *block.Block) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.blocks[b.Hash()] = b
-	m.byHeight[b.Height()] = b
-	m.latest = b
-	return nil
-}
-
-func (m *fullMockChainRepo) SaveBlockWithUTXOs(_ context.Context, b *block.Block, _ *utxo.UndoEntry) error {
-	return m.SaveBlock(context.Background(), b)
-}
-
-func (m *fullMockChainRepo) GetBlock(_ context.Context, hash block.Hash) (*block.Block, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if b, ok := m.blocks[hash]; ok {
-		return b, nil
-	}
-	return nil, chain.ErrChainEmpty
-}
-
-func (m *fullMockChainRepo) GetBlockByHeight(_ context.Context, height uint64) (*block.Block, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if b, ok := m.byHeight[height]; ok {
-		return b, nil
-	}
-	return nil, chain.ErrChainEmpty
-}
-
-func (m *fullMockChainRepo) GetLatestBlock(_ context.Context) (*block.Block, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if m.latest != nil {
-		return m.latest, nil
-	}
-	return nil, chain.ErrChainEmpty
-}
-
-func (m *fullMockChainRepo) GetChainHeight(_ context.Context) (uint64, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if m.latest != nil {
-		return m.latest.Height(), nil
-	}
-	return 0, chain.ErrChainEmpty
-}
-
-func (m *fullMockChainRepo) GetBlocksInRange(_ context.Context, start, end uint64) ([]*block.Block, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	var result []*block.Block
-	for h := start; h <= end; h++ {
-		if b, ok := m.byHeight[h]; ok {
-			result = append(result, b)
-		}
-	}
-	return result, nil
-}
-
-func (m *fullMockChainRepo) GetUndoEntry(_ context.Context, blockHeight uint64) (*utxo.UndoEntry, error) {
-	return nil, utxo.ErrUndoEntryNotFound
-}
-
-func (m *fullMockChainRepo) DeleteBlocksAbove(_ context.Context, height uint64) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for h, b := range m.byHeight {
-		if h > height {
-			delete(m.blocks, b.Hash())
-			delete(m.byHeight, h)
-		}
-	}
-	if b, ok := m.byHeight[height]; ok {
-		m.latest = b
-	}
-	return nil
-}
-
-// mockUTXORepo implements utxo.Repository in-memory.
-type mockUTXORepo struct {
-	mu    sync.Mutex
-	utxos map[string]utxo.UTXO // key = "txid_hex:vout"
-}
-
-func newMockUTXORepo() *mockUTXORepo {
-	return &mockUTXORepo{utxos: make(map[string]utxo.UTXO)}
-}
-
-func (r *mockUTXORepo) utxoKey(txID block.Hash, vout uint32) string {
-	return txID.String() + ":" + string(rune(vout+'0'))
-}
-
-func (r *mockUTXORepo) Put(u utxo.UTXO) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.utxos[r.utxoKey(u.TxID(), u.Vout())] = u
-	return nil
-}
-
-func (r *mockUTXORepo) Get(txID block.Hash, vout uint32) (utxo.UTXO, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if u, ok := r.utxos[r.utxoKey(txID, vout)]; ok {
-		return u, nil
-	}
-	return utxo.UTXO{}, utxo.ErrUTXONotFound
-}
-
-func (r *mockUTXORepo) Delete(txID block.Hash, vout uint32) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	delete(r.utxos, r.utxoKey(txID, vout))
-	return nil
-}
-
-func (r *mockUTXORepo) GetByAddress(address string) ([]utxo.UTXO, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	var result []utxo.UTXO
-	for _, u := range r.utxos {
-		if u.Address() == address {
-			result = append(result, u)
-		}
-	}
-	return result, nil
-}
-
-func (r *mockUTXORepo) SaveUndoEntry(_ *utxo.UndoEntry) error { return nil }
-func (r *mockUTXORepo) GetUndoEntry(_ uint64) (*utxo.UndoEntry, error) {
-	return nil, utxo.ErrUndoEntryNotFound
-}
-func (r *mockUTXORepo) DeleteUndoEntry(_ uint64) error { return nil }
-
 // makeRelayTestNode creates a fully wired test node with UTXO support.
-func makeRelayTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chain, *mempool.Mempool, *fullMockChainRepo) {
+func makeRelayTestNode(t *testing.T, minerAddr string) (*p2p.Server, *chain.Chain, *mempool.Mempool, *testutil.MockChainRepo) {
 	t.Helper()
 
-	repo := newFullMockChainRepo()
-	utxoRepo := newMockUTXORepo()
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(utxoRepo)
 	pow := &block.ProofOfWork{}
 	cfg := chain.ChainConfig{

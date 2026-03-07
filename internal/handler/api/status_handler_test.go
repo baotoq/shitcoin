@@ -12,6 +12,7 @@ import (
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/infrastructure/persistence/bbolt"
 	"github.com/baotoq/shitcoin/internal/svc"
+	"github.com/baotoq/shitcoin/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zeromicro/go-zero/rest/pathvar"
@@ -24,9 +25,9 @@ type mockPeerCounter struct {
 func (m *mockPeerCounter) PeerCount() int { return m.count }
 
 func TestStatusHandler_ReturnsNodeMetrics(t *testing.T) {
-	repo := newMockChainRepo()
-	genesis := createTestBlock(t, 0, block.Hash{})
-	repo.addBlock(genesis)
+	repo := testutil.NewMockChainRepo()
+	genesis := testutil.MustCreateBlock(t, 0, block.Hash{})
+	repo.AddBlock(genesis)
 
 	pow := &block.ProofOfWork{}
 	ch := chain.NewChain(repo, pow, chain.ChainConfig{InitialDifficulty: 1}, nil)
@@ -54,9 +55,9 @@ func TestStatusHandler_ReturnsNodeMetrics(t *testing.T) {
 }
 
 func TestStatusHandler_NilPeerCounter(t *testing.T) {
-	repo := newMockChainRepo()
-	genesis := createTestBlock(t, 0, block.Hash{})
-	repo.addBlock(genesis)
+	repo := testutil.NewMockChainRepo()
+	genesis := testutil.MustCreateBlock(t, 0, block.Hash{})
+	repo.AddBlock(genesis)
 
 	pow := &block.ProofOfWork{}
 	ch := chain.NewChain(repo, pow, chain.ChainConfig{InitialDifficulty: 1}, nil)
@@ -96,9 +97,9 @@ func TestMempoolHandler_ReturnsEmptyArray(t *testing.T) {
 }
 
 func TestTxHandler_NotFound(t *testing.T) {
-	repo := newMockChainRepo()
-	genesis := createTestBlock(t, 0, block.Hash{})
-	repo.addBlock(genesis)
+	repo := testutil.NewMockChainRepo()
+	genesis := testutil.MustCreateBlock(t, 0, block.Hash{})
+	repo.AddBlock(genesis)
 
 	pow := &block.ProofOfWork{}
 	ch := chain.NewChain(repo, pow, chain.ChainConfig{InitialDifficulty: 1}, nil)
@@ -117,9 +118,9 @@ func TestTxHandler_NotFound(t *testing.T) {
 }
 
 func TestTxHandler_FindsTxInBlock(t *testing.T) {
-	repo := newMockChainRepo()
-	genesis := createTestBlock(t, 0, block.Hash{})
-	repo.addBlock(genesis)
+	repo := testutil.NewMockChainRepo()
+	genesis := testutil.MustCreateBlock(t, 0, block.Hash{})
+	repo.AddBlock(genesis)
 
 	pow := &block.ProofOfWork{}
 	ch := chain.NewChain(repo, pow, chain.ChainConfig{InitialDifficulty: 1}, nil)
