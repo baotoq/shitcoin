@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: CI/CD & Kubernetes
-status: roadmapped
-stopped_at: null
-last_updated: "2026-03-07"
-last_activity: 2026-03-07 -- Roadmap created for v1.1 (5 phases, 23 requirements)
+status: executing
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-03-07T13:08:16Z"
+last_activity: 2026-03-07 -- Completed 09-01 (backend Dockerfile)
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 7
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 14
 ---
 
 # Project State
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 9 - Containerization (ready to plan)
+**Current focus:** Phase 9 - Containerization (executing plan 2 of 2)
 
 ## Current Position
 
 Phase: 9 of 13 (Containerization) -- first phase of v1.1
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-07 -- Roadmap created for v1.1
+Plan: 2 of 2
+Status: Executing
+Last activity: 2026-03-07 -- Completed 09-01 (backend Dockerfile)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 14%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22 (v1.0)
+- Total plans completed: 23 (22 v1.0 + 1 v1.1)
 - Average duration: 6min
 - Total execution time: ~2.2 hours
 
@@ -66,6 +66,8 @@ Recent decisions affecting current work:
 - [Roadmap v1.1]: Phases 10 and 11 can run in parallel after Phase 9 (both depend on Dockerfiles, not each other)
 - [Research]: BoltDB requires Recreate strategy + single replica in K8s (Phase 11)
 - [Research]: CGO_ENABLED=0 mandatory for Go multi-stage Docker builds (Phase 9)
+- [09-01]: alpine:3.21 over scratch for shell/debugging access in runtime container
+- [09-01]: Config file copied from build context (not builder stage) into runtime image
 
 ### Pending Todos
 
@@ -79,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Roadmap created for v1.1
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
