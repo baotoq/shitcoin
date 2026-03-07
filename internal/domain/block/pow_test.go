@@ -122,6 +122,67 @@ func TestMineNonceExhausted(t *testing.T) {
 	assert.ErrorIs(t, err, ErrNonceExhausted)
 }
 
+func TestMineWithProgressCallsOnProgressEverySampleRate(t *testing.T) {
+	b, err := NewGenesisBlock("Progress Test", 16, nil, Hash{})
+	require.NoError(t, err)
+
+	pow := &ProofOfWork{}
+	var progressCalls []MiningProgress
+	sampleRate := uint32(100)
+
+	err = pow.MineWithProgress(b, sampleRate, func(p MiningProgress) {
+		progressCalls = append(progressCalls, p)
+	})
+	require.NoError(t, err)
+
+	// Should have been called at least once (nonce 0 is the first sample point)
+	assert.NotEmpty(t, progressCalls)
+
+	// Verify nonces are multiples of sampleRate
+	for _, p := range progressCalls {
+		assert.Equal(t, uint32(0), p.Nonce%sampleRate,
+			"progress nonce %d should be multiple of sample rate %d", p.Nonce, sampleRate)
+	}
+}
+
+func TestMineWithProgressNilCallbackNoPanic(t *testing.T) {
+	b, err := NewGenesisBlock("Nil Callback", 16, nil, Hash{})
+	require.NoError(t, err)
+
+	pow := &ProofOfWork{}
+
+	// Should not panic with nil callback
+	assert.NotPanics(t, func() {
+		err = pow.MineWithProgress(b, 100, nil)
+	})
+	require.NoError(t, err)
+
+	// Block should still be mined
+	assert.False(t, b.Hash().IsZero())
+}
+
+func TestMineWithProgressReportsCorrectValues(t *testing.T) {
+	b, err := NewGenesisBlock("Values Test", 16, nil, Hash{})
+	require.NoError(t, err)
+
+	pow := &ProofOfWork{}
+	var lastProgress MiningProgress
+
+	err = pow.MineWithProgress(b, 1, func(p MiningProgress) {
+		lastProgress = p
+	})
+	require.NoError(t, err)
+
+	// Verify difficulty matches block bits
+	assert.Equal(t, uint32(16), lastProgress.Difficulty)
+
+	// Verify target is non-empty hex string
+	assert.NotEmpty(t, lastProgress.Target)
+
+	// Verify hash is non-empty hex string
+	assert.NotEmpty(t, lastProgress.Hash)
+}
+
 func TestMineMultipleBlocks(t *testing.T) {
 	pow := &ProofOfWork{}
 
