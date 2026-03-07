@@ -5,9 +5,9 @@ milestone_name: Testing & Quality
 status: active
 stopped_at: null
 last_updated: "2026-03-08"
-last_activity: 2026-03-08 -- Milestone v1.2 started
+last_activity: 2026-03-08 -- v1.2 roadmap created (Phases 14-18)
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Defining requirements
+**Current focus:** Phase 14 - Test Infrastructure
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-08 — Milestone v1.2 started
+Phase: 14 (1 of 5 in v1.2) (Test Infrastructure)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-03-08 -- v1.2 roadmap created
 
 ## Performance Metrics
 
@@ -57,9 +57,10 @@ Last activity: 2026-03-08 — Milestone v1.2 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap v1.1]: 5-phase structure following strict dependency chain: Dockerfiles -> CI -> Kustomize -> Tilt -> ArgoCD
-- [Research]: BoltDB requires Recreate strategy + single replica in K8s (Phase 11)
-- [Research]: CGO_ENABLED=0 mandatory for Go multi-stage Docker builds (Phase 9)
+- [v1.2 Roadmap]: No new test dependencies -- existing testify + stdlib covers all needs
+- [v1.2 Roadmap]: Shared testutil package (Phase 14) before any test writing -- eliminates mock duplication
+- [v1.2 Roadmap]: Race detection via -race flag deferred to Phase 18 (after coverage exists)
+- [Research]: WebSocket hub lacks Stop() -- may need small production code change for Phase 17
 
 ### Pending Todos
 
@@ -67,10 +68,11 @@ None yet.
 
 ### Blockers/Concerns
 
-None.
+- WebSocket hub lacks Stop() method -- may need small production code change for test cleanup (Phase 17)
+- Existing time.Sleep-based test synchronization may cause flaky tests -- replace with require.Eventually when encountered
 
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Milestone v1.2 started
+Stopped at: v1.2 roadmap created, ready to plan Phase 14
 Resume file: None

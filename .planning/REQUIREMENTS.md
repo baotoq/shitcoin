@@ -113,25 +113,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TINF-01 | — | Pending |
-| TINF-02 | — | Pending |
-| TINF-03 | — | Pending |
-| DOM-01 | — | Pending |
-| DOM-02 | — | Pending |
-| DOM-03 | — | Pending |
-| DOM-04 | — | Pending |
-| HNDL-01 | — | Pending |
-| HNDL-02 | — | Pending |
-| INFR-01 | — | Pending |
-| INFR-02 | — | Pending |
-| INTG-01 | — | Pending |
-| INTG-02 | — | Pending |
+| TINF-01 | Phase 14 | Pending |
+| TINF-02 | Phase 14 | Pending |
+| TINF-03 | Phase 18 | Pending |
+| DOM-01 | Phase 15 | Pending |
+| DOM-02 | Phase 15 | Pending |
+| DOM-03 | Phase 15 | Pending |
+| DOM-04 | Phase 15 | Pending |
+| HNDL-01 | Phase 17 | Pending |
+| HNDL-02 | Phase 17 | Pending |
+| INFR-01 | Phase 16 | Pending |
+| INFR-02 | Phase 16 | Pending |
+| INTG-01 | Phase 18 | Pending |
+| INTG-02 | Phase 18 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13 ⚠️
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-08 after initial definition*
+*Last updated: 2026-03-08 after roadmap creation (Phase 14-18 mappings)*

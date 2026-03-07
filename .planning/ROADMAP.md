@@ -3,7 +3,8 @@
 ## Milestones
 
 - ✅ **v1.0 Educational Blockchain** -- Phases 1-6 (shipped 2026-03-07)
-- 🚧 **v1.1 CI/CD & Kubernetes** -- Phases 9-13 (in progress)
+- ✅ **v1.1 CI/CD & Kubernetes** -- Phases 9-13 (shipped 2026-03-07)
+- 🚧 **v1.2 Testing & Quality** -- Phases 14-18 (in progress)
 
 ## Phases
 
@@ -21,96 +22,86 @@
 
 </details>
 
-### 🚧 v1.1 CI/CD & Kubernetes
+<details>
+<summary>✅ v1.1 CI/CD & Kubernetes (Phases 9-13) -- SHIPPED 2026-03-07</summary>
 
-**Milestone Goal:** Add CI/CD pipeline, local K8s development, and GitOps deployment to the blockchain project.
+- [x] Phase 9: Containerization (2/2 plans) -- completed 2026-03-07
+- [x] Phase 10: CI Pipeline (2/2 plans) -- completed 2026-03-07
+- [x] Phase 11: Kubernetes Manifests (2/2 plans) -- completed 2026-03-07
+- [x] Phase 12: Local K8s Development (2/2 plans) -- completed 2026-03-07
+- [x] Phase 13: GitOps Deployment (1/1 plan) -- completed 2026-03-07
 
-- [x] **Phase 9: Containerization** - Multi-stage Dockerfiles for Go backend and React frontend with nginx reverse proxy (completed 2026-03-07)
-- [x] **Phase 10: CI Pipeline** - GitHub Actions for test, lint, build, and image push to GHCR (completed 2026-03-07)
-- [x] **Phase 11: Kubernetes Manifests** - Kustomize base + overlays defining complete K8s deployment (completed 2026-03-07)
-- [x] **Phase 12: Local K8s Development** - Tilt with live-update for fast iteration on a local kind cluster (completed 2026-03-07)
-- [x] **Phase 13: GitOps Deployment** - ArgoCD Application for automated sync from git to cluster (completed 2026-03-07)
+</details>
+
+### 🚧 v1.2 Testing & Quality
+
+**Milestone Goal:** Achieve comprehensive test coverage across all layers -- domain logic, P2P networking, API/WebSocket, and infrastructure persistence.
+
+- [ ] **Phase 14: Test Infrastructure** - Shared test helpers, consolidated mocks, and reusable builders in `internal/testutil/`
+- [ ] **Phase 15: Domain Layer Coverage** - Unit tests for chain, P2P, utxo, wallet, mempool, tx, and error paths across all domain packages
+- [ ] **Phase 16: Infrastructure Persistence Tests** - BoltDB repository and JSON file wallet store test coverage
+- [ ] **Phase 17: Handler Layer Tests** - REST API and WebSocket hub test coverage with httptest and mock dependencies
+- [ ] **Phase 18: Integration & CI Quality** - P2P multi-node integration tests, E2E chain scenarios, and race detection in CI
 
 ## Phase Details
 
-### Phase 9: Containerization
-**Goal**: Both services produce minimal, secure container images that run correctly
-**Depends on**: Nothing (first phase of v1.1)
-**Requirements**: DOCK-01, DOCK-02, DOCK-03, DOCK-04, DOCK-05
+### Phase 14: Test Infrastructure
+**Goal**: All subsequent test phases can import shared builders and mocks instead of duplicating test scaffolding
+**Depends on**: Nothing (first phase of v1.2)
+**Requirements**: TINF-01, TINF-02
 **Success Criteria** (what must be TRUE):
-  1. `docker build` produces a working Go backend image under 20MB that starts and serves /api/status
-  2. `docker build` produces a working React frontend image with nginx that serves the SPA and proxies /api and /ws to the backend
-  3. Build context excludes data/, wallets.json, .git, and node_modules (verified via .dockerignore)
-  4. Both containers run as a non-root user (verified by `docker exec whoami`)
-**Plans:** 2/2 plans complete
+  1. `internal/testutil/` package exists with reusable block, transaction, wallet, and UTXO builder functions that compile and are importable from any test file
+  2. Mock implementations for chain.Repository, utxo.Repository, and wallet.Repository exist in a single shared location, replacing duplicated mocks across 4+ packages
+  3. Existing tests that used package-local mocks still pass after migrating to the shared mocks
+**Plans**: TBD
 
-Plans:
-- [ ] 09-01-PLAN.md -- Backend Dockerfile + .dockerignore
-- [ ] 09-02-PLAN.md -- Frontend Dockerfile + nginx.conf
-
-### Phase 10: CI Pipeline
-**Goal**: Every push and PR is automatically tested, linted, and built; images are pushed to registry on main merge
-**Depends on**: Phase 9
-**Requirements**: CI-01, CI-02, CI-03, CI-04, CI-05
+### Phase 15: Domain Layer Coverage
+**Goal**: Domain logic is thoroughly tested, covering happy paths, edge cases, and error conditions across all domain packages
+**Depends on**: Phase 14
+**Requirements**: DOM-01, DOM-02, DOM-03, DOM-04
 **Success Criteria** (what must be TRUE):
-  1. A push to any branch triggers Go tests and golangci-lint, with pass/fail visible in GitHub Actions
-  2. A push to any branch triggers frontend lint, typecheck, and build verification
-  3. Merging to main builds and pushes Docker images to GHCR with correct tags
-  4. Go test coverage percentage is reported in CI output
-**Plans:** 2/2 plans complete
+  1. `go test -cover ./internal/domain/chain/` reports 85%+ coverage, including mining orchestration, reorg logic, and difficulty adjustment edge cases
+  2. `go test -cover ./internal/domain/p2p/` reports 80%+ coverage, including message encoding/decoding, handler dispatch, and sync logic
+  3. `go test -cover` for utxo, wallet, mempool, and tx packages each report 95%+ coverage
+  4. Tests exist for error paths including invalid blocks, double spends, corrupt data, nil inputs, and boundary conditions -- verified by running `go test -v` and seeing explicit error-case test names
+**Plans**: TBD
 
-Plans:
-- [ ] 10-01-PLAN.md -- Go CI workflow (test + lint + coverage) and golangci-lint v2 config
-- [ ] 10-02-PLAN.md -- Frontend CI workflow and Docker build/push workflow
-
-### Phase 11: Kubernetes Manifests
-**Goal**: Complete Kustomize manifest set defines a deployable, persistent, health-checked blockchain node
-**Depends on**: Phase 9
-**Requirements**: K8S-01, K8S-02, K8S-03, K8S-04, K8S-05, K8S-06, K8S-07
+### Phase 16: Infrastructure Persistence Tests
+**Goal**: Persistence layer correctness is verified with real BoltDB and file I/O, ensuring data integrity across block saves, queries, and reorgs
+**Depends on**: Phase 14
+**Requirements**: INFR-01, INFR-02
 **Success Criteria** (what must be TRUE):
-  1. `kubectl apply -k deploy/k8s/overlays/dev` creates running backend and frontend pods with Services
-  2. Backend pod uses Recreate strategy with single replica and mounts a PVC for BoltDB data persistence
-  3. Backend config (shitcoin.yaml) is externalized via ConfigMap, not baked into the image
-  4. Liveness and readiness probes on /api/status report healthy for a running backend
-  5. `kubectl apply -k deploy/k8s/overlays/prod` applies production resource limits and pinned image tags
-**Plans:** 2/2 plans complete
+  1. `go test -cover ./internal/infrastructure/persistence/bbolt/` reports 80%+ coverage, including atomic block+UTXO saves, range queries, reorg deletes, and undo entries
+  2. `go test -cover ./internal/infrastructure/persistence/jsonfile/` reports 90%+ coverage
+  3. All persistence tests use `t.TempDir()` for isolation and pass when run with `go test -count=2` (no shared state between runs)
+**Plans**: TBD
 
-Plans:
-- [ ] 11-01-PLAN.md -- Kustomize base manifests (Deployments, Services, PVC, ConfigMap, probes)
-- [ ] 11-02-PLAN.md -- Kustomize dev and prod overlays (image refs, resource limits)
-
-### Phase 12: Local K8s Development
-**Goal**: Developer runs `tilt up` and gets a live-reloading blockchain environment on a local K8s cluster
-**Depends on**: Phase 9, Phase 11
-**Requirements**: DEV-01, DEV-02, DEV-03, DEV-04
+### Phase 17: Handler Layer Tests
+**Goal**: HTTP API and WebSocket handlers are tested against mock dependencies, verifying request/response behavior and event broadcasting
+**Depends on**: Phase 14
+**Requirements**: HNDL-01, HNDL-02
 **Success Criteria** (what must be TRUE):
-  1. `tilt up` builds and deploys both services to a local kind cluster with port-forwarding
-  2. Editing a Go source file triggers automatic rebuild and restart in the backend container without a full image rebuild
-  3. Editing a React source file triggers automatic update in the frontend container
-  4. `make tilt-up`, `make test`, `make lint`, and `make docker-build` all work as documented
-**Plans:** 2/2 plans complete
+  1. `go test -cover ./internal/handler/api/` reports 80%+ coverage, with tests for address, mempool, search, and tx handlers using httptest
+  2. `go test -cover ./internal/handler/ws/` reports 75%+ coverage, with tests for event subscribe, broadcast to connected clients, and client disconnect cleanup
+  3. All handler tests use mock dependencies (no real BoltDB or network connections)
+**Plans**: TBD
 
-Plans:
-- [ ] 12-01-PLAN.md -- Tiltfile with live-update for backend and frontend, Dockerfile.dev, kind cluster config
-- [ ] 12-02-PLAN.md -- Makefile with common dev commands
-
-### Phase 13: GitOps Deployment
-**Goal**: ArgoCD automatically syncs Kubernetes state from git, completing the CI/CD loop
-**Depends on**: Phase 11
-**Requirements**: GIT-01, GIT-02
+### Phase 18: Integration & CI Quality
+**Goal**: Cross-layer integration tests verify end-to-end workflows, and CI enforces race-safe execution across the entire test suite
+**Depends on**: Phase 15, Phase 16, Phase 17
+**Requirements**: INTG-01, INTG-02, TINF-03
 **Success Criteria** (what must be TRUE):
-  1. ArgoCD Application CR points to the Kustomize dev overlay and auto-syncs changes from git
-  2. The ArgoCD Application manifest lives in argocd/ directory, outside the K8s manifest path that ArgoCD watches
-**Plans:** 1/1 plans complete
-
-Plans:
-- [ ] 13-01-PLAN.md -- ArgoCD Application CR with auto-sync pointing to Kustomize dev overlay
+  1. Integration tests verify TCP handshake, block sync, and tx relay between 2+ in-process nodes -- passing with `go test -v -run Integration`
+  2. E2E chain scenario tests verify the full workflow: create wallet, send tx, mine block, verify UTXO updated, check balance -- all in a single test function
+  3. `go test -race ./...` passes in CI (GitHub Actions) with zero data race warnings
+  4. CI pipeline runs all tests with `-race` flag on every push and PR
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
-(Phases 10 and 11 can begin in parallel after Phase 9 completes)
+Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
+(Phases 15, 16, and 17 can begin in parallel after Phase 14 completes)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -126,8 +117,13 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 10. CI Pipeline | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 11. Kubernetes Manifests | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 12. Local K8s Development | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 13. GitOps Deployment | 1/1 | Complete    | 2026-03-07 | - |
+| 13. GitOps Deployment | v1.1 | 1/1 | Complete | 2026-03-07 |
+| 14. Test Infrastructure | v1.2 | 0/? | Not started | - |
+| 15. Domain Layer Coverage | v1.2 | 0/? | Not started | - |
+| 16. Infrastructure Persistence Tests | v1.2 | 0/? | Not started | - |
+| 17. Handler Layer Tests | v1.2 | 0/? | Not started | - |
+| 18. Integration & CI Quality | v1.2 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-07 -- Phase 13 planned (1 plan)*
+*Last updated: 2026-03-08 -- v1.2 Testing & Quality milestone added (Phases 14-18)*
