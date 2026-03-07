@@ -402,3 +402,96 @@ func TestReorganize_PreservesBlocksBelowFork(t *testing.T) {
 
 	mpool.AssertExpectations(t)
 }
+
+func TestRewardAtHeight(t *testing.T) {
+	repo := newMockChainRepo()
+	utxoRepo := newMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "halving-test",
+		BlockReward:       5000000000,
+		HalvingInterval:   10,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	ctx := context.Background()
+	require.NoError(t, ch.Initialize(ctx, "miner"))
+
+	tests := []struct {
+		name   string
+		height uint64
+		want   int64
+	}{
+		{"genesis", 0, 5000000000},
+		{"before first halving", 9, 5000000000},
+		{"first halving", 10, 2500000000},
+		{"second halving", 20, 1250000000},
+		{"third halving", 30, 625000000},
+		{"64th halving (zero)", 640, 0},
+		{"beyond 64 halvings", 700, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ch.RewardAtHeight(tt.height)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestRewardAtHeightNoHalving(t *testing.T) {
+	repo := newMockChainRepo()
+	utxoRepo := newMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "no-halving-test",
+		BlockReward:       5000000000,
+		HalvingInterval:   0, // no halving
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	ctx := context.Background()
+	require.NoError(t, ch.Initialize(ctx, "miner"))
+
+	// With HalvingInterval=0, reward is always BlockReward
+	for _, h := range []uint64{0, 10, 100, 1000, 10000} {
+		assert.Equal(t, int64(5000000000), ch.RewardAtHeight(h))
+	}
+}
+
+func TestCoinbaseIncludesFees(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-fees"
+
+	repo := newMockChainRepo()
+	utxoRepo := newMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "fee-test",
+		BlockReward:       5000000000,
+		HalvingInterval:   0,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Mine a block with totalFees = 1000
+	blk, err := ch.MineBlock(ctx, minerAddr, nil, 1000)
+	require.NoError(t, err)
+
+	// Extract coinbase from the mined block
+	rawTxs := blk.RawTransactions()
+	require.Greater(t, len(rawTxs), 0)
+	coinbaseTx, ok := rawTxs[0].(*tx.Transaction)
+	require.True(t, ok)
+	require.True(t, coinbaseTx.IsCoinbase())
+
+	// Coinbase output should be BlockReward + totalFees
+	assert.Equal(t, int64(5000000000+1000), coinbaseTx.Outputs()[0].Value())
+}

@@ -356,3 +356,40 @@ func TestCreateTransactionWithChangeMultipleInputs(t *testing.T) {
 	assert.Equal(t, int64(5000), tx.Outputs()[0].Value())
 	assert.Equal(t, int64(2000), tx.Outputs()[1].Value())
 }
+
+func TestCreateTransactionWithChangeFee(t *testing.T) {
+	prevTxID := block.DoubleSHA256([]byte("prev-tx"))
+	inputs := []TxInput{NewTxInput(prevTxID, 0)}
+	inputValues := []int64{5000}
+
+	// Fee of 500: change = 5000 - 3000 - 500 = 1500
+	tx, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 3000, "change-addr", 500)
+	require.NoError(t, err)
+
+	require.Len(t, tx.Outputs(), 2)
+	assert.Equal(t, int64(3000), tx.Outputs()[0].Value())
+	assert.Equal(t, int64(1500), tx.Outputs()[1].Value())
+}
+
+func TestCreateTransactionWithChangeFeeExactSpend(t *testing.T) {
+	prevTxID := block.DoubleSHA256([]byte("prev-tx"))
+	inputs := []TxInput{NewTxInput(prevTxID, 0)}
+	inputValues := []int64{5000}
+
+	// Fee of 2000: change = 5000 - 3000 - 2000 = 0 (no change output)
+	tx, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 3000, "change-addr", 2000)
+	require.NoError(t, err)
+
+	require.Len(t, tx.Outputs(), 1)
+	assert.Equal(t, int64(3000), tx.Outputs()[0].Value())
+}
+
+func TestCreateTransactionWithChangeFeeInsufficientFunds(t *testing.T) {
+	prevTxID := block.DoubleSHA256([]byte("prev-tx"))
+	inputs := []TxInput{NewTxInput(prevTxID, 0)}
+	inputValues := []int64{5000}
+
+	// Fee of 3000 + amount 3000 = 6000 > 5000 available
+	_, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 3000, "change-addr", 3000)
+	assert.ErrorIs(t, err, ErrInsufficientFunds)
+}

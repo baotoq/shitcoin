@@ -299,3 +299,130 @@ func TestConcurrentAccess(t *testing.T) {
 
 	assert.Equal(t, 10, mp.Count())
 }
+
+func TestAddStoresFee(t *testing.T) {
+	repo := newMemRepo()
+	utxoSet := utxo.NewSet(repo)
+	privKey, _ := btcec.NewPrivateKey()
+	address := "testaddr"
+
+	spendTx := buildSignedTx(t, utxoSet, privKey, address)
+
+	mp := New(utxoSet)
+	require.NoError(t, mp.AddWithFee(spendTx, 500))
+	assert.Equal(t, 1, mp.Count())
+	assert.Equal(t, int64(500), mp.FeeForTx(spendTx.ID()))
+}
+
+func TestDrainByFee(t *testing.T) {
+	repo := newMemRepo()
+	utxoSet := utxo.NewSet(repo)
+	privKey, _ := btcec.NewPrivateKey()
+
+	// Create 3 txs with different fees
+	fees := []int64{100, 500, 300}
+	var txs []*tx.Transaction
+	for i := range 3 {
+		coinbase := tx.NewCoinbaseTx("addr", int64(5_000_000_000+i))
+		_, _ = utxoSet.ApplyBlock(uint64(i), []*tx.Transaction{coinbase})
+
+		input := tx.NewTxInput(coinbase.ID(), 0)
+		spendTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(int64(5_000_000_000+i), "bob")})
+		_ = tx.SignTransaction(spendTx, privKey)
+		txs = append(txs, spendTx)
+	}
+
+	mp := New(utxoSet)
+	for i, transaction := range txs {
+		require.NoError(t, mp.AddWithFee(transaction, fees[i]))
+	}
+
+	drained, totalFees := mp.DrainByFee(0)
+	require.Len(t, drained, 3)
+	assert.Equal(t, int64(900), totalFees)
+
+	// Verify sorted by fee descending: 500, 300, 100
+	assert.Equal(t, txs[1].ID(), drained[0].ID()) // fee 500
+	assert.Equal(t, txs[2].ID(), drained[1].ID()) // fee 300
+	assert.Equal(t, txs[0].ID(), drained[2].ID()) // fee 100
+
+	assert.Equal(t, 0, mp.Count())
+}
+
+func TestDrainByFeeMaxTxs(t *testing.T) {
+	repo := newMemRepo()
+	utxoSet := utxo.NewSet(repo)
+	privKey, _ := btcec.NewPrivateKey()
+
+	// Create 5 txs
+	fees := []int64{100, 500, 300, 200, 400}
+	var txs []*tx.Transaction
+	for i := range 5 {
+		coinbase := tx.NewCoinbaseTx("addr", int64(5_000_000_000+i))
+		_, _ = utxoSet.ApplyBlock(uint64(i), []*tx.Transaction{coinbase})
+
+		input := tx.NewTxInput(coinbase.ID(), 0)
+		spendTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(int64(5_000_000_000+i), "bob")})
+		_ = tx.SignTransaction(spendTx, privKey)
+		txs = append(txs, spendTx)
+	}
+
+	mp := New(utxoSet)
+	for i, transaction := range txs {
+		require.NoError(t, mp.AddWithFee(transaction, fees[i]))
+	}
+
+	// Drain only top 2
+	drained, totalFees := mp.DrainByFee(2)
+	require.Len(t, drained, 2)
+	assert.Equal(t, int64(900), totalFees) // 500 + 400
+
+	// Verify top 2 by fee: 500, 400
+	assert.Equal(t, txs[1].ID(), drained[0].ID()) // fee 500
+	assert.Equal(t, txs[4].ID(), drained[1].ID()) // fee 400
+
+	// Remaining 3 should still be in pool
+	assert.Equal(t, 3, mp.Count())
+}
+
+func TestDrainByFeeZeroLimit(t *testing.T) {
+	repo := newMemRepo()
+	utxoSet := utxo.NewSet(repo)
+	privKey, _ := btcec.NewPrivateKey()
+
+	for i := range 3 {
+		coinbase := tx.NewCoinbaseTx("addr", int64(5_000_000_000+i))
+		_, _ = utxoSet.ApplyBlock(uint64(i), []*tx.Transaction{coinbase})
+
+		input := tx.NewTxInput(coinbase.ID(), 0)
+		spendTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(int64(5_000_000_000+i), "bob")})
+		_ = tx.SignTransaction(spendTx, privKey)
+
+		mp := New(utxoSet)
+		_ = mp.AddWithFee(spendTx, int64(100*(i+1)))
+
+		// DrainByFee(0) returns all -- backward compat
+		if i == 2 {
+			// Build a pool with 3 entries for the final test
+		}
+	}
+
+	// More explicit test: build pool of 3 and drain with limit 0
+	repo2 := newMemRepo()
+	utxoSet2 := utxo.NewSet(repo2)
+	mp := New(utxoSet2)
+
+	for i := range 3 {
+		coinbase := tx.NewCoinbaseTx("addr2", int64(5_000_000_000+i))
+		_, _ = utxoSet2.ApplyBlock(uint64(i), []*tx.Transaction{coinbase})
+
+		input := tx.NewTxInput(coinbase.ID(), 0)
+		spendTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(int64(5_000_000_000+i), "bob2")})
+		_ = tx.SignTransaction(spendTx, privKey)
+		require.NoError(t, mp.AddWithFee(spendTx, int64(100*(i+1))))
+	}
+
+	drained, _ := mp.DrainByFee(0)
+	assert.Len(t, drained, 3)
+	assert.Equal(t, 0, mp.Count())
+}

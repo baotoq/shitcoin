@@ -68,7 +68,7 @@ func (c *Chain) Initialize(ctx context.Context, minerAddress string) error {
 		// Chain is empty -- create genesis block with coinbase
 		var txs []*tx.Transaction
 		var blockTxs []any
-		genesisReward := c.rewardAtHeight(0)
+		genesisReward := c.RewardAtHeight(0)
 		if minerAddress != "" && genesisReward > 0 {
 			coinbase := tx.NewCoinbaseTxWithHeight(minerAddress, genesisReward, 0)
 			txs = []*tx.Transaction{coinbase}
@@ -122,10 +122,10 @@ func (c *Chain) Initialize(ctx context.Context, minerAddress string) error {
 	return nil
 }
 
-// rewardAtHeight computes the block reward at the given height, halving every
+// RewardAtHeight computes the block reward at the given height, halving every
 // HalvingInterval blocks. After 64 halvings the reward is zero. If HalvingInterval
 // is <= 0, halving is disabled and the full BlockReward is always returned.
-func (c *Chain) rewardAtHeight(height uint64) int64 {
+func (c *Chain) RewardAtHeight(height uint64) int64 {
 	if c.config.HalvingInterval <= 0 {
 		return c.config.BlockReward
 	}
@@ -155,7 +155,7 @@ func (c *Chain) MineBlock(ctx context.Context, minerAddress string, txs []*tx.Tr
 	}
 
 	// Create coinbase transaction and prepend to transaction list
-	coinbaseReward := c.rewardAtHeight(newHeight) + totalFees
+	coinbaseReward := c.RewardAtHeight(newHeight) + totalFees
 	coinbase := tx.NewCoinbaseTxWithHeight(minerAddress, coinbaseReward, newHeight)
 	allTxs := make([]*tx.Transaction, 0, 1+len(txs))
 	allTxs = append(allTxs, coinbase)
