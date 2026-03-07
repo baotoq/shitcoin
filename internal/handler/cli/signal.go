@@ -8,7 +8,9 @@ import (
 	"syscall"
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
+	"github.com/baotoq/shitcoin/internal/domain/events"
 	"github.com/baotoq/shitcoin/internal/domain/p2p"
+	"github.com/baotoq/shitcoin/internal/handler/ws"
 )
 
 // autoMine runs a continuous mining loop until SIGINT or SIGTERM is received.
@@ -17,6 +19,20 @@ func (c *CLI) autoMine(minerAddress string) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Set up mining progress callback to publish events
+	c.svc.Chain.OnMiningProgress = func(p block.MiningProgress) {
+		c.svc.EventBus.Publish(events.Event{
+			Type: events.EventMiningProgress,
+			Payload: ws.MiningProgressPayload{
+				Nonce:       p.Nonce,
+				HashHex:     p.Hash,
+				TargetHex:   p.Target,
+				Difficulty:  p.Difficulty,
+				BlockHeight: c.svc.Chain.Height() + 1,
+			},
+		})
+	}
 
 	// Set up signal handler
 	sigCh := make(chan os.Signal, 1)
@@ -30,19 +46,43 @@ func (c *CLI) autoMine(minerAddress string) {
 	for {
 		select {
 		case <-ctx.Done():
+			c.svc.EventBus.Publish(events.Event{
+				Type:    events.EventMiningStopped,
+				Payload: ws.MiningStoppedPayload{BlockHeight: c.svc.Chain.Height(), Reason: "cancelled"},
+			})
 			fmt.Println("Mining stopped.")
 			return
 		default:
+			nextHeight := c.svc.Chain.Height() + 1
+			c.svc.EventBus.Publish(events.Event{
+				Type:    events.EventMiningStarted,
+				Payload: ws.MiningStartedPayload{BlockHeight: nextHeight},
+			})
+
 			txs := c.svc.Mempool.DrainAll()
 			blk, err := c.svc.Chain.MineBlock(ctx, minerAddress, txs)
 			if err != nil {
 				if ctx.Err() != nil {
+					c.svc.EventBus.Publish(events.Event{
+						Type:    events.EventMiningStopped,
+						Payload: ws.MiningStoppedPayload{BlockHeight: nextHeight, Reason: "cancelled"},
+					})
 					fmt.Println("Mining stopped.")
 					return
 				}
 				fmt.Printf("Mining error: %v\n", err)
 				continue
 			}
+
+			c.svc.EventBus.Publish(events.Event{
+				Type:    events.EventNewBlock,
+				Payload: map[string]any{"height": blk.Height(), "hash": blk.Hash().String()},
+			})
+			c.svc.EventBus.Publish(events.Event{
+				Type:    events.EventMempoolChanged,
+				Payload: ws.MempoolChangedPayload{Count: c.svc.Mempool.Count()},
+			})
+
 			fmt.Printf("Mined block #%d (%s) with %d tx\n", blk.Height(), blk.Hash().String()[:16], len(txs))
 		}
 	}
@@ -56,6 +96,20 @@ func (c *CLI) autoMineWithP2P(minerAddress string, srv *p2p.Server) {
 
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
+
+	// Set up mining progress callback to publish events
+	c.svc.Chain.OnMiningProgress = func(p block.MiningProgress) {
+		c.svc.EventBus.Publish(events.Event{
+			Type: events.EventMiningProgress,
+			Payload: ws.MiningProgressPayload{
+				Nonce:       p.Nonce,
+				HashHex:     p.Hash,
+				TargetHex:   p.Target,
+				Difficulty:  p.Difficulty,
+				BlockHeight: c.svc.Chain.Height() + 1,
+			},
+		})
+	}
 
 	// Set up signal handler
 	sigCh := make(chan os.Signal, 1)
@@ -72,6 +126,10 @@ func (c *CLI) autoMineWithP2P(minerAddress string, srv *p2p.Server) {
 	// Register callback: when a block is received from a peer, cancel mining
 	srv.OnBlockReceived(func(blk *block.Block) {
 		fmt.Printf("Received block #%d from peer, cancelling current mining\n", blk.Height())
+		c.svc.EventBus.Publish(events.Event{
+			Type:    events.EventNewBlock,
+			Payload: map[string]any{"height": blk.Height(), "hash": blk.Hash().String(), "source": "peer"},
+		})
 		if mineCancel != nil {
 			mineCancel()
 		}
@@ -80,6 +138,10 @@ func (c *CLI) autoMineWithP2P(minerAddress string, srv *p2p.Server) {
 	for {
 		select {
 		case <-rootCtx.Done():
+			c.svc.EventBus.Publish(events.Event{
+				Type:    events.EventMiningStopped,
+				Payload: ws.MiningStoppedPayload{BlockHeight: c.svc.Chain.Height(), Reason: "cancelled"},
+			})
 			fmt.Println("Mining stopped.")
 			return
 		default:
@@ -87,12 +149,22 @@ func (c *CLI) autoMineWithP2P(minerAddress string, srv *p2p.Server) {
 			mineCtx, cancel := context.WithCancel(rootCtx)
 			mineCancel = cancel
 
+			nextHeight := c.svc.Chain.Height() + 1
+			c.svc.EventBus.Publish(events.Event{
+				Type:    events.EventMiningStarted,
+				Payload: ws.MiningStartedPayload{BlockHeight: nextHeight},
+			})
+
 			txs := c.svc.Mempool.DrainAll()
 			blk, err := c.svc.Chain.MineBlock(mineCtx, minerAddress, txs)
 			cancel() // clean up mine context
 
 			if err != nil {
 				if rootCtx.Err() != nil {
+					c.svc.EventBus.Publish(events.Event{
+						Type:    events.EventMiningStopped,
+						Payload: ws.MiningStoppedPayload{BlockHeight: nextHeight, Reason: "cancelled"},
+					})
 					fmt.Println("Mining stopped.")
 					return
 				}
@@ -102,6 +174,15 @@ func (c *CLI) autoMineWithP2P(minerAddress string, srv *p2p.Server) {
 
 			// Broadcast mined block to peers
 			srv.BroadcastBlock(blk, "")
+
+			c.svc.EventBus.Publish(events.Event{
+				Type:    events.EventNewBlock,
+				Payload: map[string]any{"height": blk.Height(), "hash": blk.Hash().String(), "source": "mined"},
+			})
+			c.svc.EventBus.Publish(events.Event{
+				Type:    events.EventMempoolChanged,
+				Payload: ws.MempoolChangedPayload{Count: c.svc.Mempool.Count()},
+			})
 
 			fmt.Printf("Mined block #%d (%s) with %d tx\n", blk.Height(), blk.Hash().String()[:16], len(txs))
 		}

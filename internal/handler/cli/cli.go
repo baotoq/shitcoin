@@ -8,10 +8,14 @@ import (
 	"strings"
 
 	"github.com/baotoq/shitcoin/internal/config"
+	"github.com/baotoq/shitcoin/internal/domain/events"
 	"github.com/baotoq/shitcoin/internal/domain/p2p"
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/domain/wallet"
+	"github.com/baotoq/shitcoin/internal/handler/api"
+	"github.com/baotoq/shitcoin/internal/handler/ws"
 	"github.com/baotoq/shitcoin/internal/svc"
+	"github.com/zeromicro/go-zero/rest"
 )
 
 // CLI handles command-line dispatch for all shitcoin subcommands.
@@ -198,6 +202,12 @@ func (c *CLI) send(args []string) {
 		os.Exit(1)
 	}
 
+	// Publish mempool change event
+	c.svc.EventBus.Publish(events.Event{
+		Type:    events.EventMempoolChanged,
+		Payload: ws.MempoolChangedPayload{Count: c.svc.Mempool.Count()},
+	})
+
 	// Broadcast to P2P peers if server is running
 	if c.server != nil {
 		c.server.BroadcastTx(transaction, "")
@@ -297,13 +307,29 @@ func (c *CLI) startNode(args []string) {
 			fmt.Printf("Connecting to peer %s...\n", peerAddr)
 			if err := srv.Connect(peerAddr); err != nil {
 				fmt.Printf("Warning: failed to connect to %s: %v\n", peerAddr, err)
+				c.svc.EventBus.Publish(events.Event{
+					Type:    events.EventPeerDisconnected,
+					Payload: ws.PeerPayload{Addr: peerAddr},
+				})
 			} else {
 				fmt.Printf("Connected to %s\n", peerAddr)
+				c.svc.EventBus.Publish(events.Event{
+					Type:    events.EventPeerConnected,
+					Payload: ws.PeerPayload{Addr: peerAddr},
+				})
 			}
 		}
 	}
 
 	fmt.Printf("Connected peers: %d\n", srv.PeerCount())
+
+	// Start WebSocket hub and HTTP server
+	hub := ws.NewHub(nodeSvc.EventBus)
+	httpServer := rest.MustNewServer(c.config.RestConf)
+	defer httpServer.Stop()
+	api.RegisterRoutes(httpServer, nodeSvc, srv, ws.ServeWs(hub))
+	go httpServer.Start()
+	fmt.Printf("HTTP server listening on :%d\n", c.config.Port)
 
 	// Store server reference for send command broadcasting
 	c.server = srv

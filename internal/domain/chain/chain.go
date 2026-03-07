@@ -36,6 +36,11 @@ type Chain struct {
 	latestBlock *block.Block
 	config      ChainConfig
 	utxoSet     *utxo.Set
+
+	// OnMiningProgress is an optional callback invoked during mining with sampled
+	// progress reports. Set by the handler layer to publish events without coupling
+	// the domain to the event bus. Nil-safe: if not set, MineBlock uses pow.Mine.
+	OnMiningProgress func(block.MiningProgress)
 }
 
 // NewChain creates a new Chain aggregate with the given dependencies.
@@ -155,8 +160,14 @@ func (c *Chain) MineBlock(ctx context.Context, minerAddress string, txs []*tx.Tr
 		return nil, fmt.Errorf("create block: %w", err)
 	}
 
-	if err := c.pow.Mine(newBlock); err != nil {
-		return nil, fmt.Errorf("mine block: %w", err)
+	if c.OnMiningProgress != nil {
+		if err := c.pow.MineWithProgress(newBlock, 5000, c.OnMiningProgress); err != nil {
+			return nil, fmt.Errorf("mine block: %w", err)
+		}
+	} else {
+		if err := c.pow.Mine(newBlock); err != nil {
+			return nil, fmt.Errorf("mine block: %w", err)
+		}
 	}
 
 	// Apply UTXO changes and save atomically
