@@ -10,9 +10,9 @@ Requirements for CI/CD & Kubernetes milestone. Each maps to roadmap phases.
 ### Docker
 
 - [x] **DOCK-01**: Multi-stage Dockerfile produces minimal Go backend image (~15MB) with CGO_ENABLED=0
-- [ ] **DOCK-02**: Multi-stage Dockerfile produces React frontend image with nginx serving SPA
+- [x] **DOCK-02**: Multi-stage Dockerfile produces React frontend image with nginx serving SPA
 - [x] **DOCK-03**: .dockerignore excludes data/, wallets.json, .git, node_modules from build context
-- [ ] **DOCK-04**: nginx.conf provides SPA try_files routing and reverse proxies /api and /ws to backend
+- [x] **DOCK-04**: nginx.conf provides SPA try_files routing and reverse proxies /api and /ws to backend
 - [x] **DOCK-05**: Both containers run as non-root user
 
 ### CI Pipeline
@@ -77,9 +77,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | DOCK-01 | Phase 9 | Complete |
-| DOCK-02 | Phase 9 | Pending |
+| DOCK-02 | Phase 9 | Complete |
 | DOCK-03 | Phase 9 | Complete |
-| DOCK-04 | Phase 9 | Pending |
+| DOCK-04 | Phase 9 | Complete |
 | DOCK-05 | Phase 9 | Complete |
 | CI-01 | Phase 10 | Pending |
 | CI-02 | Phase 10 | Pending |
