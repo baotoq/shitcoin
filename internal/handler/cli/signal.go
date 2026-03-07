@@ -60,7 +60,7 @@ func (c *CLI) autoMine(minerAddress string) {
 			})
 
 			txs := c.svc.Mempool.DrainAll()
-			blk, err := c.svc.Chain.MineBlock(ctx, minerAddress, txs)
+			blk, err := c.svc.Chain.MineBlock(ctx, minerAddress, txs, 0)
 			if err != nil {
 				if ctx.Err() != nil {
 					c.svc.EventBus.Publish(events.Event{
@@ -156,7 +156,7 @@ func (c *CLI) autoMineWithP2P(minerAddress string, srv *p2p.Server) {
 			})
 
 			txs := c.svc.Mempool.DrainAll()
-			blk, err := c.svc.Chain.MineBlock(mineCtx, minerAddress, txs)
+			blk, err := c.svc.Chain.MineBlock(mineCtx, minerAddress, txs, 0)
 			cancel() // clean up mine context
 
 			if err != nil {

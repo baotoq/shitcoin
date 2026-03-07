@@ -257,7 +257,7 @@ func TestBlockBroadcast(t *testing.T) {
 
 	// Mine a block on node A
 	ctx := context.Background()
-	blk, err := chainA.MineBlock(ctx, "miner-A", nil)
+	blk, err := chainA.MineBlock(ctx, "miner-A", nil, 0)
 	require.NoError(t, err)
 
 	// Broadcast the mined block

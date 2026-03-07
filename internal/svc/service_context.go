@@ -81,6 +81,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		InitialDifficulty:        c.Consensus.InitialDifficulty,
 		GenesisMessage:           c.Consensus.GenesisMessage,
 		BlockReward:              c.Consensus.BlockReward,
+		HalvingInterval:          c.Consensus.HalvingInterval,
+		MaxBlockTxs:              c.Consensus.MaxBlockTxs,
 	}
 	ch := chain.NewChain(repo, pow, chainConfig, utxoSet)
 

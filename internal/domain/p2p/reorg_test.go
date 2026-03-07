@@ -104,7 +104,7 @@ func mineReorgTestBlocks(t *testing.T, ch *chain.Chain, n int, minerAddr string)
 	ctx := context.Background()
 	blocks := make([]*block.Block, 0, n)
 	for range n {
-		blk, err := ch.MineBlock(ctx, minerAddr, nil)
+		blk, err := ch.MineBlock(ctx, minerAddr, nil, 0)
 		require.NoError(t, err)
 		blocks = append(blocks, blk)
 	}

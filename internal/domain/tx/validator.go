@@ -51,21 +51,22 @@ func ValidateCoinbase(tx *Transaction, expectedReward int64) error {
 }
 
 // CreateTransactionWithChange creates a transaction with automatic change output.
-// If the sum of input values exceeds the payment amount, a change output is
-// created to the change address for the difference.
-func CreateTransactionWithChange(inputs []TxInput, inputValues []int64, toAddress string, amount int64, changeAddress string) (*Transaction, error) {
+// If the sum of input values exceeds the payment amount plus fee, a change output
+// is created to the change address for the difference. The fee is implicit
+// (not represented as an output) and is collected by the miner.
+func CreateTransactionWithChange(inputs []TxInput, inputValues []int64, toAddress string, amount int64, changeAddress string, fee int64) (*Transaction, error) {
 	var inputSum int64
 	for _, v := range inputValues {
 		inputSum += v
 	}
 
-	if inputSum < amount {
+	if inputSum < amount+fee {
 		return nil, ErrInsufficientFunds
 	}
 
 	outputs := []TxOutput{NewTxOutput(amount, toAddress)}
 
-	change := inputSum - amount
+	change := inputSum - amount - fee
 	if change > 0 {
 		outputs = append(outputs, NewTxOutput(change, changeAddress))
 	}

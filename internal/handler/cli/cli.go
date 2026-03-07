@@ -53,6 +53,8 @@ func (c *CLI) Run(args []string) {
 		c.startNode(args[1:])
 	case "printchain":
 		c.printChain()
+	case "testnet":
+		c.testnet(args[1:])
 	default:
 		fmt.Printf("Unknown command: %s\n", args[0])
 		c.printUsage()
@@ -70,6 +72,7 @@ func (c *CLI) printUsage() {
 	fmt.Println("  mine -address ADDR        - Mine a new block")
 	fmt.Println("  startnode [-port PORT] [-mine ADDR] [-peers HOST:PORT,...] [-datadir DIR] - Start a node")
 	fmt.Println("  printchain                - Print all blocks in the chain")
+	fmt.Println("  testnet [-nodes N] [-base-port PORT] [-base-http-port PORT] - Launch a local multi-node testnet")
 }
 
 // createWallet generates a new wallet and persists it.
@@ -184,7 +187,7 @@ func (c *CLI) send(args []string) {
 	}
 
 	// Create transaction with change
-	transaction, err := tx.CreateTransactionWithChange(inputs, inputValues, *to, *amount, *from)
+	transaction, err := tx.CreateTransactionWithChange(inputs, inputValues, *to, *amount, *from, 0)
 	if err != nil {
 		fmt.Printf("Error creating transaction: %v\n", err)
 		os.Exit(1)
@@ -238,7 +241,7 @@ func (c *CLI) mine(args []string) {
 	txs := c.svc.Mempool.DrainAll()
 
 	// Mine block
-	blk, err := c.svc.Chain.MineBlock(ctx, *address, txs)
+	blk, err := c.svc.Chain.MineBlock(ctx, *address, txs, 0)
 	if err != nil {
 		fmt.Printf("Error mining block: %v\n", err)
 		os.Exit(1)
@@ -253,10 +256,16 @@ func (c *CLI) mine(args []string) {
 func (c *CLI) startNode(args []string) {
 	fs := flag.NewFlagSet("startnode", flag.ExitOnError)
 	port := fs.Int("port", c.config.P2P.Port, "TCP port for P2P server")
+	httpPort := fs.Int("http-port", 0, "HTTP port for REST/WS (default: config port)")
 	mineAddr := fs.String("mine", "", "Miner address for auto-mining")
 	peers := fs.String("peers", c.config.P2P.Peers, "Comma-separated seed peer addresses (host:port)")
 	datadir := fs.String("datadir", "", "Data directory (default: data/node-{port}/)")
 	fs.Parse(args)
+
+	// Override HTTP port if specified
+	if *httpPort > 0 {
+		c.config.Port = *httpPort
+	}
 
 	// Derive data directory from port if not specified
 	nodeDataDir := *datadir

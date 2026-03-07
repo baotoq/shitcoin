@@ -36,6 +36,12 @@ type ConsensusConfig struct {
 
 	// BlockReward is the coinbase reward in satoshis (default: 50 coins = 5,000,000,000 satoshis).
 	BlockReward int64 `json:",default=5000000000"`
+
+	// HalvingInterval is how many blocks between reward halvings (0 = no halving).
+	HalvingInterval int `json:",default=210000"`
+
+	// MaxBlockTxs is the maximum number of non-coinbase transactions per block (0 = unlimited).
+	MaxBlockTxs int `json:",default=100"`
 }
 
 // DefaultGenesisMessage is the default genesis block message when none is configured.

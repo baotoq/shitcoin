@@ -305,7 +305,7 @@ func TestCreateTransactionWithChangeExact(t *testing.T) {
 	inputs := []TxInput{NewTxInput(prevTxID, 0)}
 	inputValues := []int64{1000}
 
-	tx, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 1000, "change-addr")
+	tx, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 1000, "change-addr", 0)
 	require.NoError(t, err)
 
 	// Exact spend -- no change output needed
@@ -319,7 +319,7 @@ func TestCreateTransactionWithChangeHasChange(t *testing.T) {
 	inputs := []TxInput{NewTxInput(prevTxID, 0)}
 	inputValues := []int64{5000}
 
-	tx, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 3000, "change-addr")
+	tx, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 3000, "change-addr", 0)
 	require.NoError(t, err)
 
 	// Should have 2 outputs: payment + change
@@ -339,7 +339,7 @@ func TestCreateTransactionWithChangeInsufficientFunds(t *testing.T) {
 	inputs := []TxInput{NewTxInput(prevTxID, 0)}
 	inputValues := []int64{500}
 
-	_, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 1000, "change-addr")
+	_, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 1000, "change-addr", 0)
 	assert.ErrorIs(t, err, ErrInsufficientFunds)
 }
 
@@ -349,7 +349,7 @@ func TestCreateTransactionWithChangeMultipleInputs(t *testing.T) {
 	inputs := []TxInput{NewTxInput(txID1, 0), NewTxInput(txID2, 1)}
 	inputValues := []int64{3000, 4000} // total 7000
 
-	tx, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 5000, "change-addr")
+	tx, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 5000, "change-addr", 0)
 	require.NoError(t, err)
 
 	require.Len(t, tx.Outputs(), 2)

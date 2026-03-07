@@ -7,6 +7,7 @@ Consensus:
   DifficultyAdjustInterval: 10
   InitialDifficulty: 5
   GenesisMessage: "Hello, Shitcoin!"
+  HalvingInterval: 10
 
 Storage:
   DBPath: data/shitcoin.db

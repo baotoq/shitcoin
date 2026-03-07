@@ -236,7 +236,7 @@ func TestReorganize_SwitchesToLongerFork(t *testing.T) {
 
 	// Mine 5 blocks on the main chain: genesis(0) -> 1 -> 2 -> 3 -> 4(A4) -> 5(A5)
 	for range 5 {
-		_, err := ch.MineBlock(ctx, minerAddr, nil)
+		_, err := ch.MineBlock(ctx, minerAddr, nil, 0)
 		require.NoError(t, err)
 	}
 
@@ -314,7 +314,7 @@ func TestReorganize_OrphanedTxsReturnToMempool(t *testing.T) {
 
 	// Mine 3 blocks
 	for range 3 {
-		_, err := ch.MineBlock(ctx, minerAddr, nil)
+		_, err := ch.MineBlock(ctx, minerAddr, nil, 0)
 		require.NoError(t, err)
 	}
 
@@ -367,7 +367,7 @@ func TestReorganize_PreservesBlocksBelowFork(t *testing.T) {
 
 	// Mine 4 blocks
 	for range 4 {
-		_, err := ch.MineBlock(ctx, minerAddr, nil)
+		_, err := ch.MineBlock(ctx, minerAddr, nil, 0)
 		require.NoError(t, err)
 	}
 

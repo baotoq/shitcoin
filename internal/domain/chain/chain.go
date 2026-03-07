@@ -26,6 +26,8 @@ type ChainConfig struct {
 	InitialDifficulty        int    // initial bits value
 	GenesisMessage           string // message embedded in genesis block
 	BlockReward              int64  // block reward in satoshis
+	HalvingInterval          int    // blocks between reward halvings (0 = no halving)
+	MaxBlockTxs              int    // max non-coinbase transactions per block (0 = unlimited)
 }
 
 // Chain is the aggregate root that manages the block sequence, mining, and difficulty.
@@ -66,8 +68,9 @@ func (c *Chain) Initialize(ctx context.Context, minerAddress string) error {
 		// Chain is empty -- create genesis block with coinbase
 		var txs []*tx.Transaction
 		var blockTxs []any
-		if minerAddress != "" && c.config.BlockReward > 0 {
-			coinbase := tx.NewCoinbaseTxWithHeight(minerAddress, c.config.BlockReward, 0)
+		genesisReward := c.rewardAtHeight(0)
+		if minerAddress != "" && genesisReward > 0 {
+			coinbase := tx.NewCoinbaseTxWithHeight(minerAddress, genesisReward, 0)
 			txs = []*tx.Transaction{coinbase}
 			blockTxs = make([]any, len(txs))
 			for i, t := range txs {
@@ -119,10 +122,25 @@ func (c *Chain) Initialize(ctx context.Context, minerAddress string) error {
 	return nil
 }
 
+// rewardAtHeight computes the block reward at the given height, halving every
+// HalvingInterval blocks. After 64 halvings the reward is zero. If HalvingInterval
+// is <= 0, halving is disabled and the full BlockReward is always returned.
+func (c *Chain) rewardAtHeight(height uint64) int64 {
+	if c.config.HalvingInterval <= 0 {
+		return c.config.BlockReward
+	}
+	halvings := height / uint64(c.config.HalvingInterval)
+	if halvings >= 64 {
+		return 0
+	}
+	return c.config.BlockReward >> halvings
+}
+
 // MineBlock creates a new block with transactions, mines it with PoW, and persists it.
 // Creates a coinbase transaction crediting the miner. Adjusts difficulty every
 // DifficultyAdjustInterval blocks. Atomically updates block storage and UTXO set.
-func (c *Chain) MineBlock(ctx context.Context, minerAddress string, txs []*tx.Transaction) (*block.Block, error) {
+// totalFees is the sum of transaction fees to include in the coinbase reward.
+func (c *Chain) MineBlock(ctx context.Context, minerAddress string, txs []*tx.Transaction, totalFees int64) (*block.Block, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -137,7 +155,8 @@ func (c *Chain) MineBlock(ctx context.Context, minerAddress string, txs []*tx.Tr
 	}
 
 	// Create coinbase transaction and prepend to transaction list
-	coinbase := tx.NewCoinbaseTxWithHeight(minerAddress, c.config.BlockReward, newHeight)
+	coinbaseReward := c.rewardAtHeight(newHeight) + totalFees
+	coinbase := tx.NewCoinbaseTxWithHeight(minerAddress, coinbaseReward, newHeight)
 	allTxs := make([]*tx.Transaction, 0, 1+len(txs))
 	allTxs = append(allTxs, coinbase)
 	allTxs = append(allTxs, txs...)
