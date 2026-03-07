@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: CI/CD & Kubernetes
 status: executing
-stopped_at: Completed 09-02-PLAN.md
-last_updated: "2026-03-07T13:12:45.348Z"
-last_activity: 2026-03-07 -- Completed 09-02 (Frontend Dockerfile)
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-03-07T14:51:53.536Z"
+last_activity: 2026-03-07 -- Completed 10-02 (Frontend CI & Docker Workflows)
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 29
+  total_plans: 4
+  completed_plans: 3
+  percent: 43
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 9 - Containerization (executing)
+**Current focus:** Phase 10 - CI Pipeline (executing)
 
 ## Current Position
 
-Phase: 9 of 13 (Containerization) -- first phase of v1.1
-Plan: 2 of 2 complete
+Phase: 10 of 13 (CI Pipeline)
+Plan: 1 of 2 complete (10-02 done, 10-01 pending)
 Status: Executing
-Last activity: 2026-03-07 -- Completed 09-02 (Frontend Dockerfile)
+Last activity: 2026-03-07 -- Completed 10-02 (Frontend CI & Docker Workflows)
 
-Progress: [███░░░░░░░] 29%
+Progress: [████░░░░░░] 43%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [███░░░░░░░] 29%
 
 **Recent Trend:**
 - Trend: Stable, infrastructure phases may be faster (config files, no complex logic)
+| Phase 10 P02 | 10min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [09-01]: Config file copied from build context (not builder stage) into runtime image
 - [09-02]: Nginx listens on port 8080 (non-root compatible, no CAP_NET_BIND_SERVICE needed)
 - [09-02]: Added .dockerignore for web/ to exclude node_modules from build context
+- [Phase 10]: Separate GHCR image names: repo for backend, repo-web for frontend
+- [Phase 10]: GHA cache (type=gha) for Docker layer caching; conditional push on master merge only
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07
-Stopped at: Completed 09-02-PLAN.md
+Last session: 2026-03-07T14:51:53.485Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None

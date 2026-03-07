@@ -19,8 +19,8 @@ Requirements for CI/CD & Kubernetes milestone. Each maps to roadmap phases.
 
 - [ ] **CI-01**: GitHub Actions runs go test ./... on push and PR
 - [ ] **CI-02**: GitHub Actions runs golangci-lint with project .golangci.yml config
-- [ ] **CI-03**: GitHub Actions runs frontend lint, typecheck, and build verification
-- [ ] **CI-04**: GitHub Actions builds Docker images on PR and pushes to GHCR on main merge
+- [x] **CI-03**: GitHub Actions runs frontend lint, typecheck, and build verification
+- [x] **CI-04**: GitHub Actions builds Docker images on PR and pushes to GHCR on main merge
 - [ ] **CI-05**: Go test coverage is reported in CI output
 
 ### Kubernetes
@@ -83,8 +83,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCK-05 | Phase 9 | Complete |
 | CI-01 | Phase 10 | Pending |
 | CI-02 | Phase 10 | Pending |
-| CI-03 | Phase 10 | Pending |
-| CI-04 | Phase 10 | Pending |
+| CI-03 | Phase 10 | Complete |
+| CI-04 | Phase 10 | Complete |
 | CI-05 | Phase 10 | Pending |
 | K8S-01 | Phase 11 | Pending |
 | K8S-02 | Phase 11 | Pending |
