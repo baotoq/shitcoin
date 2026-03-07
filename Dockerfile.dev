@@ -1,0 +1,7 @@
+FROM alpine:3.21
+RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
+WORKDIR /app
+COPY build/shitcoin /app/shitcoin
+COPY etc/shitcoin.yaml /app/etc/shitcoin.yaml
+USER appuser
+ENTRYPOINT ["/app/shitcoin"]
