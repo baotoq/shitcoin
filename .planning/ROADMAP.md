@@ -126,7 +126,7 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 10. CI Pipeline | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 11. Kubernetes Manifests | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 12. Local K8s Development | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 13. GitOps Deployment | 1/1 | Complete   | 2026-03-07 | - |
+| 13. GitOps Deployment | 1/1 | Complete    | 2026-03-07 | - |
 
 ---
 *Roadmap created: 2026-03-05*
