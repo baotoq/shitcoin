@@ -1,168 +1,175 @@
 # Project Research Summary
 
-**Project:** Shitcoin v1.1 -- CI/CD & Kubernetes
-**Domain:** CI/CD pipeline, containerization, local K8s development, and GitOps deployment for an existing Go blockchain + React frontend
-**Researched:** 2026-03-07
+**Project:** shitcoin -- Testing & Quality Milestone (v1.2)
+**Domain:** Go test coverage and quality infrastructure for an educational blockchain application
+**Researched:** 2026-03-08
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This milestone wraps the existing Go blockchain node and React block explorer in production-grade CI/CD and Kubernetes infrastructure. The work is entirely additive -- no existing source code in `cmd/`, `internal/`, or `web/src/` needs modification. The proven approach is: multi-stage Docker builds for both services, GitHub Actions for CI (test, lint, build, push), Kustomize for K8s manifest management, Tilt for local K8s development with live reload, and ArgoCD for GitOps continuous delivery. All tooling is well-documented, widely adopted, and free for open-source projects.
+This milestone is about writing more tests with existing tools, not adding new dependencies. The Go blockchain application already has 23 test files with established patterns (table-driven tests, testify assertions, testify/suite for BoltDB, httptest for API handlers, net.Pipe for P2P). Coverage is uneven: domain packages range from 67-100%, but handler/api sits at 41%, handler/ws at 35%, handler/cli at 0%, and infrastructure/bbolt at 56%. The entire Go testing stack (stdlib testing, testify v1.11.1, gorilla/websocket v1.5.3) is already in go.mod. Zero new `go get` commands are required.
 
-The recommended approach follows a strict dependency chain: Dockerfiles first (everything depends on container images), then CI pipeline (validates builds in automation and pushes to registry), then Kustomize manifests (consumed by both Tilt and ArgoCD), then Tilt for local dev workflow, and finally ArgoCD for GitOps. This ordering is not arbitrary -- each layer depends on artifacts from the previous one. Skipping ahead (e.g., writing Kustomize manifests before Dockerfiles exist) creates untestable code.
+The recommended approach is to build a shared `internal/testutil/` package first (consolidating 4 duplicated mock implementations into one), then systematically fill coverage gaps layer by layer: domain logic first (pure, fast, no I/O), then infrastructure persistence (real BoltDB in TempDir), then handlers (httptest + mocks), and finally cross-cutting concerns (race detection, error paths). This ordering follows the dependency graph and ensures foundational test infrastructure is stable before higher-level tests depend on it.
 
-The primary risks center on BoltDB's single-writer file locking model conflicting with Kubernetes deployment patterns. Using the default `RollingUpdate` strategy or multiple replicas will cause database lock contention and data corruption. The mitigation is straightforward: use `Recreate` strategy, single replica, and proper SIGTERM handling. Secondary risks include the classic SPA-on-nginx 404 issue (solved with `try_files`) and CGO-linked binaries crashing on minimal runtime images (solved with `CGO_ENABLED=0`). All pitfalls have well-known, low-cost preventions when addressed at the right phase.
+The primary risks are flaky tests from `time.Sleep`-based synchronization (already present in 4+ test files), goroutine leaks from P2P servers and WebSocket hubs without proper cleanup, and BoltDB deadlocks from shared file handles. All three are mitigable with known patterns: polling with `require.Eventually`, `t.Cleanup()` for resource teardown, and `t.TempDir()` for DB isolation. Adding `-race` to CI is the single highest-impact change -- it catches concurrency bugs across the P2P, event bus, and WebSocket layers at near-zero cost.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack adds 6 categories of tooling without modifying the existing Go + React codebase. All tools are current stable releases as of March 2026.
+No new dependencies. The existing stack covers all testing needs.
 
 **Core technologies:**
-- **GitHub Actions** (ubuntu-latest): CI execution -- free for public repos, native Docker/buildx support
-- **golangci-lint v2.11**: Go linting -- runs 100+ linters in one pass, official GitHub Action for CI integration
-- **Multi-stage Dockerfiles** (golang:1.26-alpine + alpine:3.23 / node:22-alpine + nginx:alpine): Containerization -- produces ~15MB Go image and ~25MB frontend image
-- **Kustomize v5.8**: K8s manifest management -- built into kubectl, base+overlay pattern without templating language
-- **Tilt v0.37.0**: Local K8s dev -- live-update syncs code into running containers without full image rebuilds
-- **ArgoCD v3.3**: GitOps CD -- auto-syncs K8s manifests from git, web UI for deployment visualization
-- **GHCR** (ghcr.io): Container registry -- native GitHub integration, free, no rate limits with GITHUB_TOKEN
+- **Go stdlib `testing`**: Test runner, benchmarks, `t.TempDir()`, `t.Cleanup()` -- built-in, zero dependency
+- **testify v1.11.1**: assert/require/mock/suite -- already used in all 23 test files, Go community standard
+- **golangci-lint v2.10**: Static analysis -- already configured in CI with `.golangci.yml`
+- **`net/http/httptest`**: HTTP handler testing -- stdlib, pattern already established in `block_handler_test.go`
+- **gorilla/websocket v1.5.3**: WebSocket test client -- already a production dependency
+
+**CI enhancements (flags only, no new tools):**
+- Add `-race` flag to `go test` (catches concurrency bugs in P2P, event bus, WebSocket)
+- Add `-covermode=atomic` (race-safe coverage)
+- Add coverage threshold check at 70% (prevent regression)
+- Add `-timeout 30s` per-package (surface deadlocks early)
 
 ### Expected Features
 
 **Must have (table stakes):**
-- Multi-stage Dockerfiles for Go backend and React frontend
-- `.dockerignore` to prevent leaking `data/`, `wallets.json` into images
-- GitHub Actions CI pipeline (go test, golangci-lint, frontend lint, Docker build)
-- Kustomize base manifests (Deployment, Service, ConfigMap for both services)
-- Kustomize dev overlay for local K8s configuration
-- Tiltfile with `docker_build` and `live_update` for both services
-- ArgoCD Application manifest pointing to dev overlay
+- Shared test helpers and fixtures (`internal/testutil/`) -- foundation for all other work
+- API handler tests for all 8 endpoints (41.3% -> 80%+) -- 4 handler files completely untested
+- WebSocket hub event broadcasting tests (34.7% -> 75%+) -- user-visible functionality
+- BoltDB repository tests (55.7% -> 80%+) -- persistence correctness for data integrity
+- Chain aggregate edge case tests (69.5% -> 85%+) -- mining, reorg, difficulty adjustment
+- P2P message encoding and handler coverage (67.1% -> 80%+) -- wire protocol correctness
+- Error path testing across all packages -- happy paths exist but error/edge cases underserved
+- Race condition testing via `-race` flag -- concurrent code in P2P, mempool, WebSocket, mining
 
 **Should have (differentiators):**
-- CI Docker layer caching (GHA cache backend)
-- Go test coverage reporting
-- Kustomize prod overlay
-- Makefile/Taskfile for common commands
+- P2P multi-node integration tests (in-process TCP, 2+ nodes)
+- End-to-end chain scenario tests (create wallet -> send tx -> mine -> verify UTXO)
+- UTXO undo/rollback integration tests (apply blocks, trigger reorg, verify rollback)
+- Coverage enforcement in CI (per-package thresholds)
+- CLI handler tests for command dispatch (0% -> 50%+)
 
 **Defer (v2+):**
-- Multi-node testnet in K8s (StatefulSet with headless Service)
-- ArgoCD ApplicationSet for multi-environment promotion
-- Trivy security scanning in CI
+- Fuzz tests for deserialization (add after serialization paths well-tested)
+- Golden file tests for wire protocol snapshots
+- Benchmark tests for PoW mining
+- Full CLI handler coverage for testnet/demo orchestration (high effort, low value)
+- Property-based testing, mutation testing (overkill for educational project)
 
 ### Architecture Approach
 
-The architecture is a purely additive layer: ~19 new files in `.github/`, `deploy/`, `argocd/`, and project root. No modifications to existing source. The flow is: developer pushes code, GitHub Actions runs test/lint/build in parallel, pushes images to GHCR, ArgoCD detects manifest changes, Kustomize renders final manifests, Kubernetes applies the deployment. For local dev, Tilt replaces the CI/push/ArgoCD chain with filesystem watching and live container updates.
+Testing integrates with the existing DDD layers without modifying production code. The key architectural addition is a shared `internal/testutil/` package with consolidated mock repositories and test factories (`NewTestChain`, `MineBlocks`, `BuildSignedTx`). This eliminates ~400 lines of duplicated mock code across 4 packages and provides a consistent foundation. All repository interfaces already support dependency injection; zero production code changes are needed.
 
 **Major components:**
-1. **GitHub Actions CI** -- test, lint, build images, push to GHCR; parallel jobs with dependency gates
-2. **Docker images** (2 Dockerfiles) -- multi-stage builds producing minimal runtime images; nginx reverse-proxies /api and /ws to backend
-3. **Kustomize manifests** (base + overlays) -- Deployments, Services, ConfigMap via configMapGenerator; dev overlay for local, prod overlay for production-like settings
-4. **Tiltfile** -- local K8s dev orchestration with live_update for Go rebuild-in-container and React HMR
-5. **ArgoCD Application** -- GitOps sync controller watching `deploy/k8s/overlays/` path, auto-sync with prune and self-heal
+1. **`internal/testutil/`** -- Shared test factories (chain, tx, utxo builders) and consolidated mock implementations for chain.Repository, utxo.Repository, wallet.Repository
+2. **Domain unit tests** -- Pure logic tests using mock repos; table-driven with testify assertions
+3. **Infrastructure integration tests** -- Real BoltDB in `t.TempDir()` with testify/suite lifecycle
+4. **Handler unit tests** -- httptest + mock ServiceContext for API; gorilla/websocket client for WebSocket hub
+5. **Cross-cutting** -- Race detection (`-race`), error path coverage, CI threshold enforcement
 
 ### Critical Pitfalls
 
-1. **BoltDB file locking blocks rolling updates** -- Use `strategy.type: Recreate` and `replicas: 1` on backend Deployment. Trap SIGTERM and call `db.Close()`. Set `terminationGracePeriodSeconds: 30`.
-2. **BoltDB data loss without persistent volumes** -- Define PVC in Kustomize base, mount at `/data/`. Config paths must reference the mount. Use emptyDir for dev if data loss is acceptable.
-3. **CGO-linked binary crashes on minimal images** -- Set `CGO_ENABLED=0` explicitly in Dockerfile. All project dependencies (bbolt, go-zero, btcec) are pure Go.
-4. **SPA 404 on nginx page refresh** -- Include `try_files $uri $uri/ /index.html` in nginx.conf. Also add WebSocket upgrade headers for `/ws` proxy.
-5. **ArgoCD perpetual OutOfSync** -- Configure `ignoreDifferences` for server-mutated fields. Pin Kustomize version to match local. Test sync stability before declaring done.
+1. **BoltDB single-writer deadlocks** -- Always use `t.TempDir()` per test, register `t.Cleanup(func() { db.Close() })` immediately after `bolt.Open()`, never share DB files between parallel subtests. Existing pattern in `ChainRepoSuite` is correct; maintain it.
+
+2. **`time.Sleep` synchronization causing flaky tests** -- Already present in hub_test.go, server_test.go, relay_test.go, sync_test.go. Replace with `require.Eventually` or polling-with-deadline pattern. Fix existing instances when touching those files.
+
+3. **Goroutine leaks from P2P servers and WebSocket hubs** -- Always use `t.Cleanup()` for server shutdown. The WebSocket hub currently has no `Stop()` method, leaking goroutines. Add context-based cancellation or a quit channel.
+
+4. **TCP port conflicts in P2P tests** -- Always use port 0 for OS-assigned ephemeral ports (existing pattern is correct). Never hardcode ports. Set connection deadlines in test clients.
+
+5. **Duplicated mock implementations** -- 4 copies of `mockChainRepo` across packages with subtle behavior differences (some lack mutex locks). Consolidate into `internal/testutil/mock/` in the first phase to prevent divergence.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Containerization (Dockerfiles + Config)
+### Phase 1: Test Infrastructure Foundation
+**Rationale:** Every subsequent phase imports shared helpers. Mock duplication is the number one source of maintenance burden and inconsistency. Must be solved first.
+**Delivers:** `internal/testutil/` package with chain/tx/utxo builders, consolidated mock repos (ChainRepo, UTXORepo, WalletRepo), type-assertion helpers for `[]any` transactions
+**Addresses:** Test helpers (table stakes), mock deduplication (pitfall #6)
+**Avoids:** Duplicated mock implementations (#6), error-swallowing helpers (#12), `[]any` type assertion bugs (#8)
 
-**Rationale:** Everything downstream depends on container images. Dockerfiles, .dockerignore, nginx.conf, and .golangci.yml are independent of K8s and can be validated with `docker build` locally.
-**Delivers:** Buildable Docker images for both services, linter configuration, Docker context hygiene.
-**Addresses:** Multi-stage Dockerfiles (backend + frontend), .dockerignore, nginx.conf for SPA + API/WS proxy, .golangci.yml.
-**Avoids:** CGO binary crash (set CGO_ENABLED=0 from day one), SPA 404 (nginx.conf with try_files), wallet keys in image layers (.dockerignore), WebSocket proxy breakage (upgrade headers).
+### Phase 2: Domain Layer Coverage
+**Rationale:** Domain logic is pure, fast, and has no I/O dependencies. Highest-value tests per effort. Must be solid before handler tests depend on domain objects.
+**Delivers:** Coverage improvements for chain (69.5% -> 85%+), p2p encoding (67.1% -> 80%+), utxo (86% -> 95%+), wallet (87% -> 95%+), mempool (90% -> 95%+), tx (94% -> 95%+)
+**Addresses:** Chain edge cases, P2P message encoding, domain gap-filling (all table stakes)
+**Avoids:** Mining difficulty too high (#5), ECDSA non-determinism (#10), reorg edge cases (#13)
 
-### Phase 2: CI Pipeline (GitHub Actions)
+### Phase 3: Infrastructure Persistence Tests
+**Rationale:** Can run in parallel with Phase 2 (independent layer). BoltDB correctness is critical for data integrity. Established suite pattern makes extension straightforward.
+**Delivers:** BoltDB coverage (55.7% -> 80%+) including atomic saves, range queries, DeleteBlocksAbove (reorg), and undo entries. JSON file wallet repo (82.5% -> 90%+).
+**Addresses:** BoltDB repository tests (table stakes), serialization roundtrip tests
+**Avoids:** BoltDB deadlocks (#1), serialization field drift (#11)
 
-**Rationale:** CI validates Dockerfiles in automation and pushes images to GHCR. Depends on Dockerfiles from Phase 1. Independent of K8s manifests.
-**Delivers:** Automated test, lint, and Docker build on PR; image push to GHCR on main merge.
-**Uses:** GitHub Actions, golangci-lint-action, docker/build-push-action, docker/metadata-action, GHCR.
-**Avoids:** CI cache collisions (configure caching strategy upfront), excessive image pushes (only push on main/tags).
+### Phase 4: Handler Layer Tests
+**Rationale:** Depends on testutil/mock from Phase 1. Handler tests verify the HTTP/WS interface layer, which has the largest absolute coverage gaps (API 41%, WS 35%).
+**Delivers:** API handler coverage (41.3% -> 80%+) for all 8 endpoints, WebSocket hub coverage (34.7% -> 75%+) with proper event broadcasting tests
+**Addresses:** API handler tests, WebSocket hub tests (both table stakes)
+**Avoids:** go-zero pathvar coupling (#14), WebSocket implementation coupling (#9), goroutine leaks (#4)
 
-### Phase 3: Kubernetes Manifests (Kustomize)
+### Phase 5: Cross-Cutting Quality
+**Rationale:** Only meaningful after baseline coverage exists. Race detection, error paths, and CI enforcement are quality multipliers, not coverage builders.
+**Delivers:** `-race` flag in CI, error path tests across all packages, coverage threshold enforcement (70%+), existing `time.Sleep` refactoring
+**Addresses:** Race condition testing (table stakes), error path testing (table stakes), coverage CI gate (differentiator)
+**Avoids:** Flaky sleep-based tests (#3), race conditions in concurrent assertions (#7)
 
-**Rationale:** Both Tilt and ArgoCD consume Kustomize manifests. Must exist before either can be configured. Depends on knowing image names from Phase 1-2.
-**Delivers:** Complete K8s deployment definition: namespace, Deployments, Services, ConfigMap, PVC, dev and prod overlays.
-**Addresses:** Base manifests for both services, configMapGenerator for shitcoin.yaml, dev overlay with local settings, resource requests/limits.
-**Avoids:** BoltDB file locking (Recreate strategy), BoltDB data loss (PVC definition), P2P load-balancing issues (expose P2P port but single replica for v1.1).
-
-### Phase 4: Local K8s Development (Tilt)
-
-**Rationale:** Tilt provides the local feedback loop for iterating on K8s manifests and Dockerfiles. Depends on Dockerfiles (Phase 1) and Kustomize (Phase 3).
-**Delivers:** `tilt up` workflow with live-update for Go and React, port-forwarding, .tiltignore, kind cluster setup docs.
-**Uses:** Tilt, ctlptl, Docker Desktop K8s or kind.
-**Avoids:** Full image rebuild on every change (live_update), Tilt watching node_modules (.tiltignore).
-
-### Phase 5: GitOps Deployment (ArgoCD)
-
-**Rationale:** ArgoCD is the consumer of all prior artifacts -- images in registry (Phase 2) and Kustomize manifests (Phase 3). Last because it requires everything else to be working.
-**Delivers:** ArgoCD Application CR with auto-sync, deployment visualization, health checks.
-**Uses:** ArgoCD v3.3, Kustomize integration.
-**Avoids:** ArgoCD sync loops (ignoreDifferences config), Application CR inside watched path (separate argocd/ directory).
+### Phase 6: Mock Migration and Integration Tests
+**Rationale:** Defer refactoring working tests until new coverage is stable. Integration tests synthesize all layers and are the most pitfall-prone.
+**Delivers:** Existing tests migrated to `testutil/mock/` (eliminating ~400 lines of duplication), optional integration tests behind build tags (P2P multi-node, E2E chain scenarios, UTXO rollback)
+**Addresses:** P2P integration tests, E2E scenarios, UTXO rollback tests (all differentiators)
+**Avoids:** All pitfalls compounded -- this is why it comes last
 
 ### Phase Ordering Rationale
 
-- Phases follow a strict dependency chain: Dockerfiles -> CI -> Kustomize -> Tilt -> ArgoCD. Each phase produces artifacts consumed by later phases.
-- Dockerfiles and CI are grouped early because they are independently testable without a K8s cluster.
-- Kustomize comes before Tilt and ArgoCD because both consume its manifests -- writing manifests once and testing with two consumers is more efficient than the reverse.
-- Tilt before ArgoCD because Tilt provides the fast local iteration loop needed to debug manifest issues before committing them for ArgoCD to sync.
-- BoltDB pitfalls (locking, data loss) must be addressed in Phase 3 (Kustomize manifests) -- not deferred to later phases.
+- Phases follow the dependency graph: testutil (Phase 1) -> domain (Phase 2) -> handlers (Phase 4). Infrastructure (Phase 3) is independent and can parallel with Phase 2.
+- The ordering is pitfall-aware: foundational risks (mock duplication, test helpers) are resolved before they compound in integration tests.
+- Coverage gaps are attacked largest-first within each layer: API (41%) and WS (35%) in Phase 4, chain (69%) and P2P (67%) in Phase 2, bbolt (56%) in Phase 3.
+- Cross-cutting quality (Phase 5) comes after coverage exists, because `-race` and error path tests are meaningless without test volume.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3 (Kustomize):** BoltDB volume management and Recreate strategy interaction needs careful manifest design. P2P port exposure strategy (single replica vs headless Service) warrants validation.
-- **Phase 4 (Tilt):** Live-update for Go backend (sync + recompile in container) has nuances around binary path and restart behavior. Tilt + Kustomize integration (`k8s_yaml(kustomize(...))`) should be tested early.
+- **Phase 4 (Handler Tests):** WebSocket hub testing with gorilla/websocket client needs concrete implementation patterns. The existing hub lacks a `Stop()` method, which may require a small production code change (adding context cancellation).
+- **Phase 6 (Integration Tests):** Multi-node P2P integration tests are complex. Need to validate port allocation strategy and determine how many integration scenarios provide sufficient confidence.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (Dockerfiles):** Multi-stage Docker builds for Go and React+nginx are extremely well-documented. Patterns are established and verified.
-- **Phase 2 (CI):** GitHub Actions CI for Go projects is a solved problem. Official actions exist for every step.
-- **Phase 5 (ArgoCD):** ArgoCD Application CR with Kustomize is a standard configuration. Official docs cover it thoroughly.
+- **Phase 1 (Test Infrastructure):** Well-documented Go test helper patterns. The mock consolidation is mechanical.
+- **Phase 2 (Domain Layer):** Pure unit tests with table-driven patterns already established in the codebase.
+- **Phase 3 (Infrastructure Tests):** testify/suite + BoltDB pattern already working in `chain_repo_test.go`.
+- **Phase 5 (Cross-Cutting):** Adding `-race` and coverage thresholds are CI configuration changes, not code decisions.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All tools are current stable releases with verified version numbers. Docker Hub images confirmed available. |
-| Features | HIGH | Feature set is well-scoped with clear dependencies. MVP is achievable within the milestone. |
-| Architecture | HIGH | Purely additive architecture with no source code changes. File layout and component boundaries are clear. |
-| Pitfalls | HIGH | BoltDB-specific pitfalls are well-documented in etcd/bbolt community. K8s and Docker pitfalls are standard knowledge. |
+| Stack | HIGH | All tools already in go.mod or stdlib. Verified versions against go.mod directly. Zero new dependencies. |
+| Features | HIGH | Coverage gaps measured from actual `go test -cover` output. Feature priorities derived from gap size and risk. |
+| Architecture | HIGH | Test architecture extends established patterns from 23 existing test files. No novel patterns needed. |
+| Pitfalls | HIGH | All pitfalls identified from direct codebase inspection. Sleep-based waits, mock duplication, and BoltDB patterns verified in source. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Graceful BoltDB shutdown:** The existing Go code may not trap SIGTERM and call `db.Close()`. This needs verification during Phase 3 implementation. If missing, a small code change in `cmd/shitcoin/main.go` is required -- the only potential source modification in this milestone.
-- **P2P multi-node in K8s:** Deferred to v2+, but the headless Service + StatefulSet pattern should be documented for future reference. Phase 3 should expose the P2P port (3000) even if multi-node is not implemented.
-- **Frontend live-update strategy:** Two options exist (Vite HMR inside container vs. Vite dev server outside K8s proxying to K8s backend). The simpler approach (run Vite locally, proxy to K8s backend) may be preferable. Validate during Phase 4.
-- **ArgoCD image tag update automation:** How CI updates the image tag in Kustomize overlays after pushing a new image is not fully specified. Options: CI commits tag change to repo, ArgoCD Image Updater, or manual. Decide during Phase 5 planning.
+- **WebSocket hub Stop() method:** The hub currently has no graceful shutdown. Tests will leak goroutines without it. Determine during Phase 4 planning whether to add a `Stop()` method (small production code change) or use context cancellation.
+- **CLI handler testability:** `handler/cli` orchestration code (testnet.go, demo.go) may not be testable without significant refactoring. The 50% target for CLI is aspirational -- validate during Phase 5 planning whether simple dispatch tests are sufficient.
+- **Coverage targets vs effort:** The 80%+ targets for API, WS, and bbolt are ambitious. If certain paths require disproportionate mocking effort, consider lowering targets for specific packages during planning.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [bbolt GitHub](https://github.com/etcd-io/bbolt) -- file locking, mmap, concurrency model
-- [Kubernetes official docs](https://kubernetes.io/docs/) -- Services, PVCs, headless services, Kustomize
-- [ArgoCD official docs](https://argo-cd.readthedocs.io/) -- Kustomize integration, sync policies
-- [Tilt official docs](https://docs.tilt.dev/) -- live_update, choosing clusters, FAQ
-- [GitHub Actions runner images](https://github.com/actions/runner-images) -- ubuntu-latest = Ubuntu 24.04
-- [Docker multi-stage builds guide](https://docs.docker.com/build/building/multi-stage/)
-- [7 Common K8s Pitfalls (official blog)](https://kubernetes.io/blog/2025/10/20/seven-kubernetes-pitfalls-and-how-to-avoid/)
+- Direct codebase analysis: 23 test files across 15 packages (`go test -cover` output, 2026-03-08)
+- `go.mod` dependency verification: testify v1.11.1, gorilla/websocket v1.5.3, bbolt v1.4.3, Go 1.26.1
+- `.github/workflows/ci-go.yml` and `.golangci.yml` -- current CI configuration
+- Go stdlib documentation: `testing`, `net/http/httptest`, `t.TempDir()`, `t.Cleanup()` -- stable, well-documented
+- testify library documentation and established usage patterns across all test files
 
 ### Secondary (MEDIUM confidence)
-- [GitHub Actions Go CI pipeline guides](https://oneuptime.com/blog/post/2025-12-20-go-ci-pipeline-github-actions/view) -- workflow structure
-- [Kustomize best practices](https://pauldally.medium.com/kustomize-best-practices-part-2-c560f1fa1409) -- overlay patterns
-- [Go linting in CI](https://medium.com/@tedious/go-linting-best-practices-for-ci-cd-with-github-actions-aa6d96e0c509) -- golangci-lint configuration
-- [React Vite + Docker + Nginx production guide](https://www.buildwithmatija.com/blog/production-react-vite-docker-deployment) -- frontend containerization
-- [GitOps repo structure with ArgoCD](https://itnext.io/how-to-structure-your-gitops-repository-with-a-single-argocd-instance-f128b916c915) -- Application CR placement
+- goleak (`go.uber.org/goleak`) for goroutine leak detection -- well-maintained Uber open-source, but not yet used in codebase
+- `require.Eventually` polling pattern for replacing `time.Sleep` -- documented in testify, not yet used in this codebase
 
 ---
-*Research completed: 2026-03-07*
+*Research completed: 2026-03-08*
 *Ready for roadmap: yes*

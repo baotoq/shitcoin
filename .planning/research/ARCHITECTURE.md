@@ -1,471 +1,450 @@
 # Architecture Patterns
 
-**Domain:** CI/CD and Kubernetes deployment for Go blockchain + React frontend
-**Researched:** 2026-03-07
+**Domain:** Testing & quality infrastructure for Go blockchain application (DDD architecture)
+**Researched:** 2026-03-08
 
 ## Recommended Architecture
 
-The CI/CD and K8s layer wraps the existing Go DDD application without modifying domain code. The integration is purely additive: new files at the repository root and in new directories (`deploy/`, `.github/`). No existing Go or React source files need modification.
+Testing integrates with the existing DDD layers without modifying production code. The codebase already has 23 test files covering all packages except `cmd/shitcoin`, `internal/handler/cli`, and `internal/svc`. The established patterns are sound -- the goal is to extend coverage, consolidate duplicated test helpers, and add missing test categories.
 
-### High-Level Flow
-
-```
-Developer pushes code
-       |
-       v
-GitHub Actions CI
-  ├── Test (go test ./...)
-  ├── Lint (golangci-lint)
-  ├── Build Docker images (backend + frontend)
-  └── Push to registry (ghcr.io)
-       |
-       v
-ArgoCD detects manifest changes in deploy/
-       |
-       v
-Kustomize renders final manifests
-       |
-       v
-Kubernetes applies deployment
-```
-
-For local development, Tilt replaces the CI/push/ArgoCD portion:
+### Current Test Architecture (What Exists)
 
 ```
-Developer edits code
-       |
-       v
-Tilt watches filesystem
-  ├── live_update syncs Go files, rebuilds in-container
-  ├── live_update syncs React files, Vite HMR handles reload
-  └── Deploys to local K8s (kind/k3d)
+internal/
+├── domain/
+│   ├── block/       block_test.go, pow_test.go, merkle_test.go, difficulty_test.go
+│   ├── chain/       chain_test.go  (reorg, rewards, fees -- uses hand-rolled mocks)
+│   ├── tx/          transaction_test.go
+│   ├── utxo/        set_test.go
+│   ├── wallet/      wallet_test.go, base58_test.go
+│   ├── mempool/     mempool_test.go  (uses hand-rolled memRepo)
+│   ├── p2p/         p2p_test.go, server_test.go, sync_test.go, relay_test.go, reorg_test.go
+│   └── events/      bus_test.go
+├── handler/
+│   ├── api/         block_handler_test.go, status_handler_test.go  (httptest + hand-rolled mocks)
+│   ├── cli/         [NO TESTS]
+│   └── ws/          hub_test.go
+├── config/          config_test.go
+├── infrastructure/
+│   └── persistence/
+│       ├── bbolt/   chain_repo_test.go, utxo_repo_test.go  (suite.Suite + real BoltDB in TempDir)
+│       └── jsonfile/ wallet_repo_test.go
+└── svc/             [NO TESTS]
 ```
 
-### New File Layout
-
-All new files. Nothing in `internal/`, `cmd/`, or `web/src/` is modified.
+### Target Test Architecture (What to Build)
 
 ```
-shitcoin/
-├── .github/
-│   └── workflows/
-│       └── ci.yaml                    # GitHub Actions CI pipeline
-├── deploy/
-│   ├── docker/
-│   │   ├── Dockerfile.backend         # Multi-stage Go build
-│   │   ├── Dockerfile.frontend        # Multi-stage React build + nginx
-│   │   └── nginx.conf                 # Frontend reverse proxy to backend
-│   └── k8s/
-│       ├── base/
-│       │   ├── kustomization.yaml     # Base resources list + configMapGenerator
-│       │   ├── namespace.yaml         # shitcoin namespace
-│       │   ├── backend-deployment.yaml
-│       │   ├── backend-service.yaml
-│       │   ├── frontend-deployment.yaml
-│       │   ├── frontend-service.yaml
-│       │   └── configs/
-│       │       └── shitcoin.yaml      # Config for configMapGenerator
-│       └── overlays/
-│           ├── dev/
-│           │   ├── kustomization.yaml
-│           │   └── patches/
-│           │       └── backend-resources.yaml
-│           └── prod/
-│               ├── kustomization.yaml
-│               └── patches/
-│                   ├── backend-resources.yaml
-│                   └── backend-replicas.yaml
-├── argocd/
-│   └── application.yaml              # ArgoCD Application CR (separate from deploy/)
-├── Tiltfile                           # Tilt local dev config (Starlark)
-├── .golangci.yml                      # Linter config
-└── .dockerignore                      # Docker build context filter
+internal/
+├── testutil/                          NEW -- shared test helpers package
+│   ├── chain.go                       Chain/block factory helpers
+│   ├── tx.go                          Transaction + signing helpers
+│   ├── utxo.go                        UTXO setup helpers
+│   └── mock/                          NEW -- consolidated mock implementations
+│       ├── chain_repo.go              In-memory chain.Repository
+│       ├── utxo_repo.go               In-memory utxo.Repository
+│       └── wallet_repo.go             In-memory wallet.Repository
+├── domain/
+│   ├── block/       [existing tests sufficient, add edge cases]
+│   ├── chain/       [extend: mining, validation, difficulty adjustment]
+│   ├── tx/          [extend: signing, validation, edge cases]
+│   ├── utxo/        [extend: rollback, concurrent access]
+│   ├── wallet/      [existing tests sufficient]
+│   ├── mempool/     [existing tests comprehensive]
+│   ├── p2p/         [existing tests comprehensive]
+│   └── events/      [existing tests sufficient]
+├── handler/
+│   ├── api/         [extend: all 8 endpoints, error paths]
+│   ├── cli/         [NEW: test command dispatch, testnet, demo]
+│   └── ws/          [extend: event forwarding, connection lifecycle]
+├── infrastructure/
+│   └── persistence/
+│       ├── bbolt/   [extend: concurrent access, undo entries, DeleteBlocksAbove]
+│       └── jsonfile/ [extend: concurrent access, file corruption recovery]
+└── svc/             [NEW: ServiceContext construction, Close cleanup]
 ```
 
 ### Component Boundaries
 
 | Component | Responsibility | Communicates With |
 |-----------|---------------|-------------------|
-| GitHub Actions CI | Test, lint, build images, push to registry | ghcr.io, repository webhooks |
-| Dockerfile.backend | Multi-stage Go binary build (builder + distroless) | go.mod, cmd/, internal/, etc/ |
-| Dockerfile.frontend | Multi-stage React build (node + nginx) | web/package.json, web/src/ |
-| nginx.conf | Reverse-proxy /api and /ws to backend Service in K8s | Backend K8s Service |
-| Kustomize base | Shared K8s manifests (deployments, services, configmap) | K8s API server |
-| Kustomize overlays | Environment-specific patches (resources, replicas, image tags) | Kustomize base |
-| ArgoCD Application | GitOps sync controller, watches deploy/k8s/overlays/ | Git repository, K8s API server |
-| Tiltfile | Local dev orchestration with live reload | Local K8s cluster (kind/k3d), Dockerfiles, Kustomize |
+| `internal/testutil/` | Shared test factories and helper functions | All test files across all layers |
+| `internal/testutil/mock/` | Consolidated in-memory repository implementations | Domain and handler tests |
+| Domain unit tests | Test pure business logic in isolation | Mock repositories via interfaces |
+| Handler tests | Test HTTP/WS handlers with httptest | Mock ServiceContext fields, mock repos |
+| Infrastructure tests | Test real persistence against temp DB files | Real BoltDB/JSON in `t.TempDir()` |
+| Integration tests (build tag) | Test cross-layer flows end-to-end | Real repositories, real domain objects |
 
-### Data Flow: Code Change to Running Container
+### Data Flow: Test Fixture Creation
 
-**CI Pipeline (push to master):**
-
-1. Push triggers `.github/workflows/ci.yaml`
-2. `test` and `lint` jobs run in parallel (independent)
-3. `build` job (depends on test+lint passing) builds two Docker images
-4. Images pushed to `ghcr.io/baotoq/shitcoin-backend:sha-<commit>` and `ghcr.io/baotoq/shitcoin-frontend:sha-<commit>`
-5. Image tag updated in overlay's `kustomization.yaml` (via CI step or ArgoCD Image Updater)
-6. ArgoCD detects manifest diff, syncs to cluster
-
-**Local Dev (Tilt):**
-
-1. `tilt up` builds images from Dockerfiles, deploys via Kustomize dev overlay
-2. On Go file change: `live_update` syncs files, runs `go build` in container
-3. On React file change: `live_update` syncs to frontend container (Vite HMR)
-4. Port-forwards: backend `:8080`, frontend on `:5173` (mapped from nginx `:80`)
+```
+testutil.NewTestChain(t, opts...)
+    |
+    v
+Creates mock repos (chain + UTXO) in memory
+    |
+    v
+Initializes chain.Chain with genesis block
+    |
+    v
+Returns TestChain{ Chain, ChainRepo, UTXOSet, UTXORepo }
+    |
+    v
+Test calls testutil.MineBlocks(t, tc, minerAddr, n)
+    |
+    v
+Mines n blocks, applies UTXO changes, returns []*block.Block
+    |
+    v
+Test calls testutil.BuildSignedTx(t, tc, from, to, amount)
+    |
+    v
+Finds UTXOs for 'from', creates + signs tx, returns *tx.Transaction
+```
 
 ## Integration Points with Existing Codebase
 
-### Backend Dockerfile -- What It Needs from the Repo
+### New Components
 
-| Source | Purpose | Docker COPY |
-|--------|---------|-------------|
-| `go.mod` + `go.sum` | Dependency cache layer (changes rarely) | First COPY for layer caching |
-| `cmd/shitcoin/` | Entry point | `/app/cmd/shitcoin/` |
-| `internal/` | All domain, handler, infra code | `/app/internal/` |
-| `etc/shitcoin.yaml` | Default config (overridden by ConfigMap in K8s) | `/app/etc/` |
+| Component | Type | Purpose |
+|-----------|------|---------|
+| `internal/testutil/chain.go` | New file | `NewTestChain`, `MineBlocks`, `DefaultChainConfig` helpers |
+| `internal/testutil/tx.go` | New file | `BuildSignedTx`, `NewTestWallet`, `FundAddress` helpers |
+| `internal/testutil/utxo.go` | New file | `SeedUTXOs`, `AssertBalance` helpers |
+| `internal/testutil/mock/chain_repo.go` | New file | Consolidated `mockChainRepo` (currently duplicated in 3 packages) |
+| `internal/testutil/mock/utxo_repo.go` | New file | Consolidated `mockUTXORepo` (currently duplicated in 3 packages) |
+| `internal/testutil/mock/wallet_repo.go` | New file | In-memory `wallet.Repository` for handler tests |
+| `internal/handler/cli/cli_test.go` | New file | CLI command dispatch tests |
+| `internal/svc/service_context_test.go` | New file | ServiceContext construction/teardown tests |
 
-**No code changes needed.** The binary is built with `go build ./cmd/shitcoin/` -- same command as local development.
+### Modified Components
 
-### Frontend Dockerfile -- What It Needs from the Repo
+| File | Change | Reason |
+|------|--------|--------|
+| `internal/domain/chain/chain_test.go` | Replace local `mockChainRepo`/`mockUTXORepo` with `testutil/mock` imports | Deduplicate ~200 lines of duplicated mock code |
+| `internal/domain/mempool/mempool_test.go` | Replace local `memRepo` with `testutil/mock.UTXORepo` | Deduplicate |
+| `internal/handler/api/block_handler_test.go` | Replace local `mockChainRepo` with `testutil/mock.ChainRepo` | Deduplicate |
+| `internal/domain/p2p/server_test.go` | Replace local `MockChainRepo` with `testutil/mock.ChainRepo` | Deduplicate |
 
-| Source | Purpose | Docker COPY |
-|--------|---------|-------------|
-| `web/package.json` + `web/package-lock.json` | npm cache layer | First COPY |
-| `web/` (all) | React source, config, components | Second COPY |
-| Build output: `web/dist/` | Static files served by nginx | Copied to nginx html root |
+### Existing Code NOT Modified
 
-**No code changes needed.** The existing `npm run build` command produces the `dist/` output.
-
-### Vite Proxy vs Nginx Proxy
-
-The Vite proxy in `web/vite.config.ts` proxies `/api` and `/ws` to `localhost:8080` during development. In production (Docker/K8s), there is no Vite dev server. Nginx serves the static files and proxies API/WS requests to the backend K8s Service.
-
-- **Dev (local, no Docker):** Vite `:5173` proxies to Go `:8080` -- existing behavior, unchanged
-- **Dev (Tilt/K8s):** Nginx proxies to `shitcoin-backend:8080` Service
-- **Prod (K8s):** Same nginx config
-
-The React app already uses relative URLs (`/api/...`, `/ws`) so no frontend code change is needed.
-
-### Config as ConfigMap
-
-The existing `etc/shitcoin.yaml` maps directly to a Kubernetes ConfigMap via Kustomize's `configMapGenerator`. go-zero's `conf.MustLoad` reads from a file path, so the ConfigMap is volume-mounted at `/app/etc/shitcoin.yaml`.
-
-```yaml
-# deploy/k8s/base/configs/shitcoin.yaml (used by configMapGenerator)
-Name: shitcoin
-Host: 0.0.0.0
-Port: 8080
-Consensus:
-  BlockTimeTarget: 1
-  DifficultyAdjustInterval: 10
-  InitialDifficulty: 5
-Storage:
-  DBPath: /data/shitcoin.db
-  WalletPath: /data/wallets.json
-```
-
-**Key difference from local:** Storage paths point to `/data/` which maps to an emptyDir or PVC volume in K8s, not a relative `data/` directory.
-
-### BoltDB Storage in Containers
-
-BoltDB writes to a single file. In K8s:
-- **Dev (emptyDir):** Data is ephemeral, lost on pod restart. Fine for development.
-- **Prod (PVC):** PersistentVolumeClaim mounted at `/data/` preserves chain state across restarts.
-
-The `ServiceContext` in `internal/svc/service_context.go` already calls `os.MkdirAll` for the DB directory, so this works without code changes.
-
-### P2P Networking in K8s
-
-The P2P layer listens on TCP port 3000. For the educational scope of v1.1, a single-replica Deployment is sufficient. Multi-node P2P in K8s would require a StatefulSet with a headless Service for stable DNS names -- that is out of scope for this milestone.
-
-The backend Service exposes both port 8080 (HTTP/WS) and port 3000 (P2P) but only HTTP is needed for the frontend.
+No production code changes. All repository interfaces (`chain.Repository`, `utxo.Repository`, `wallet.Repository`) already support dependency injection via interfaces. The `svc.ServiceContext` struct has exported fields that tests can populate directly (already done in `status_handler_test.go`).
 
 ## Patterns to Follow
 
-### Pattern 1: Multi-Stage Docker Build for Go
+### Pattern 1: Shared Test Helpers in `internal/testutil/`
 
-**What:** Two-stage Dockerfile separating compilation from runtime.
-**When:** Always for the Go backend.
-**Why:** Reduces image from ~1GB (golang base) to ~15MB (distroless).
+**What:** Centralized package for test factories, eliminating duplication across 4+ packages that each re-implement `mockChainRepo` and `mockUTXORepo`.
+**When:** Any test that needs a chain, blocks, or signed transactions.
 
-```dockerfile
-# deploy/docker/Dockerfile.backend
-FROM golang:1.26-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY cmd/ cmd/
-COPY internal/ internal/
-COPY etc/ etc/
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /shitcoin ./cmd/shitcoin/
+```go
+// internal/testutil/chain.go
+package testutil
 
-FROM gcr.io/distroless/static-debian12:nonroot
-COPY --from=builder /shitcoin /shitcoin
-COPY --from=builder /app/etc/shitcoin.yaml /app/etc/shitcoin.yaml
-EXPOSE 8080 3000
-ENTRYPOINT ["/shitcoin"]
-CMD ["-f", "/app/etc/shitcoin.yaml", "startnode"]
+import (
+    "context"
+    "testing"
+
+    "github.com/baotoq/shitcoin/internal/domain/block"
+    "github.com/baotoq/shitcoin/internal/domain/chain"
+    "github.com/baotoq/shitcoin/internal/domain/utxo"
+    mockpkg "github.com/baotoq/shitcoin/internal/testutil/mock"
+    "github.com/stretchr/testify/require"
+)
+
+// TestChain bundles a chain aggregate with its in-memory dependencies.
+type TestChain struct {
+    Chain     *chain.Chain
+    ChainRepo *mockpkg.ChainRepo
+    UTXORepo  *mockpkg.UTXORepo
+    UTXOSet   *utxo.Set
+    PoW       *block.ProofOfWork
+    Config    chain.ChainConfig
+}
+
+// DefaultChainConfig returns a config with low difficulty for fast test mining.
+func DefaultChainConfig() chain.ChainConfig {
+    return chain.ChainConfig{
+        InitialDifficulty: 1,
+        GenesisMessage:    "test-genesis",
+        BlockReward:       5_000_000_000,
+    }
+}
+
+// NewTestChain creates an initialized chain with genesis block, ready for testing.
+func NewTestChain(t *testing.T, minerAddr string) *TestChain {
+    t.Helper()
+    cfg := DefaultChainConfig()
+    repo := mockpkg.NewChainRepo()
+    utxoRepo := mockpkg.NewUTXORepo()
+    utxoSet := utxo.NewSet(utxoRepo)
+    pow := &block.ProofOfWork{}
+    ch := chain.NewChain(repo, pow, cfg, utxoSet)
+    require.NoError(t, ch.Initialize(context.Background(), minerAddr))
+    return &TestChain{Chain: ch, ChainRepo: repo, UTXORepo: utxoRepo,
+        UTXOSet: utxoSet, PoW: pow, Config: cfg}
+}
+
+// MineBlocks mines n blocks and returns them.
+func MineBlocks(t *testing.T, tc *TestChain, minerAddr string, n int) []*block.Block {
+    t.Helper()
+    var blocks []*block.Block
+    for range n {
+        b, err := tc.Chain.MineBlock(context.Background(), minerAddr, nil, 0)
+        require.NoError(t, err)
+        blocks = append(blocks, b)
+    }
+    return blocks
+}
 ```
 
-**CGO_ENABLED=0 is safe** because bbolt (pure Go), go-zero, gorilla/websocket, and btcec have no CGO dependencies.
+**Why this pattern:** The codebase currently has 4 independent copies of `mockChainRepo` (chain_test.go, block_handler_test.go, server_test.go -- each ~80 lines) and 3 copies of `mockUTXORepo` (chain_test.go, mempool_test.go -- each ~50 lines). Centralizing eliminates ~400 lines of duplication and ensures consistent behavior.
 
-### Pattern 2: Multi-Stage Docker Build for React + Nginx
+### Pattern 2: Table-Driven Tests (Already Established)
 
-**What:** Build React in Node stage, serve static files from nginx.
-**When:** Always for the frontend.
+**What:** The codebase already uses table-driven tests extensively (see `block_test.go`, `chain_test.go`). Continue this pattern for all new tests.
+**When:** Any function with multiple input/output combinations.
 
-```dockerfile
-# deploy/docker/Dockerfile.frontend
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY web/package.json web/package-lock.json ./
-RUN npm ci
-COPY web/ ./
-RUN npm run build
-
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY deploy/docker/nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-```
-
-### Pattern 3: Nginx Reverse Proxy for API/WebSocket
-
-**What:** nginx.conf that serves static files and proxies /api and /ws to the backend.
-**When:** Production and K8s dev (replaces Vite proxy).
-
-```nginx
-# deploy/docker/nginx.conf
-server {
-    listen 80;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    location /api {
-        proxy_pass http://shitcoin-backend:8080;
+```go
+func TestRewardAtHeight(t *testing.T) {
+    tc := testutil.NewTestChain(t, "miner")
+    tests := []struct {
+        name   string
+        height uint64
+        want   int64
+    }{
+        {"genesis", 0, 5_000_000_000},
+        {"before halving", 9, 5_000_000_000},
+        {"first halving", 10, 2_500_000_000},
     }
-
-    location /ws {
-        proxy_pass http://shitcoin-backend:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-
-    location / {
-        try_files $uri $uri/ /index.html;
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            assert.Equal(t, tt.want, tc.Chain.RewardAtHeight(tt.height))
+        })
     }
 }
 ```
 
-The backend hostname `shitcoin-backend` is the K8s Service name, resolved via cluster DNS.
+### Pattern 3: Suite Tests for Stateful Infrastructure (Already Established)
 
-### Pattern 4: Kustomize configMapGenerator
+**What:** Use `testify/suite` for infrastructure tests that need setup/teardown of real resources (BoltDB files).
+**When:** Testing `bbolt` and `jsonfile` repositories.
 
-**What:** Generate ConfigMaps from files with content-hash suffix.
-**When:** For shitcoin.yaml config.
-**Why:** Content hash suffix ensures pods restart when config changes.
+The existing `ChainRepoSuite` in `chain_repo_test.go` is the model. Each test gets a fresh DB via `SetupTest()` with `t.TempDir()` and `t.Cleanup()`.
 
-```yaml
-# deploy/k8s/base/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-namespace: shitcoin
-resources:
-  - namespace.yaml
-  - backend-deployment.yaml
-  - backend-service.yaml
-  - frontend-deployment.yaml
-  - frontend-service.yaml
-configMapGenerator:
-  - name: shitcoin-config
-    files:
-      - shitcoin.yaml=configs/shitcoin.yaml
+```go
+type ChainRepoSuite struct {
+    suite.Suite
+    db   *bolt.DB
+    repo *BboltRepository
+}
+
+func (s *ChainRepoSuite) SetupTest() {
+    dbPath := filepath.Join(s.T().TempDir(), "test.db")
+    db, err := bolt.Open(dbPath, 0600, nil)
+    s.Require().NoError(err)
+    s.T().Cleanup(func() { db.Close() })
+    s.db = db
+    repo, err := NewBboltRepository(db)
+    s.Require().NoError(err)
+    s.repo = repo
+}
 ```
 
-### Pattern 5: Parallel CI Jobs with Dependency Gates
+### Pattern 4: httptest for API Handler Tests (Already Established)
 
-**What:** Run test and lint in parallel; build images only if both pass.
-**When:** Every CI run.
-**Why:** Faster feedback (test and lint are independent).
+**What:** Use `net/http/httptest` with mock ServiceContext fields.
+**When:** Testing REST API handlers.
 
-```yaml
-# .github/workflows/ci.yaml structure
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-go@v5
-        with: { go-version-file: go.mod, cache: true }
-      - run: go test ./...
+The existing pattern in `block_handler_test.go` is correct: create mock repos, populate a `svc.ServiceContext` struct with only the needed fields, call the handler function, assert on the recorder.
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: golangci/golangci-lint-action@v6
-
-  build:
-    needs: [test, lint]
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: docker/build-push-action@v6
-        # build and push backend + frontend images
+```go
+func TestBlocksHandler(t *testing.T) {
+    repo := mock.NewChainRepo()  // from testutil/mock
+    // seed blocks...
+    svcCtx := &svc.ServiceContext{ChainRepo: repo}
+    handler := BlocksHandler(svcCtx)
+    req := httptest.NewRequest(http.MethodGet, "/api/blocks", nil)
+    w := httptest.NewRecorder()
+    handler(w, req)
+    assert.Equal(t, http.StatusOK, w.Code)
+}
 ```
 
-### Pattern 6: Tiltfile with Live Update
+**go-zero path variables:** The codebase uses `pathvar.WithVars(req, map[string]string{...})` from `github.com/zeromicro/go-zero/rest/pathvar` to inject route parameters. This is the correct approach -- continue using it.
 
-**What:** Tilt watches files, syncs changes into running containers, rebuilds in-place.
-**When:** Local K8s development.
+### Pattern 5: net.Pipe for P2P Protocol Tests (Already Established)
 
-```python
-# Tiltfile (Starlark)
-docker_build(
-    'shitcoin-backend',
-    '.',
-    dockerfile='deploy/docker/Dockerfile.backend',
-    live_update=[
-        sync('./cmd', '/app/cmd'),
-        sync('./internal', '/app/internal'),
-        run('cd /app && CGO_ENABLED=0 go build -o /shitcoin ./cmd/shitcoin/',
-            trigger=['./cmd', './internal']),
-    ],
+**What:** Use `net.Pipe()` for in-memory TCP connections to test P2P message encoding and peer behavior.
+**When:** Testing P2P wire protocol, peer lifecycle, message handling.
+
+The existing `p2p_test.go` uses this pattern well. For server-level tests, `server_test.go` uses port 0 for OS-assigned ports.
+
+### Pattern 6: Build Tags for Integration Tests
+
+**What:** Separate slow integration tests (real DB, real mining, multi-component) from fast unit tests using build tags.
+**When:** Tests that take >1 second or require multiple components wired together.
+
+```go
+//go:build integration
+
+package integration_test
+
+import (
+    "testing"
+    "github.com/baotoq/shitcoin/internal/testutil"
 )
 
-docker_build(
-    'shitcoin-frontend',
-    '.',
-    dockerfile='deploy/docker/Dockerfile.frontend',
-    live_update=[
-        sync('./web/src', '/app/src'),
-    ],
-)
-
-k8s_yaml(kustomize('deploy/k8s/overlays/dev'))
-k8s_resource('shitcoin-backend', port_forwards=['8080:8080', '3000:3000'])
-k8s_resource('shitcoin-frontend', port_forwards=['5173:80'])
+func TestFullBlockLifecycle(t *testing.T) {
+    // Create chain with real BoltDB repo
+    // Mine block, verify UTXO changes, verify persistence
+}
 ```
+
+Run separately: `go test -tags integration ./...`
+
+### Pattern 7: Testing the CLI Layer
+
+**What:** Test CLI command dispatch by invoking handler functions directly, not by spawning subprocesses.
+**When:** Testing `internal/handler/cli/`.
+
+The CLI handlers accept `*svc.ServiceContext` and use `flag.FlagSet` for argument parsing. Test by constructing a ServiceContext with mock repos and calling the command handler functions.
+
+```go
+func TestSendCommand(t *testing.T) {
+    // Build ServiceContext with mock repos
+    // Call the send handler with parsed flags
+    // Verify transaction created and submitted
+}
+```
+
+Do NOT test via `exec.Command("go", "run", ...)` -- that is slow, flaky, and does not provide useful coverage.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Single Fat Dockerfile
+### Anti-Pattern 1: Duplicating Mock Implementations Per Package
 
-**What:** One Dockerfile that builds Go, builds React, and runs both.
-**Why bad:** Huge image (~1.5GB), cannot scale backend/frontend independently, slow rebuilds.
-**Instead:** Separate Dockerfiles per service. Two K8s Deployments.
+**What:** Each test file re-implements `mockChainRepo`, `mockUTXORepo` from scratch.
+**Why bad:** Already present in the codebase -- 4 independent copies of chain repo mock (~320 lines total), with subtle behavior differences between them. The mock in `handler/api/` lacks mutex locks; the one in `domain/chain/` has full concurrency safety. This divergence can mask concurrency bugs.
+**Instead:** Single implementation in `internal/testutil/mock/` with consistent behavior.
 
-### Anti-Pattern 2: Baking Data Volumes into Images
+### Anti-Pattern 2: time.Sleep for Synchronization
 
-**What:** Including BoltDB data files in the Docker image.
-**Why bad:** Data is ephemeral, lost on pod restart. Images become huge and stale.
-**Instead:** Use emptyDir (dev) or PVC (prod) mounted at `/data/` in K8s.
+**What:** Using `time.Sleep(10 * time.Millisecond)` to wait for goroutine processing.
+**Why bad:** Already present in `hub_test.go` (5 occurrences). Flaky under CI load, wastes time.
+**Instead:** Use channels, `sync.WaitGroup`, or polling with `require.Eventually`:
 
-### Anti-Pattern 3: Hardcoded Backend URL in Frontend Build
-
-**What:** Setting `VITE_API_URL=http://specific-host:8080` at build time.
-**Why bad:** Requires rebuild for each environment.
-**Instead:** Use relative URLs (`/api/...`). The existing code already does this. Nginx handles proxying.
-
-### Anti-Pattern 4: Using `latest` Image Tag
-
-**What:** Tagging Docker images as `latest` and referencing `latest` in K8s manifests.
-**Why bad:** ArgoCD cannot detect changes (same tag). No rollback to specific version.
-**Instead:** Tag with git SHA (`sha-abc1234`). Kustomize `images` transformer updates tags per overlay.
-
-### Anti-Pattern 5: ArgoCD Application CR Inside the Watched Path
-
-**What:** Putting `argocd/application.yaml` inside `deploy/k8s/`.
-**Why bad:** ArgoCD watches `deploy/k8s/` and would try to manage its own Application resource, causing loops.
-**Instead:** Keep `argocd/` at repo root, separate from `deploy/k8s/`.
-
-### Anti-Pattern 6: Running All CI Steps Sequentially
-
-**What:** Test -> Lint -> Build (serial pipeline).
-**Why bad:** Wastes time. Test and lint are independent.
-**Instead:** Parallel jobs with `needs` dependency on build step.
-
-## Build Order (Dependency Graph for Implementation)
-
-```
-Phase 1: Dockerfiles + .dockerignore + .golangci.yml + nginx.conf
-    No K8s dependency. Testable with `docker build` locally.
-    |
-Phase 2: GitHub Actions CI
-    Depends on Dockerfiles. Validates build+test+lint in automation.
-    |
-Phase 3: Kustomize manifests (base + overlays)
-    Depends on knowing image names from Phase 1-2.
-    Testable with `kubectl apply -k deploy/k8s/overlays/dev --dry-run=client`.
-    |
-Phase 4: Tiltfile + local K8s dev
-    Depends on Dockerfiles (Phase 1) and Kustomize (Phase 3).
-    Testable with `tilt up` against a kind/k3d cluster.
-    |
-Phase 5: ArgoCD Application
-    Depends on Kustomize manifests (Phase 3) and images in registry (Phase 2).
-    Testable by applying the Application CR to an ArgoCD instance.
+```go
+require.Eventually(t, func() bool {
+    hub.mu.RLock()
+    defer hub.mu.RUnlock()
+    _, exists := hub.clients[client]
+    return exists
+}, 500*time.Millisecond, 5*time.Millisecond, "client should be registered")
 ```
 
-**Rationale:** Dockerfiles first because everything else (CI, Tilt, K8s) depends on container images. CI second because it validates Dockerfiles in automation and pushes images. Kustomize third because both Tilt and ArgoCD consume its manifests. Tilt before ArgoCD because Tilt provides the local feedback loop for iterating on manifests. ArgoCD last because it is the consumer of all prior artifacts.
+### Anti-Pattern 3: Testing Implementation Details
+
+**What:** Asserting on internal struct fields (e.g., `hub.clients[client]`) instead of observable behavior.
+**Why bad:** Tests break when internals change even if behavior is preserved.
+**Instead:** Test through the public API. For the hub: verify that a published event arrives on the client's send channel.
+
+### Anti-Pattern 4: Tests That Require Specific Mining Results
+
+**What:** Asserting on exact block hashes or nonce values from PoW mining.
+**Why bad:** Mining is non-deterministic. Tests become fragile.
+**Instead:** Assert on properties: block height, parent hash, valid PoW (difficulty check), transaction contents.
+
+### Anti-Pattern 5: Skipping Error Path Tests
+
+**What:** Only testing the happy path (valid block, valid tx, found result).
+**Why bad:** Error handling bugs are common production issues.
+**Instead:** Always test: not found, invalid input, duplicate, concurrent access, boundary values.
+
+## Build Order (Dependency Graph for Test Phases)
+
+```
+Phase 1: internal/testutil/ + internal/testutil/mock/
+    Foundation. All subsequent test work depends on shared helpers.
+    |
+Phase 2: Domain layer test extensions
+    block/, chain/, tx/, utxo/ -- pure logic, no I/O, fast
+    Uses testutil helpers. No infrastructure dependency.
+    |
+Phase 3: Infrastructure layer test extensions
+    bbolt/, jsonfile/ -- real DB, TempDir isolation
+    Independent of domain test extensions (can parallel with Phase 2).
+    |
+Phase 4: Handler layer test extensions
+    api/ (all 8 endpoints), ws/ (fix time.Sleep)
+    Depends on testutil/mock/ from Phase 1.
+    |
+Phase 5: CLI handler tests + ServiceContext tests
+    cli/, svc/ -- higher-level, depends on mock repos from Phase 1.
+    |
+Phase 6: Migration of existing tests to use testutil/mock/
+    Refactor chain_test.go, mempool_test.go, server_test.go,
+    block_handler_test.go to import testutil/mock/ instead of local mocks.
+    Depends on Phase 1 being stable.
+    |
+Phase 7: Integration tests (build tag)
+    Cross-layer tests using real BoltDB + full chain lifecycle.
+    Depends on all prior phases.
+```
+
+**Rationale:** The `testutil` package is the foundation -- every subsequent phase imports it. Domain tests come before handler tests because handlers depend on domain objects (blocks, transactions). Infrastructure tests can run in parallel with domain tests since they are independent (real DB vs mocks). CLI tests come later because they orchestrate multiple domain operations. Migration of existing tests (Phase 6) is deferred to avoid disrupting working tests while new coverage is being added. Integration tests come last because they synthesize all layers.
 
 ## Files: New vs Modified
 
-### New Files (19 files)
+### New Files (8 files)
 
 | File | Purpose |
 |------|---------|
-| `.github/workflows/ci.yaml` | CI pipeline definition |
-| `.golangci.yml` | golangci-lint configuration |
-| `.dockerignore` | Exclude .git/, data/, node_modules/, .planning/ from Docker context |
-| `deploy/docker/Dockerfile.backend` | Go multi-stage build |
-| `deploy/docker/Dockerfile.frontend` | React multi-stage build + nginx |
-| `deploy/docker/nginx.conf` | Frontend reverse proxy to backend Service |
-| `deploy/k8s/base/kustomization.yaml` | Base Kustomize config with configMapGenerator |
-| `deploy/k8s/base/namespace.yaml` | `shitcoin` namespace |
-| `deploy/k8s/base/backend-deployment.yaml` | Backend Deployment (config volume, data volume) |
-| `deploy/k8s/base/backend-service.yaml` | Backend ClusterIP Service (ports 8080, 3000) |
-| `deploy/k8s/base/frontend-deployment.yaml` | Frontend Deployment (nginx) |
-| `deploy/k8s/base/frontend-service.yaml` | Frontend ClusterIP Service (port 80) |
-| `deploy/k8s/base/configs/shitcoin.yaml` | Config file for configMapGenerator |
-| `deploy/k8s/overlays/dev/kustomization.yaml` | Dev overlay (local images, emptyDir) |
-| `deploy/k8s/overlays/dev/patches/backend-resources.yaml` | Dev resource limits |
-| `deploy/k8s/overlays/prod/kustomization.yaml` | Prod overlay (registry images, PVC) |
-| `deploy/k8s/overlays/prod/patches/backend-resources.yaml` | Prod resource limits |
-| `argocd/application.yaml` | ArgoCD Application CR |
-| `Tiltfile` | Tilt local dev orchestration |
+| `internal/testutil/chain.go` | `NewTestChain`, `MineBlocks`, `DefaultChainConfig` |
+| `internal/testutil/tx.go` | `BuildSignedTx`, `NewTestWallet`, `FundAddress` |
+| `internal/testutil/utxo.go` | `SeedUTXOs`, `AssertBalance` |
+| `internal/testutil/mock/chain_repo.go` | Consolidated thread-safe in-memory `chain.Repository` |
+| `internal/testutil/mock/utxo_repo.go` | Consolidated thread-safe in-memory `utxo.Repository` |
+| `internal/testutil/mock/wallet_repo.go` | In-memory `wallet.Repository` |
+| `internal/handler/cli/cli_test.go` | CLI command dispatch and subcommand tests |
+| `internal/svc/service_context_test.go` | ServiceContext construction and Close tests |
 
-### Modified Files (1 file)
+### Modified Files (4 files, test-only changes)
 
 | File | Change |
 |------|--------|
-| `.gitignore` | Add `.tilt-dev/` and `tilt_modules/` |
+| `internal/domain/chain/chain_test.go` | Replace ~200 lines of local mocks with `testutil/mock` imports |
+| `internal/domain/mempool/mempool_test.go` | Replace ~80 lines of local `memRepo` with `testutil/mock.UTXORepo` |
+| `internal/handler/api/block_handler_test.go` | Replace ~80 lines of local `mockChainRepo` with `testutil/mock.ChainRepo` |
+| `internal/domain/p2p/server_test.go` | Replace ~60 lines of local `MockChainRepo` with `testutil/mock.ChainRepo` |
 
-### Existing Files NOT Modified (0 changes to source)
+### Existing Production Code NOT Modified
 
-No changes to any file in `cmd/`, `internal/`, `web/src/`, `etc/`, `go.mod`, or `web/package.json`. The CI/CD and K8s layer is entirely additive.
+Zero changes to any file outside `*_test.go` files and the new `testutil/` package. The existing interface-based DI already supports testing without modification.
 
-## Scalability Considerations
+## Test Organization Per Layer
 
-| Concern | Local Dev (Tilt) | Single-Node K8s | Multi-Node K8s |
-|---------|-----------------|-----------------|----------------|
-| Storage | emptyDir (ephemeral) | PVC with hostPath | PVC with cloud storage |
-| P2P peers | Single replica, no peers | Single replica | StatefulSet + headless Service |
-| Frontend scaling | Single replica | Single replica | HPA on CPU |
-| Config management | Kustomize dev overlay | Kustomize dev overlay | Kustomize prod overlay |
-| Image registry | Local (kind load) | ghcr.io | ghcr.io |
-
-For this educational project, single-replica Deployments are the right scope. Multi-node StatefulSets are an interesting extension but not part of v1.1.
+| Layer | Test Type | Isolation | Speed | Pattern |
+|-------|-----------|-----------|-------|---------|
+| `domain/block` | Unit | No deps | <1ms/test | Table-driven, pure functions |
+| `domain/chain` | Unit | Mock repos | ~100ms/test (PoW mining) | `testutil.NewTestChain` |
+| `domain/tx` | Unit | No deps | <1ms/test | Table-driven |
+| `domain/utxo` | Unit | Mock repo | <1ms/test | Seed + assert |
+| `domain/wallet` | Unit | No deps | <5ms/test (key gen) | Pure functions |
+| `domain/mempool` | Unit | Mock UTXO repo | <5ms/test (signing) | `testutil.BuildSignedTx` |
+| `domain/p2p` | Unit + Integration | `net.Pipe`, port 0 | ~200ms/test (TCP) | `makeTestServer` |
+| `domain/events` | Unit | No deps | <1ms/test | Channel assertions |
+| `handler/api` | Unit | Mock repos | <1ms/test | httptest + pathvar |
+| `handler/ws` | Unit | Real Bus | <50ms/test | Channel + Eventually |
+| `handler/cli` | Unit | Mock ServiceContext | ~100ms/test | Direct function calls |
+| `infrastructure/bbolt` | Integration | Real BoltDB in TempDir | ~50ms/test | suite.Suite |
+| `infrastructure/jsonfile` | Integration | Real files in TempDir | <10ms/test | t.TempDir |
+| `svc` | Integration | Real BoltDB in TempDir | ~100ms/test | t.TempDir + Cleanup |
 
 ## Sources
 
-- [GitHub Actions CI with Go](https://www.alexedwards.net/blog/ci-with-go-and-github-actions) - HIGH confidence
-- [Go CI/CD Best Practices with GitHub Actions](https://dev.to/ticatwolves/automate-your-go-project-best-practices-cicd-with-github-actions-4bo4) - MEDIUM confidence
-- [Go Linting with golangci-lint in CI](https://medium.com/@tedious/go-linting-best-practices-for-ci-cd-with-github-actions-aa6d96e0c509) - MEDIUM confidence
-- [Tilt Dev Official Site](https://tilt.dev/) - HIGH confidence
-- [Local K8s Development with Tilt (2026)](https://oneuptime.com/blog/post/2026-01-19-kubernetes-tilt-local-development/view) - MEDIUM confidence
-- [Kustomize Official Docs](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) - HIGH confidence
-- [Kustomize Best Practices](https://www.openanalytics.eu/blog/2021/02/23/kustomize-best-practices/) - MEDIUM confidence
-- [ArgoCD Kustomize Integration](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/) - HIGH confidence
-- [GitOps Repo Structure with ArgoCD](https://itnext.io/how-to-structure-your-gitops-repository-with-a-single-argocd-instance-f128b916c915) - MEDIUM confidence
-- [Multi-Stage Docker Builds for Go (2026)](https://oneuptime.com/blog/post/2026-01-07-go-docker-multi-stage/view) - MEDIUM confidence
-- [Deploying Go to Production (2026)](https://dasroot.net/posts/2026/03/deploying-go-applications-production-best-practices-tools/) - MEDIUM confidence
+- Existing codebase analysis: 23 test files across 15 packages - HIGH confidence (direct code inspection)
+- Go testing patterns from `testing` package stdlib documentation - HIGH confidence
+- testify library (already in go.mod: `github.com/stretchr/testify`) for assertions, require, mock, suite - HIGH confidence
+- go-zero `pathvar.WithVars` for route parameter injection in handler tests - HIGH confidence (already used in codebase)
+- `net.Pipe()` and `httptest` patterns from Go stdlib - HIGH confidence
