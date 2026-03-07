@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-03-07T08:25:51.109Z"
-last_activity: 2026-03-07 -- Plan 05-01 executed, backend foundation for web dashboard
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-07T08:26:52.037Z"
+last_activity: 2026-03-07 -- Plan 05-02 executed, REST API handlers for block explorer
 progress:
   total_phases: 8
   completed_phases: 6
   total_plans: 19
-  completed_plans: 16
-  percent: 79
+  completed_plans: 17
+  percent: 89
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 05.1 complete -- Go upgraded to 1.26.1 with modernizers
+**Current focus:** Phase 05 Plan 02 complete -- REST API handlers for block explorer
 
 ## Current Position
 
 Phase: 05 of 8 (Web Dashboard)
-Plan: 1 of 4 in current phase (05-01 complete)
+Plan: 2 of 4 in current phase (05-02 complete)
 Status: In Progress
-Last activity: 2026-03-07 -- Plan 05-01 executed, backend foundation for web dashboard
+Last activity: 2026-03-07 -- Plan 05-02 executed, REST API handlers for block explorer
 
-Progress: [████████░░] 79%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [████████░░] 79%
 | Phase 05.1 P01 | 3min | 2 tasks | 9 files |
 | Phase 05 P01 | 3min | 2 tasks | 8 files |
 | Phase 05 P03 | 4min | 2 tasks | 9 files |
+| Phase 05 P02 | 5min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -127,6 +128,7 @@ Recent decisions affecting current work:
 - [Phase 05]: Chain.OnMiningProgress callback keeps event bus out of domain layer
 - [Phase 05]: Slow WebSocket clients evicted on full send buffer (non-blocking broadcast)
 - [Phase 05]: WebSocket hub goroutine started in constructor, event bus subscriber as second goroutine
+- [Phase 05]: Handler factory pattern: FooHandler(svcCtx) returns http.HandlerFunc with closure
 
 ### Roadmap Evolution
 
@@ -144,6 +146,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T08:25:51.106Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-03-07T08:26:52.034Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
