@@ -1,4 +1,4 @@
-package mempool
+package mempool_test
 
 import (
 	"sync"
@@ -9,75 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
+	"github.com/baotoq/shitcoin/internal/domain/mempool"
 	"github.com/baotoq/shitcoin/internal/domain/tx"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
+	"github.com/baotoq/shitcoin/internal/testutil"
 )
-
-// --- In-memory UTXO repository for mempool tests ---
-
-type memRepo struct {
-	utxos map[string]utxo.UTXO
-	undos map[uint64]*utxo.UndoEntry
-}
-
-func newMemRepo() *memRepo {
-	return &memRepo{
-		utxos: make(map[string]utxo.UTXO),
-		undos: make(map[uint64]*utxo.UndoEntry),
-	}
-}
-
-func (m *memRepo) Put(u utxo.UTXO) error {
-	m.utxos[u.Key()] = u
-	return nil
-}
-
-func (m *memRepo) Get(txID block.Hash, vout uint32) (utxo.UTXO, error) {
-	u := utxo.NewUTXO(txID, vout, 0, "")
-	val, ok := m.utxos[u.Key()]
-	if !ok {
-		return utxo.UTXO{}, utxo.ErrUTXONotFound
-	}
-	return val, nil
-}
-
-func (m *memRepo) Delete(txID block.Hash, vout uint32) error {
-	u := utxo.NewUTXO(txID, vout, 0, "")
-	key := u.Key()
-	if _, ok := m.utxos[key]; !ok {
-		return utxo.ErrUTXONotFound
-	}
-	delete(m.utxos, key)
-	return nil
-}
-
-func (m *memRepo) GetByAddress(address string) ([]utxo.UTXO, error) {
-	var result []utxo.UTXO
-	for _, u := range m.utxos {
-		if u.Address() == address {
-			result = append(result, u)
-		}
-	}
-	return result, nil
-}
-
-func (m *memRepo) SaveUndoEntry(entry *utxo.UndoEntry) error {
-	m.undos[entry.BlockHeight] = entry
-	return nil
-}
-
-func (m *memRepo) GetUndoEntry(blockHeight uint64) (*utxo.UndoEntry, error) {
-	entry, ok := m.undos[blockHeight]
-	if !ok {
-		return nil, utxo.ErrUndoEntryNotFound
-	}
-	return entry, nil
-}
-
-func (m *memRepo) DeleteUndoEntry(blockHeight uint64) error {
-	delete(m.undos, blockHeight)
-	return nil
-}
 
 // buildSignedTx creates a valid signed spending transaction against the UTXO set.
 // 1. Creates a coinbase, applies it to the UTXO set
@@ -102,34 +38,34 @@ func buildSignedTx(t *testing.T, utxoSet *utxo.Set, privKey *btcec.PrivateKey, a
 }
 
 func TestAdd_ValidTransaction(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 	address := "testaddr"
 
 	spendTx := buildSignedTx(t, utxoSet, privKey, address)
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	require.NoError(t, mp.Add(spendTx))
 	assert.Equal(t, 1, mp.Count())
 }
 
 func TestAdd_Duplicate(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 
 	spendTx := buildSignedTx(t, utxoSet, privKey, "testaddr")
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	_ = mp.Add(spendTx)
 
 	err := mp.Add(spendTx)
-	assert.ErrorIs(t, err, ErrDuplicate)
+	assert.ErrorIs(t, err, mempool.ErrDuplicate)
 }
 
 func TestAdd_DoubleSpend(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 	address := "testaddr"
@@ -148,15 +84,15 @@ func TestAdd_DoubleSpend(t *testing.T) {
 	spendTx2 := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(5_000_000_000, "charlie")})
 	_ = tx.SignTransaction(spendTx2, privKey)
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	_ = mp.Add(spendTx1)
 
 	err = mp.Add(spendTx2)
-	assert.ErrorIs(t, err, ErrDoubleSpend)
+	assert.ErrorIs(t, err, mempool.ErrDoubleSpend)
 }
 
 func TestAdd_InvalidSignature(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 
 	// Create coinbase
@@ -167,13 +103,13 @@ func TestAdd_InvalidSignature(t *testing.T) {
 	input := tx.NewTxInput(coinbase.ID(), 0)
 	unsignedTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(5_000_000_000, "bob")})
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	err := mp.Add(unsignedTx)
-	assert.ErrorIs(t, err, ErrInvalidSignature)
+	assert.ErrorIs(t, err, mempool.ErrInvalidSignature)
 }
 
 func TestAdd_UTXONotFound(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 
@@ -183,13 +119,13 @@ func TestAdd_UTXONotFound(t *testing.T) {
 	fakeTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(1000, "bob")})
 	_ = tx.SignTransaction(fakeTx, privKey)
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	err := mp.Add(fakeTx)
-	assert.ErrorIs(t, err, ErrUTXONotFound)
+	assert.ErrorIs(t, err, mempool.ErrUTXONotFound)
 }
 
 func TestDrainAll(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 
@@ -205,7 +141,7 @@ func TestDrainAll(t *testing.T) {
 		txs = append(txs, spendTx)
 	}
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	for _, transaction := range txs {
 		require.NoError(t, mp.Add(transaction))
 	}
@@ -216,7 +152,7 @@ func TestDrainAll(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 
@@ -232,7 +168,7 @@ func TestRemove(t *testing.T) {
 		txs = append(txs, spendTx)
 	}
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	for _, transaction := range txs {
 		_ = mp.Add(transaction)
 	}
@@ -244,7 +180,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestTransactions(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 
@@ -259,7 +195,7 @@ func TestTransactions(t *testing.T) {
 		txs = append(txs, spendTx)
 	}
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	for _, transaction := range txs {
 		_ = mp.Add(transaction)
 	}
@@ -269,7 +205,7 @@ func TestTransactions(t *testing.T) {
 }
 
 func TestConcurrentAccess(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 
@@ -285,7 +221,7 @@ func TestConcurrentAccess(t *testing.T) {
 		txs = append(txs, spendTx)
 	}
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 
 	var wg sync.WaitGroup
 	for i := range 10 {
@@ -301,21 +237,21 @@ func TestConcurrentAccess(t *testing.T) {
 }
 
 func TestAddStoresFee(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 	address := "testaddr"
 
 	spendTx := buildSignedTx(t, utxoSet, privKey, address)
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	require.NoError(t, mp.AddWithFee(spendTx, 500))
 	assert.Equal(t, 1, mp.Count())
 	assert.Equal(t, int64(500), mp.FeeForTx(spendTx.ID()))
 }
 
 func TestDrainByFee(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 
@@ -332,7 +268,7 @@ func TestDrainByFee(t *testing.T) {
 		txs = append(txs, spendTx)
 	}
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	for i, transaction := range txs {
 		require.NoError(t, mp.AddWithFee(transaction, fees[i]))
 	}
@@ -350,7 +286,7 @@ func TestDrainByFee(t *testing.T) {
 }
 
 func TestDrainByFeeMaxTxs(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 
@@ -367,7 +303,7 @@ func TestDrainByFeeMaxTxs(t *testing.T) {
 		txs = append(txs, spendTx)
 	}
 
-	mp := New(utxoSet)
+	mp := mempool.New(utxoSet)
 	for i, transaction := range txs {
 		require.NoError(t, mp.AddWithFee(transaction, fees[i]))
 	}
@@ -386,7 +322,7 @@ func TestDrainByFeeMaxTxs(t *testing.T) {
 }
 
 func TestDrainByFeeZeroLimit(t *testing.T) {
-	repo := newMemRepo()
+	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
 	privKey, _ := btcec.NewPrivateKey()
 
@@ -398,7 +334,7 @@ func TestDrainByFeeZeroLimit(t *testing.T) {
 		spendTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(int64(5_000_000_000+i), "bob")})
 		_ = tx.SignTransaction(spendTx, privKey)
 
-		mp := New(utxoSet)
+		mp := mempool.New(utxoSet)
 		_ = mp.AddWithFee(spendTx, int64(100*(i+1)))
 
 		// DrainByFee(0) returns all -- backward compat
@@ -408,9 +344,9 @@ func TestDrainByFeeZeroLimit(t *testing.T) {
 	}
 
 	// More explicit test: build pool of 3 and drain with limit 0
-	repo2 := newMemRepo()
+	repo2 := testutil.NewMockUTXORepo()
 	utxoSet2 := utxo.NewSet(repo2)
-	mp := New(utxoSet2)
+	mp := mempool.New(utxoSet2)
 
 	for i := range 3 {
 		coinbase := tx.NewCoinbaseTx("addr2", int64(5_000_000_000+i))

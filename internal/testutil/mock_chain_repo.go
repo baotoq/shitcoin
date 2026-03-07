@@ -2,7 +2,6 @@ package testutil
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"sync"
 
@@ -68,7 +67,7 @@ func (m *MockChainRepo) GetBlock(_ context.Context, hash block.Hash) (*block.Blo
 	defer m.mu.RUnlock()
 	b, ok := m.Blocks[hash]
 	if !ok {
-		return nil, errors.New("block not found")
+		return nil, chain.ErrBlockNotFound
 	}
 	return b, nil
 }
@@ -78,7 +77,7 @@ func (m *MockChainRepo) GetBlockByHeight(_ context.Context, height uint64) (*blo
 	defer m.mu.RUnlock()
 	b, ok := m.ByHeight[height]
 	if !ok {
-		return nil, errors.New("block not found at height")
+		return nil, chain.ErrBlockNotFound
 	}
 	return b, nil
 }
@@ -87,7 +86,7 @@ func (m *MockChainRepo) GetLatestBlock(_ context.Context) (*block.Block, error) 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if m.Latest == nil {
-		return nil, errors.New("chain is empty")
+		return nil, chain.ErrChainEmpty
 	}
 	return m.Latest, nil
 }
@@ -118,7 +117,7 @@ func (m *MockChainRepo) GetUndoEntry(_ context.Context, blockHeight uint64) (*ut
 	defer m.mu.RUnlock()
 	entry, ok := m.Undos[blockHeight]
 	if !ok {
-		return nil, errors.New("undo entry not found")
+		return nil, utxo.ErrUndoEntryNotFound
 	}
 	return entry, nil
 }
