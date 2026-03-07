@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A full blockchain implementation in Go that replicates Bitcoin's core mechanics for educational purposes. It implements Proof of Work mining, UTXO-based transactions, P2P networking between local nodes, and wallet/key management — all simplified to focus on understanding how blockchains work rather than protocol compatibility. Includes a CLI for node operations and a web dashboard for chain visualization.
+A full blockchain implementation in Go that replicates Bitcoin's core mechanics for educational purposes. Implements Proof of Work mining, UTXO-based transactions with fees and halving, P2P networking with consensus, wallet/key management, a 9-command CLI, and a React web dashboard with real-time mining visualization.
 
 ## Core Value
 
@@ -12,51 +12,57 @@ A working blockchain you built and understand end-to-end — from transaction cr
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Proof of Work mining with adjustable difficulty, auto-mine and manual modes — v1.0
+- ✓ UTXO transaction model with inputs, outputs, signing, and validation — v1.0
+- ✓ P2P networking between multiple local nodes with consensus — v1.0
+- ✓ Wallet/key management (ECDSA secp256k1, Base58Check addresses) — v1.0
+- ✓ CLI for node operations (9 commands including testnet and demo) — v1.0
+- ✓ Web dashboard with block explorer, mining visualizer, and live status — v1.0
+- ✓ Persistent chain storage using BoltDB with UTXO undo-log — v1.0
+- ✓ Genesis block creation and chain initialization — v1.0
+- ✓ Block reward halving and fee-prioritized mining — v1.0
+- ✓ Multi-node testnet orchestration and double-spend demo — v1.0
 
 ### Active
 
-- [ ] Proof of Work mining with adjustable difficulty (auto-mine and manual modes)
-- [ ] UTXO transaction model with inputs, outputs, and validation
-- [ ] P2P networking between multiple local nodes (different ports on localhost)
-- [ ] Wallet/key management (key generation, address derivation, signing)
-- [ ] CLI for node operations (start node, send transactions, mine blocks, check balances)
-- [ ] Web dashboard with block/transaction explorer and node status (peers, mempool, chain height, mining status)
-- [ ] Persistent chain storage using embedded key-value store (BoltDB or BadgerDB)
-- [ ] Genesis block creation and chain initialization
+(None — v1.0 complete, define next milestone for new requirements)
 
 ### Out of Scope
 
-- Bitcoin protocol compatibility — this is an educational clone, not a Bitcoin client
-- Internet-scale P2P (NAT traversal, DNS seeds, peer discovery beyond localhost)
+- Bitcoin protocol compatibility — educational clone, not a Bitcoin client
+- Internet-scale P2P (NAT traversal, DNS seeds) — localhost networking proves concepts
 - Scripting system (Bitcoin Script) — simplified transaction validation instead
 - SPV/light clients — all nodes are full nodes
-- Mobile or desktop GUI — CLI + web dashboard only
+- Mobile or desktop GUI — CLI + web dashboard covers needs
 
 ## Context
 
-- Personal learning project to understand blockchain internals by building one
-- Go chosen as implementation language (good concurrency support, systems-level)
-- Educational clone approach: same concepts as Bitcoin (PoW, UTXO, Merkle trees) but simplified implementations
-- Local multi-node testing: run 2-3+ nodes on localhost with different ports to demonstrate consensus and sync
-- Dashboard serves dual purpose: block explorer (browse chain data) and operational view (node health)
+Shipped v1.0 with 11,449 Go LOC + React frontend.
+Tech stack: Go 1.26.1, go-zero, BoltDB, gorilla/websocket, React + Vite + TypeScript + Tailwind CSS.
+42 requirements satisfied across 8 phases (22 plans, 127 commits, 3 days).
 
 ## Constraints
 
-- **Language**: Go — chosen for learning and concurrency primitives
-- **Dependencies**: Minimal external dependencies — prefer standard library where reasonable
-- **Storage**: Embedded KV store (BoltDB/BadgerDB) — no external database servers
-- **Networking**: localhost only — no NAT traversal or internet-facing requirements
+- **Language**: Go 1.26.1
+- **Dependencies**: Minimal — stdlib + go-zero + BoltDB + gorilla/websocket + btcec
+- **Storage**: BoltDB embedded KV store
+- **Networking**: localhost only
+- **Frontend**: React + Vite + TypeScript SPA
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Educational clone over faithful replica | Focus on understanding concepts, not protocol compatibility | — Pending |
-| UTXO model over account model | Matches Bitcoin's approach, more interesting to implement | — Pending |
-| Embedded KV store for persistence | Simple, no external deps, good for learning storage patterns | — Pending |
-| Local multi-node P2P | Proves concepts without networking complexity | — Pending |
-| Both auto-mine and manual mine modes | Auto for demos, manual for testing/learning | — Pending |
+| Educational clone over faithful replica | Focus on understanding concepts, not protocol compatibility | ✓ Good |
+| UTXO model over account model | Matches Bitcoin's approach, more interesting to implement | ✓ Good |
+| BoltDB for persistence | Simple, no external deps, atomic block+UTXO saves | ✓ Good |
+| Local multi-node P2P | Proves concepts without networking complexity | ✓ Good |
+| DDD with go-zero | Clean architecture, ServiceContext pattern works well | ✓ Good |
+| Block txs as []any | Breaks import cycles between block and tx packages | ✓ Good |
+| React + Vite SPA (not embedded) | Separate dev server, faster iteration, modern tooling | ✓ Good |
+| gorilla/websocket for real-time | Mature library, simple hub pattern for broadcasting | ✓ Good |
+| In-process double-spend demo | Faster and more reliable than subprocess approach | ✓ Good |
+| Total-fee sorting (not fee-per-byte) | Educational project, all txs roughly same size | ✓ Good |
 
 ---
-*Last updated: 2026-03-05 after initialization*
+*Last updated: 2026-03-07 after v1.0 milestone*
