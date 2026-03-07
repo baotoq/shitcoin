@@ -8,6 +8,7 @@ import (
 	"github.com/baotoq/shitcoin/internal/config"
 	"github.com/baotoq/shitcoin/internal/domain/block"
 	"github.com/baotoq/shitcoin/internal/domain/chain"
+	"github.com/baotoq/shitcoin/internal/domain/events"
 	"github.com/baotoq/shitcoin/internal/domain/mempool"
 	"github.com/baotoq/shitcoin/internal/domain/utxo"
 	"github.com/baotoq/shitcoin/internal/domain/wallet"
@@ -26,6 +27,7 @@ type ServiceContext struct {
 	UTXOSet    *utxo.Set
 	WalletRepo wallet.Repository
 	Mempool    *mempool.Mempool
+	EventBus   *events.Bus
 	DB         *bolt.DB
 }
 
@@ -90,6 +92,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		UTXOSet:    utxoSet,
 		WalletRepo: walletRepo,
 		Mempool:    pool,
+		EventBus:   events.NewBus(),
 		DB:         db,
 	}
 }
