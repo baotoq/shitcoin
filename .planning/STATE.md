@@ -9,9 +9,9 @@ last_activity: 2026-03-08 -- v1.2 roadmap created (Phases 14-18)
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 1
+  completed_plans: 1
+  percent: 20
 ---
 
 # Project State
@@ -26,16 +26,16 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 14 (1 of 5 in v1.2) (Test Infrastructure)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-08 -- v1.2 roadmap created
+Plan: 1 of 1 in current phase
+Status: Plan 14-01 complete
+Last activity: 2026-03-08 -- Completed 14-01 test builders and mock repos
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24 (22 v1.0 + 2 v1.1)
+- Total plans completed: 25 (22 v1.0 + 2 v1.1 + 1 v1.2)
 - Average duration: 6min
-- Total execution time: ~2.2 hours
+- Total execution time: ~2.3 hours
 
 **By Phase (v1.0):**
 
@@ -61,6 +61,9 @@ Recent decisions affecting current work:
 - [v1.2 Roadmap]: Shared testutil package (Phase 14) before any test writing -- eliminates mock duplication
 - [v1.2 Roadmap]: Race detection via -race flag deferred to Phase 18 (after coverage exists)
 - [Research]: WebSocket hub lacks Stop() -- may need small production code change for Phase 17
+- [14-01]: Difficulty bits=1 for test mining -- fast block creation while exercising real PoW
+- [14-01]: Exported map fields on mocks for test inspection
+- [14-01]: Domain error vars (ErrUTXONotFound, ErrWalletNotFound) in mock returns for ErrorIs
 
 ### Pending Todos
 
@@ -74,5 +77,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: v1.2 roadmap created, ready to plan Phase 14
+Stopped at: Completed 14-01-PLAN.md (test builders + mock repos)
 Resume file: None

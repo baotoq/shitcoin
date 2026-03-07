@@ -56,7 +56,7 @@
 **Plans:** 2 plans
 
 Plans:
-- [ ] 14-01-PLAN.md — Create shared testutil package with builders and mock repositories (TDD)
+- [x] 14-01-PLAN.md — Create shared testutil package with builders and mock repositories (TDD)
 - [ ] 14-02-PLAN.md — Migrate existing tests to shared testutil, delete local duplicates
 
 ### Phase 15: Domain Layer Coverage
@@ -122,7 +122,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 11. Kubernetes Manifests | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 12. Local K8s Development | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 13. GitOps Deployment | v1.1 | 1/1 | Complete | 2026-03-07 |
-| 14. Test Infrastructure | v1.2 | 0/2 | Not started | - |
+| 14. Test Infrastructure | v1.2 | 1/2 | In progress | - |
 | 15. Domain Layer Coverage | v1.2 | 0/? | Not started | - |
 | 16. Infrastructure Persistence Tests | v1.2 | 0/? | Not started | - |
 | 17. Handler Layer Tests | v1.2 | 0/? | Not started | - |
@@ -130,4 +130,4 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-08 -- Phase 14 planned (2 plans)*
+*Last updated: 2026-03-08 -- Phase 14 plan 01 complete*
