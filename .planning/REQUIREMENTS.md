@@ -25,13 +25,13 @@ Requirements for CI/CD & Kubernetes milestone. Each maps to roadmap phases.
 
 ### Kubernetes
 
-- [ ] **K8S-01**: Kustomize base defines Deployment + Service for backend and frontend
-- [ ] **K8S-02**: Kustomize base includes PVC for BoltDB data persistence
-- [ ] **K8S-03**: Kustomize base uses configMapGenerator to externalize shitcoin.yaml
-- [ ] **K8S-04**: Backend Deployment uses Recreate strategy with single replica for BoltDB safety
+- [x] **K8S-01**: Kustomize base defines Deployment + Service for backend and frontend
+- [x] **K8S-02**: Kustomize base includes PVC for BoltDB data persistence
+- [x] **K8S-03**: Kustomize base uses configMapGenerator to externalize shitcoin.yaml
+- [x] **K8S-04**: Backend Deployment uses Recreate strategy with single replica for BoltDB safety
 - [ ] **K8S-05**: Kustomize dev overlay configures local image refs and lower resource limits
 - [ ] **K8S-06**: Kustomize prod overlay configures pinned image tags and production resource limits
-- [ ] **K8S-07**: Health probes (liveness + readiness) configured on /api/status
+- [x] **K8S-07**: Health probes (liveness + readiness) configured on /api/status
 
 ### Local Dev
 
@@ -86,13 +86,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CI-03 | Phase 10 | Complete |
 | CI-04 | Phase 10 | Complete |
 | CI-05 | Phase 10 | Complete |
-| K8S-01 | Phase 11 | Pending |
-| K8S-02 | Phase 11 | Pending |
-| K8S-03 | Phase 11 | Pending |
-| K8S-04 | Phase 11 | Pending |
+| K8S-01 | Phase 11 | Complete |
+| K8S-02 | Phase 11 | Complete |
+| K8S-03 | Phase 11 | Complete |
+| K8S-04 | Phase 11 | Complete |
 | K8S-05 | Phase 11 | Pending |
 | K8S-06 | Phase 11 | Pending |
-| K8S-07 | Phase 11 | Pending |
+| K8S-07 | Phase 11 | Complete |
 | DEV-01 | Phase 12 | Pending |
 | DEV-02 | Phase 12 | Pending |
 | DEV-03 | Phase 12 | Pending |

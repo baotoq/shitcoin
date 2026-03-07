@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: CI/CD & Kubernetes
 status: executing
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-03-07T14:58:00.614Z"
-last_activity: 2026-03-07 -- Completed 10-01 (Go CI Pipeline)
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-03-07T16:22:28.855Z"
+last_activity: 2026-03-07 -- Completed 11-01 (Kustomize Base Manifests)
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
   percent: 43
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 10 - CI Pipeline (executing)
+**Current focus:** Phase 11 - Kubernetes Manifests (executing)
 
 ## Current Position
 
-Phase: 10 of 13 (CI Pipeline)
-Plan: 2 of 2 complete
+Phase: 11 of 13 (Kubernetes Manifests)
+Plan: 1 of 2 complete
 Status: Executing
-Last activity: 2026-03-07 -- Completed 10-01 (Go CI Pipeline)
+Last activity: 2026-03-07 -- Completed 11-01 (Kustomize Base Manifests)
 
-Progress: [████░░░░░░] 43%
+Progress: [██████████] 96%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [████░░░░░░] 43%
 - Trend: Stable, infrastructure phases may be faster (config files, no complex logic)
 | Phase 10 P01 | 14min | 2 tasks | 2 files |
 | Phase 10 P02 | 10min | 2 tasks | 2 files |
+| Phase 11-01 P01 | 1min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ Recent decisions affecting current work:
 - [Phase 10]: GHA cache (type=gha) for Docker layer caching; conditional push on master merge only
 - [10-01]: golangci-lint v2 config with standard defaults plus extra linters (govet, errcheck, staticcheck, etc.)
 - [10-01]: Parallel test+lint CI jobs; go-version-file: go.mod for automatic version management
+- [Phase 11-01]: configMapGenerator with hash suffix for automatic pod restart on config changes
+- [Phase 11-01]: Recreate strategy with single replica for BoltDB single-writer safety
 
 ### Pending Todos
 
@@ -88,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T14:55:00Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-03-07T16:22:28.852Z
+Stopped at: Completed 11-01-PLAN.md
 Resume file: None
