@@ -1,7 +1,7 @@
 # Requirements: Shitcoin
 
 **Defined:** 2026-03-07
-**Core Value:** A working blockchain you built and understand end-to-end — from transaction creation to block mining to peer synchronization.
+**Core Value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
 
 ## v1.1 Requirements
 
@@ -76,35 +76,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DOCK-01 | — | Pending |
-| DOCK-02 | — | Pending |
-| DOCK-03 | — | Pending |
-| DOCK-04 | — | Pending |
-| DOCK-05 | — | Pending |
-| CI-01 | — | Pending |
-| CI-02 | — | Pending |
-| CI-03 | — | Pending |
-| CI-04 | — | Pending |
-| CI-05 | — | Pending |
-| K8S-01 | — | Pending |
-| K8S-02 | — | Pending |
-| K8S-03 | — | Pending |
-| K8S-04 | — | Pending |
-| K8S-05 | — | Pending |
-| K8S-06 | — | Pending |
-| K8S-07 | — | Pending |
-| DEV-01 | — | Pending |
-| DEV-02 | — | Pending |
-| DEV-03 | — | Pending |
-| DEV-04 | — | Pending |
-| GIT-01 | — | Pending |
-| GIT-02 | — | Pending |
+| DOCK-01 | Phase 9 | Pending |
+| DOCK-02 | Phase 9 | Pending |
+| DOCK-03 | Phase 9 | Pending |
+| DOCK-04 | Phase 9 | Pending |
+| DOCK-05 | Phase 9 | Pending |
+| CI-01 | Phase 10 | Pending |
+| CI-02 | Phase 10 | Pending |
+| CI-03 | Phase 10 | Pending |
+| CI-04 | Phase 10 | Pending |
+| CI-05 | Phase 10 | Pending |
+| K8S-01 | Phase 11 | Pending |
+| K8S-02 | Phase 11 | Pending |
+| K8S-03 | Phase 11 | Pending |
+| K8S-04 | Phase 11 | Pending |
+| K8S-05 | Phase 11 | Pending |
+| K8S-06 | Phase 11 | Pending |
+| K8S-07 | Phase 11 | Pending |
+| DEV-01 | Phase 12 | Pending |
+| DEV-02 | Phase 12 | Pending |
+| DEV-03 | Phase 12 | Pending |
+| DEV-04 | Phase 12 | Pending |
+| GIT-01 | Phase 13 | Pending |
+| GIT-02 | Phase 13 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23 ⚠️
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after initial definition*
+*Last updated: 2026-03-07 after roadmap creation*
