@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-07T08:19:55.184Z"
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-03-07T08:25:51.109Z"
 last_activity: 2026-03-07 -- Plan 05-01 executed, backend foundation for web dashboard
 progress:
   total_phases: 8
   completed_phases: 6
   total_plans: 19
-  completed_plans: 15
+  completed_plans: 16
   percent: 79
 ---
 
@@ -63,6 +63,7 @@ Progress: [████████░░] 79%
 | Phase 04.1 P02 | 7min | 2 tasks | 7 files |
 | Phase 05.1 P01 | 3min | 2 tasks | 9 files |
 | Phase 05 P01 | 3min | 2 tasks | 8 files |
+| Phase 05 P03 | 4min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,9 @@ Recent decisions affecting current work:
 - [Phase 05]: Event bus uses buffered channels (cap 64) with non-blocking publish via select/default
 - [Phase 05]: MineWithProgress uses callback function pattern for flexibility, nil-safe
 - [Phase 05]: REST API types reuse bbolt storage models; PeerCounter interface decouples API from p2p
+- [Phase 05]: Chain.OnMiningProgress callback keeps event bus out of domain layer
+- [Phase 05]: Slow WebSocket clients evicted on full send buffer (non-blocking broadcast)
+- [Phase 05]: WebSocket hub goroutine started in constructor, event bus subscriber as second goroutine
 
 ### Roadmap Evolution
 
@@ -140,6 +144,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T08:19:55.180Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-03-07T08:25:51.106Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
