@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 05.1-01-PLAN.md
-last_updated: "2026-03-06T16:51:47.896Z"
-last_activity: 2026-03-06 -- Plan 05.1-01 executed, Go 1.26.1 upgrade with go fix modernizers
+status: executing
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-07T08:19:55.184Z"
+last_activity: 2026-03-07 -- Plan 05-01 executed, backend foundation for web dashboard
 progress:
   total_phases: 8
   completed_phases: 6
-  total_plans: 17
-  completed_plans: 14
-  percent: 82
+  total_plans: 19
+  completed_plans: 15
+  percent: 79
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 
 ## Current Position
 
-Phase: 05.1 of 8 (Upgrade to Go 1.26.1)
-Plan: 1 of 1 in current phase (05.1-01 complete)
-Status: Phase 05.1 Complete
-Last activity: 2026-03-06 -- Plan 05.1-01 executed, Go 1.26.1 upgrade with go fix modernizers
+Phase: 05 of 8 (Web Dashboard)
+Plan: 1 of 4 in current phase (05-01 complete)
+Status: In Progress
+Last activity: 2026-03-07 -- Plan 05-01 executed, backend foundation for web dashboard
 
-Progress: [████████░░] 82%
+Progress: [████████░░] 79%
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [████████░░] 82%
 | Phase 04.1 P01 | 7min | 2 tasks | 14 files |
 | Phase 04.1 P02 | 7min | 2 tasks | 7 files |
 | Phase 05.1 P01 | 3min | 2 tasks | 9 files |
+| Phase 05 P01 | 3min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -119,6 +120,9 @@ Recent decisions affecting current work:
 - [04.1-02]: testify/mock only for simple stub mocks; hand-rolled fakes for stateful stores with maps/mutexes
 - [Phase 05.1]: go fix correctly skipped merkle.go loop where len(level) changes during iteration
 - [Phase 05.1]: SplitSeq modernization in cli.go automatically applied by go fix (iterator-based split)
+- [Phase 05]: Event bus uses buffered channels (cap 64) with non-blocking publish via select/default
+- [Phase 05]: MineWithProgress uses callback function pattern for flexibility, nil-safe
+- [Phase 05]: REST API types reuse bbolt storage models; PeerCounter interface decouples API from p2p
 
 ### Roadmap Evolution
 
@@ -136,6 +140,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-06T16:49:16.520Z
-Stopped at: Completed 05.1-01-PLAN.md
+Last session: 2026-03-07T08:19:55.180Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None

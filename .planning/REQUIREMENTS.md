@@ -54,8 +54,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CLI-06**: User can print the full blockchain via `printchain` command
 - [x] **CLI-07**: User can start a full node via `startnode` command with port and mining address options
 - [ ] **DASH-01**: Web dashboard displays a block explorer where user can browse blocks and transactions
-- [ ] **DASH-02**: Web dashboard shows node status: connected peers, mempool size, chain height, mining status
-- [ ] **DASH-03**: Web dashboard visualizes mining in real-time (nonce attempts, hash values, target comparison)
+- [x] **DASH-02**: Web dashboard shows node status: connected peers, mempool size, chain height, mining status
+- [x] **DASH-03**: Web dashboard visualizes mining in real-time (nonce attempts, hash values, target comparison)
 - [ ] **DASH-04**: Web dashboard shows mempool with pending transactions
 - [ ] **DASH-05**: User can search by block hash, transaction hash, or address in the dashboard
 - [ ] **ORCH-01**: User can launch a local multi-node testnet with a single CLI command
@@ -128,8 +128,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLI-06 | Phase 3 | Complete |
 | CLI-07 | Phase 3 | Complete |
 | DASH-01 | Phase 5 | Pending |
-| DASH-02 | Phase 5 | Pending |
-| DASH-03 | Phase 5 | Pending |
+| DASH-02 | Phase 5 | Complete |
+| DASH-03 | Phase 5 | Complete |
 | DASH-04 | Phase 5 | Pending |
 | DASH-05 | Phase 5 | Pending |
 | ORCH-01 | Phase 6 | Pending |
