@@ -1,493 +1,471 @@
 # Architecture Patterns
 
-**Domain:** Educational Bitcoin-like blockchain implementation in Go
-**Researched:** 2026-03-05
+**Domain:** CI/CD and Kubernetes deployment for Go blockchain + React frontend
+**Researched:** 2026-03-07
 
 ## Recommended Architecture
 
-Shitcoin should follow a **layered architecture with clean package boundaries**, inspired by btcd's modular design but simplified for educational clarity. Each layer depends only on layers below it, enabling incremental development and testing.
+The CI/CD and K8s layer wraps the existing Go DDD application without modifying domain code. The integration is purely additive: new files at the repository root and in new directories (`deploy/`, `.github/`). No existing Go or React source files need modification.
+
+### High-Level Flow
 
 ```
-                    +------------------+
-                    |    Web Dashboard |   (HTTP server, block explorer UI)
-                    +--------+---------+
-                             |
-                    +--------+---------+
-                    |    CLI Layer     |   (cobra commands, user interaction)
-                    +--------+---------+
-                             |
-                    +--------+---------+
-                    |    RPC / API     |   (JSON-RPC or REST, programmatic access)
-                    +--------+---------+
-                             |
-          +------------------+------------------+
-          |                  |                  |
-+---------+------+  +--------+-------+  +-------+--------+
-|   P2P Network  |  |     Miner      |  |    Mempool     |
-|   (node sync)  |  |  (PoW engine)  |  | (pending txs)  |
-+--------+-------+  +--------+-------+  +-------+--------+
-         |                   |                   |
-         +-------------------+-------------------+
-                             |
-                    +--------+---------+
-                    |   Core Domain    |
-                    |  (blockchain,    |
-                    |   blocks, txs,   |
-                    |   UTXO, wallet)  |
-                    +--------+---------+
-                             |
-                    +--------+---------+
-                    |  Storage Layer   |
-                    |  (BoltDB/bbolt)  |
-                    +------------------+
+Developer pushes code
+       |
+       v
+GitHub Actions CI
+  ├── Test (go test ./...)
+  ├── Lint (golangci-lint)
+  ├── Build Docker images (backend + frontend)
+  └── Push to registry (ghcr.io)
+       |
+       v
+ArgoCD detects manifest changes in deploy/
+       |
+       v
+Kustomize renders final manifests
+       |
+       v
+Kubernetes applies deployment
 ```
 
-### Package Layout
+For local development, Tilt replaces the CI/push/ArgoCD portion:
 
-Use Go's multi-package layout for clear boundaries. Based on analysis of btcd, Jeiwan/blockchain_go, TheDhejavu/the-crypto-project, and volodymyrprokopyuk/go-blockchain, the following structure balances educational clarity with proper software engineering:
+```
+Developer edits code
+       |
+       v
+Tilt watches filesystem
+  ├── live_update syncs Go files, rebuilds in-container
+  ├── live_update syncs React files, Vite HMR handles reload
+  └── Deploys to local K8s (kind/k3d)
+```
+
+### New File Layout
+
+All new files. Nothing in `internal/`, `cmd/`, or `web/src/` is modified.
 
 ```
 shitcoin/
-+-- cmd/
-|   +-- shitcoin/
-|       +-- main.go              # Entry point
-+-- internal/
-|   +-- core/
-|   |   +-- block.go             # Block struct, hashing, serialization
-|   |   +-- blockchain.go        # Chain management, block addition, validation
-|   |   +-- iterator.go          # Blockchain traversal
-|   |   +-- genesis.go           # Genesis block creation
-|   |   +-- merkle.go            # Merkle tree for transaction hashing
-|   +-- tx/
-|   |   +-- transaction.go       # Transaction struct, creation, signing
-|   |   +-- input.go             # TXInput (references to previous outputs)
-|   |   +-- output.go            # TXOutput (value + lock script)
-|   |   +-- coinbase.go          # Coinbase transaction (mining reward)
-|   +-- utxo/
-|   |   +-- set.go               # UTXO set: cache of unspent outputs
-|   |   +-- finder.go            # Find spendable outputs for an address
-|   +-- wallet/
-|   |   +-- wallet.go            # Key pair generation (ECDSA)
-|   |   +-- address.go           # Address derivation (Base58Check)
-|   |   +-- keystore.go          # Wallet persistence (encrypted file)
-|   +-- consensus/
-|   |   +-- pow.go               # Proof of Work algorithm
-|   |   +-- difficulty.go        # Difficulty target and adjustment
-|   +-- mempool/
-|   |   +-- pool.go              # Pending transaction pool
-|   |   +-- validation.go        # Transaction validation before pool entry
-|   +-- network/
-|   |   +-- node.go              # Node lifecycle, peer management
-|   |   +-- server.go            # TCP listener, connection handling
-|   |   +-- protocol.go          # Message types (version, inv, getdata, block, tx)
-|   |   +-- sync.go              # Chain synchronization logic
-|   |   +-- peer.go              # Individual peer connection state
-|   +-- storage/
-|   |   +-- store.go             # Storage interface
-|   |   +-- boltdb.go            # BoltDB implementation
-|   |   +-- buckets.go           # Bucket definitions (blocks, utxo, metadata)
-|   +-- miner/
-|   |   +-- miner.go             # Mining loop (auto-mine + manual modes)
-|   |   +-- worker.go            # Block assembly from mempool
-+-- cli/
-|   +-- cli.go                   # Root CLI setup (cobra)
-|   +-- cmd_createchain.go       # Initialize new blockchain
-|   +-- cmd_createwallet.go      # Generate new wallet
-|   +-- cmd_send.go              # Create and broadcast transaction
-|   +-- cmd_balance.go           # Query address balance
-|   +-- cmd_mine.go              # Trigger manual mining
-|   +-- cmd_startnode.go         # Start P2P node
-|   +-- cmd_printchain.go        # Dump chain to stdout
-+-- api/
-|   +-- server.go                # HTTP/JSON-RPC server
-|   +-- handlers.go              # API endpoint handlers
-|   +-- routes.go                # Route definitions
-+-- web/
-|   +-- dashboard.go             # Dashboard HTTP handler
-|   +-- templates/               # HTML templates
-|   +-- static/                  # CSS/JS assets
-+-- pkg/
-|   +-- encoding/
-|   |   +-- base58.go            # Base58 encoding/decoding
-|   |   +-- serialize.go         # Gob serialization helpers
-|   +-- crypto/
-|       +-- hash.go              # SHA-256, RIPEMD-160 wrappers
-|       +-- sign.go              # ECDSA sign/verify helpers
+├── .github/
+│   └── workflows/
+│       └── ci.yaml                    # GitHub Actions CI pipeline
+├── deploy/
+│   ├── docker/
+│   │   ├── Dockerfile.backend         # Multi-stage Go build
+│   │   ├── Dockerfile.frontend        # Multi-stage React build + nginx
+│   │   └── nginx.conf                 # Frontend reverse proxy to backend
+│   └── k8s/
+│       ├── base/
+│       │   ├── kustomization.yaml     # Base resources list + configMapGenerator
+│       │   ├── namespace.yaml         # shitcoin namespace
+│       │   ├── backend-deployment.yaml
+│       │   ├── backend-service.yaml
+│       │   ├── frontend-deployment.yaml
+│       │   ├── frontend-service.yaml
+│       │   └── configs/
+│       │       └── shitcoin.yaml      # Config for configMapGenerator
+│       └── overlays/
+│           ├── dev/
+│           │   ├── kustomization.yaml
+│           │   └── patches/
+│           │       └── backend-resources.yaml
+│           └── prod/
+│               ├── kustomization.yaml
+│               └── patches/
+│                   ├── backend-resources.yaml
+│                   └── backend-replicas.yaml
+├── argocd/
+│   └── application.yaml              # ArgoCD Application CR (separate from deploy/)
+├── Tiltfile                           # Tilt local dev config (Starlark)
+├── .golangci.yml                      # Linter config
+└── .dockerignore                      # Docker build context filter
 ```
-
-**Confidence:** HIGH -- This structure is derived from multiple production and educational Go blockchain implementations.
 
 ### Component Boundaries
 
-| Component | Package | Responsibility | Depends On | Depended On By |
-|-----------|---------|---------------|------------|----------------|
-| Block | `internal/core` | Block struct, hash computation, serialization, genesis creation | `pkg/crypto`, `internal/tx` | Everything above |
-| Blockchain | `internal/core` | Chain state, adding blocks, validation rules, longest chain | `internal/storage`, Block | Miner, Network, CLI, API |
-| Transaction | `internal/tx` | TX struct, inputs/outputs, signing, coinbase creation | `pkg/crypto`, `pkg/encoding` | UTXO, Mempool, Block |
-| UTXO Set | `internal/utxo` | Cache of unspent outputs, balance queries, spendable output lookup | `internal/storage`, `internal/tx` | Wallet (balance), Miner (tx creation) |
-| Wallet | `internal/wallet` | Key generation, address derivation, TX signing | `pkg/crypto`, `pkg/encoding` | CLI, API |
-| Consensus (PoW) | `internal/consensus` | Nonce search, difficulty validation, target adjustment | `internal/core` (Block) | Miner, Blockchain (validation) |
-| Mempool | `internal/mempool` | Pending TX pool, validation before acceptance, TX selection for mining | `internal/tx`, `internal/utxo` | Miner, Network, API |
-| Miner | `internal/miner` | Block assembly, mining loop, reward distribution | `internal/consensus`, `internal/mempool`, `internal/core` | CLI (manual mine), Network (broadcast) |
-| Network | `internal/network` | Peer connections, message exchange, chain sync | `internal/core`, `internal/mempool`, `internal/tx` | CLI (start node) |
-| Storage | `internal/storage` | Persistence interface, BoltDB implementation | None (leaf dependency) | Blockchain, UTXO Set |
-| CLI | `cli/` | User commands, argument parsing | All internal packages | `cmd/shitcoin` (main) |
-| API | `api/` | JSON-RPC/REST endpoints | All internal packages | Web Dashboard |
-| Dashboard | `web/` | Block explorer UI, node status visualization | `api/` | End users (browser) |
+| Component | Responsibility | Communicates With |
+|-----------|---------------|-------------------|
+| GitHub Actions CI | Test, lint, build images, push to registry | ghcr.io, repository webhooks |
+| Dockerfile.backend | Multi-stage Go binary build (builder + distroless) | go.mod, cmd/, internal/, etc/ |
+| Dockerfile.frontend | Multi-stage React build (node + nginx) | web/package.json, web/src/ |
+| nginx.conf | Reverse-proxy /api and /ws to backend Service in K8s | Backend K8s Service |
+| Kustomize base | Shared K8s manifests (deployments, services, configmap) | K8s API server |
+| Kustomize overlays | Environment-specific patches (resources, replicas, image tags) | Kustomize base |
+| ArgoCD Application | GitOps sync controller, watches deploy/k8s/overlays/ | Git repository, K8s API server |
+| Tiltfile | Local dev orchestration with live reload | Local K8s cluster (kind/k3d), Dockerfiles, Kustomize |
 
-### Data Flow
+### Data Flow: Code Change to Running Container
 
-#### Transaction Lifecycle
+**CI Pipeline (push to master):**
 
-```
-User (CLI/API)
-  |
-  v
-1. Wallet creates TX:
-   - Find spendable UTXOs for sender address  [UTXO Set]
-   - Create TXInputs referencing those UTXOs   [TX]
-   - Create TXOutputs (recipient + change)     [TX]
-   - Sign TX with sender's private key         [Wallet]
-  |
-  v
-2. TX enters Mempool:
-   - Validate TX structure                     [Mempool]
-   - Verify signature                          [Mempool]
-   - Check inputs reference valid UTXOs        [Mempool -> UTXO Set]
-   - Check no double-spend within mempool      [Mempool]
-   - Add to pending pool                       [Mempool]
-  |
-  v
-3. TX broadcasts to peers:                     [Network]
-   - Send "tx" message to connected peers
-   - Peers validate and add to their mempools
-  |
-  v
-4. Miner assembles block:
-   - Select TXs from mempool                   [Miner -> Mempool]
-   - Create coinbase TX (mining reward)        [Miner -> TX]
-   - Build Merkle tree from TX hashes          [Core]
-   - Run Proof of Work (find valid nonce)      [Consensus]
-  |
-  v
-5. Block added to chain:
-   - Validate block (PoW, TX validity)         [Blockchain]
-   - Persist block to storage                  [Storage]
-   - Update UTXO set (remove spent, add new)   [UTXO Set]
-   - Remove mined TXs from mempool             [Mempool]
-  |
-  v
-6. Block broadcasts to peers:                  [Network]
-   - Send "block" message to connected peers
-   - Peers validate and add to their chains
-```
+1. Push triggers `.github/workflows/ci.yaml`
+2. `test` and `lint` jobs run in parallel (independent)
+3. `build` job (depends on test+lint passing) builds two Docker images
+4. Images pushed to `ghcr.io/baotoq/shitcoin-backend:sha-<commit>` and `ghcr.io/baotoq/shitcoin-frontend:sha-<commit>`
+5. Image tag updated in overlay's `kustomization.yaml` (via CI step or ArgoCD Image Updater)
+6. ArgoCD detects manifest diff, syncs to cluster
 
-#### Chain Synchronization (New Node Joining)
+**Local Dev (Tilt):**
 
-```
-New Node                          Existing Node
-   |                                    |
-   |--- version (my height: 0) ------->|
-   |                                    |
-   |<-- version (my height: 150) ------|
-   |                                    |
-   |--- getblocks ---------------------->|
-   |                                    |
-   |<-- inv (block hashes) ------------|
-   |                                    |
-   |--- getdata (hash1) --------------->|
-   |<-- block (block1) ----------------|
-   |                                    |
-   |--- getdata (hash2) --------------->|
-   |<-- block (block2) ----------------|
-   |    ...                             |
-   |                                    |
-   [Reindex UTXO set after sync]
+1. `tilt up` builds images from Dockerfiles, deploys via Kustomize dev overlay
+2. On Go file change: `live_update` syncs files, runs `go build` in container
+3. On React file change: `live_update` syncs to frontend container (Vite HMR)
+4. Port-forwards: backend `:8080`, frontend on `:5173` (mapped from nginx `:80`)
+
+## Integration Points with Existing Codebase
+
+### Backend Dockerfile -- What It Needs from the Repo
+
+| Source | Purpose | Docker COPY |
+|--------|---------|-------------|
+| `go.mod` + `go.sum` | Dependency cache layer (changes rarely) | First COPY for layer caching |
+| `cmd/shitcoin/` | Entry point | `/app/cmd/shitcoin/` |
+| `internal/` | All domain, handler, infra code | `/app/internal/` |
+| `etc/shitcoin.yaml` | Default config (overridden by ConfigMap in K8s) | `/app/etc/` |
+
+**No code changes needed.** The binary is built with `go build ./cmd/shitcoin/` -- same command as local development.
+
+### Frontend Dockerfile -- What It Needs from the Repo
+
+| Source | Purpose | Docker COPY |
+|--------|---------|-------------|
+| `web/package.json` + `web/package-lock.json` | npm cache layer | First COPY |
+| `web/` (all) | React source, config, components | Second COPY |
+| Build output: `web/dist/` | Static files served by nginx | Copied to nginx html root |
+
+**No code changes needed.** The existing `npm run build` command produces the `dist/` output.
+
+### Vite Proxy vs Nginx Proxy
+
+The Vite proxy in `web/vite.config.ts` proxies `/api` and `/ws` to `localhost:8080` during development. In production (Docker/K8s), there is no Vite dev server. Nginx serves the static files and proxies API/WS requests to the backend K8s Service.
+
+- **Dev (local, no Docker):** Vite `:5173` proxies to Go `:8080` -- existing behavior, unchanged
+- **Dev (Tilt/K8s):** Nginx proxies to `shitcoin-backend:8080` Service
+- **Prod (K8s):** Same nginx config
+
+The React app already uses relative URLs (`/api/...`, `/ws`) so no frontend code change is needed.
+
+### Config as ConfigMap
+
+The existing `etc/shitcoin.yaml` maps directly to a Kubernetes ConfigMap via Kustomize's `configMapGenerator`. go-zero's `conf.MustLoad` reads from a file path, so the ConfigMap is volume-mounted at `/app/etc/shitcoin.yaml`.
+
+```yaml
+# deploy/k8s/base/configs/shitcoin.yaml (used by configMapGenerator)
+Name: shitcoin
+Host: 0.0.0.0
+Port: 8080
+Consensus:
+  BlockTimeTarget: 1
+  DifficultyAdjustInterval: 10
+  InitialDifficulty: 5
+Storage:
+  DBPath: /data/shitcoin.db
+  WalletPath: /data/wallets.json
 ```
 
-#### Balance Query
+**Key difference from local:** Storage paths point to `/data/` which maps to an emptyDir or PVC volume in K8s, not a relative `data/` directory.
 
-```
-User (CLI: "balance <address>")
-  |
-  v
-UTXO Set: find all unspent outputs locked to <address>
-  |
-  v
-Sum output values -> return balance
-```
+### BoltDB Storage in Containers
+
+BoltDB writes to a single file. In K8s:
+- **Dev (emptyDir):** Data is ephemeral, lost on pod restart. Fine for development.
+- **Prod (PVC):** PersistentVolumeClaim mounted at `/data/` preserves chain state across restarts.
+
+The `ServiceContext` in `internal/svc/service_context.go` already calls `os.MkdirAll` for the DB directory, so this works without code changes.
+
+### P2P Networking in K8s
+
+The P2P layer listens on TCP port 3000. For the educational scope of v1.1, a single-replica Deployment is sufficient. Multi-node P2P in K8s would require a StatefulSet with a headless Service for stable DNS names -- that is out of scope for this milestone.
+
+The backend Service exposes both port 8080 (HTTP/WS) and port 3000 (P2P) but only HTTP is needed for the frontend.
 
 ## Patterns to Follow
 
-### Pattern 1: Storage Interface Abstraction
+### Pattern 1: Multi-Stage Docker Build for Go
 
-Decouple storage from business logic so the KV store can be swapped without touching core code. This is how btcd separates its database backends.
+**What:** Two-stage Dockerfile separating compilation from runtime.
+**When:** Always for the Go backend.
+**Why:** Reduces image from ~1GB (golang base) to ~15MB (distroless).
 
-**When:** Always. Define a storage interface early.
+```dockerfile
+# deploy/docker/Dockerfile.backend
+FROM golang:1.26-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY cmd/ cmd/
+COPY internal/ internal/
+COPY etc/ etc/
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /shitcoin ./cmd/shitcoin/
 
-```go
-// internal/storage/store.go
-type Store interface {
-    GetBlock(hash []byte) (*core.Block, error)
-    PutBlock(block *core.Block) error
-    GetLastHash() ([]byte, error)
-    SetLastHash(hash []byte) error
-    GetUTXOs(address string) ([]tx.TXOutput, error)
-    PutUTXOs(address string, outputs []tx.TXOutput) error
-    Close() error
-}
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=builder /shitcoin /shitcoin
+COPY --from=builder /app/etc/shitcoin.yaml /app/etc/shitcoin.yaml
+EXPOSE 8080 3000
+ENTRYPOINT ["/shitcoin"]
+CMD ["-f", "/app/etc/shitcoin.yaml", "startnode"]
 ```
 
-**Why:** Testability (use in-memory store for tests), flexibility (swap BoltDB for BadgerDB later), separation of concerns.
+**CGO_ENABLED=0 is safe** because bbolt (pure Go), go-zero, gorilla/websocket, and btcec have no CGO dependencies.
 
-### Pattern 2: Message-Based P2P Protocol
+### Pattern 2: Multi-Stage Docker Build for React + Nginx
 
-Use a simple custom protocol over TCP with typed messages, following Jeiwan's approach. Each message has a command header (12 bytes) followed by gob-encoded payload.
+**What:** Build React in Node stage, serve static files from nginx.
+**When:** Always for the frontend.
 
-**When:** Building the network layer. Avoid libp2p for an educational project -- it hides too much of the networking logic you want to learn.
+```dockerfile
+# deploy/docker/Dockerfile.frontend
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
 
-```go
-// internal/network/protocol.go
-const (
-    CmdVersion  = "version"
-    CmdInv      = "inv"
-    CmdGetData  = "getdata"
-    CmdGetBlocks = "getblocks"
-    CmdBlock    = "block"
-    CmdTx       = "tx"
-    CmdAddr     = "addr"
-)
-
-type Message struct {
-    Command string
-    Payload []byte
-}
-
-type VersionMsg struct {
-    Version    int
-    BestHeight int
-    AddrFrom   string
-}
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY deploy/docker/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
 ```
 
-**Why:** Educational value. Understanding the message protocol is a core learning goal. libp2p is excellent for production but obscures the mechanics.
+### Pattern 3: Nginx Reverse Proxy for API/WebSocket
 
-### Pattern 3: Goroutine-Based Mining with Cancellation
+**What:** nginx.conf that serves static files and proxies /api and /ws to the backend.
+**When:** Production and K8s dev (replaces Vite proxy).
 
-Use Go's concurrency primitives (goroutines, channels, context) for the mining loop so it can be interrupted when a new block arrives from the network.
+```nginx
+# deploy/docker/nginx.conf
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    index index.html;
 
-**When:** Building the miner component.
+    location /api {
+        proxy_pass http://shitcoin-backend:8080;
+    }
 
-```go
-// internal/miner/miner.go
-func (m *Miner) Start(ctx context.Context) {
-    for {
-        select {
-        case <-ctx.Done():
-            return
-        default:
-            block := m.assembleBlock()
-            if block != nil {
-                m.mineBlock(ctx, block)
-            }
-        }
+    location /ws {
+        proxy_pass http://shitcoin-backend:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
     }
 }
-
-func (m *Miner) mineBlock(ctx context.Context, block *core.Block) {
-    pow := consensus.NewProofOfWork(block)
-    nonce, hash, err := pow.Run(ctx) // ctx allows cancellation
-    if err != nil {
-        return // cancelled, new block arrived
-    }
-    block.Nonce = nonce
-    block.Hash = hash
-    m.onBlockMined(block)
-}
 ```
 
-**Why:** In a real blockchain, miners must stop mining when they receive a valid new block from the network. Context cancellation models this cleanly.
+The backend hostname `shitcoin-backend` is the K8s Service name, resolved via cluster DNS.
 
-### Pattern 4: Event-Driven Component Communication
+### Pattern 4: Kustomize configMapGenerator
 
-Use Go channels to decouple components. When a block is mined or received, emit events that other components react to.
+**What:** Generate ConfigMaps from files with content-hash suffix.
+**When:** For shitcoin.yaml config.
+**Why:** Content hash suffix ensures pods restart when config changes.
 
-**When:** Connecting miner, mempool, UTXO set, and network.
-
-```go
-type EventBus struct {
-    blockMined    chan *core.Block
-    blockReceived chan *core.Block
-    txReceived    chan *tx.Transaction
-}
+```yaml
+# deploy/k8s/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: shitcoin
+resources:
+  - namespace.yaml
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - frontend-deployment.yaml
+  - frontend-service.yaml
+configMapGenerator:
+  - name: shitcoin-config
+    files:
+      - shitcoin.yaml=configs/shitcoin.yaml
 ```
 
-**Why:** Avoids circular dependencies between network, miner, and mempool. Each component subscribes to events it cares about.
+### Pattern 5: Parallel CI Jobs with Dependency Gates
 
-### Pattern 5: BoltDB Bucket Organization
+**What:** Run test and lint in parallel; build images only if both pass.
+**When:** Every CI run.
+**Why:** Faster feedback (test and lint are independent).
 
-Use BoltDB's bucket concept to organize different data types within a single database file.
+```yaml
+# .github/workflows/ci.yaml structure
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod, cache: true }
+      - run: go test ./...
 
-**When:** Implementing storage layer.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: golangci/golangci-lint-action@v6
 
-```go
-var (
-    blocksBucket   = []byte("blocks")    // hash -> serialized block
-    utxoBucket     = []byte("utxo")      // txid -> serialized outputs
-    metadataBucket = []byte("metadata")  // "lastHash" -> last block hash
-                                         // "height" -> chain height
+  build:
+    needs: [test, lint]
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/build-push-action@v6
+        # build and push backend + frontend images
+```
+
+### Pattern 6: Tiltfile with Live Update
+
+**What:** Tilt watches files, syncs changes into running containers, rebuilds in-place.
+**When:** Local K8s development.
+
+```python
+# Tiltfile (Starlark)
+docker_build(
+    'shitcoin-backend',
+    '.',
+    dockerfile='deploy/docker/Dockerfile.backend',
+    live_update=[
+        sync('./cmd', '/app/cmd'),
+        sync('./internal', '/app/internal'),
+        run('cd /app && CGO_ENABLED=0 go build -o /shitcoin ./cmd/shitcoin/',
+            trigger=['./cmd', './internal']),
+    ],
 )
-```
 
-**Why:** BoltDB buckets act like tables, keeping block data, UTXO cache, and metadata cleanly separated within one DB file.
+docker_build(
+    'shitcoin-frontend',
+    '.',
+    dockerfile='deploy/docker/Dockerfile.frontend',
+    live_update=[
+        sync('./web/src', '/app/src'),
+    ],
+)
+
+k8s_yaml(kustomize('deploy/k8s/overlays/dev'))
+k8s_resource('shitcoin-backend', port_forwards=['8080:8080', '3000:3000'])
+k8s_resource('shitcoin-frontend', port_forwards=['5173:80'])
+```
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Single-Package Monolith
+### Anti-Pattern 1: Single Fat Dockerfile
 
-**What:** Putting all code in the `main` package (as Jeiwan's implementation does).
+**What:** One Dockerfile that builds Go, builds React, and runs both.
+**Why bad:** Huge image (~1.5GB), cannot scale backend/frontend independently, slow rebuilds.
+**Instead:** Separate Dockerfiles per service. Two K8s Deployments.
 
-**Why bad:** Files become tightly coupled, testing requires building everything, and it becomes hard to reason about dependencies. While acceptable for a tutorial, it hinders learning about Go package design.
+### Anti-Pattern 2: Baking Data Volumes into Images
 
-**Instead:** Use the multi-package layout described above. Each package has a clear API surface. This also teaches Go package design patterns.
+**What:** Including BoltDB data files in the Docker image.
+**Why bad:** Data is ephemeral, lost on pod restart. Images become huge and stale.
+**Instead:** Use emptyDir (dev) or PVC (prod) mounted at `/data/` in K8s.
 
-### Anti-Pattern 2: Global State for Blockchain Instance
+### Anti-Pattern 3: Hardcoded Backend URL in Frontend Build
 
-**What:** Using package-level variables to hold the blockchain, UTXO set, or mempool.
+**What:** Setting `VITE_API_URL=http://specific-host:8080` at build time.
+**Why bad:** Requires rebuild for each environment.
+**Instead:** Use relative URLs (`/api/...`). The existing code already does this. Nginx handles proxying.
 
-**Why bad:** Makes testing impossible (tests leak state), prevents running multiple nodes in the same process for testing, and creates hidden dependencies.
+### Anti-Pattern 4: Using `latest` Image Tag
 
-**Instead:** Use dependency injection. Pass the blockchain, UTXO set, and mempool as constructor parameters to components that need them.
+**What:** Tagging Docker images as `latest` and referencing `latest` in K8s manifests.
+**Why bad:** ArgoCD cannot detect changes (same tag). No rollback to specific version.
+**Instead:** Tag with git SHA (`sha-abc1234`). Kustomize `images` transformer updates tags per overlay.
 
-### Anti-Pattern 3: Synchronous P2P Communication
+### Anti-Pattern 5: ArgoCD Application CR Inside the Watched Path
 
-**What:** Blocking the main goroutine while waiting for peer responses.
+**What:** Putting `argocd/application.yaml` inside `deploy/k8s/`.
+**Why bad:** ArgoCD watches `deploy/k8s/` and would try to manage its own Application resource, causing loops.
+**Instead:** Keep `argocd/` at repo root, separate from `deploy/k8s/`.
 
-**Why bad:** One slow or malicious peer blocks the entire node.
+### Anti-Pattern 6: Running All CI Steps Sequentially
 
-**Instead:** Handle each peer connection in its own goroutine. Use channels or sync primitives for coordination.
+**What:** Test -> Lint -> Build (serial pipeline).
+**Why bad:** Wastes time. Test and lint are independent.
+**Instead:** Parallel jobs with `needs` dependency on build step.
 
-### Anti-Pattern 4: Scanning Full Chain for Balance Queries
-
-**What:** Iterating through every block and transaction to find unspent outputs.
-
-**Why bad:** O(n) where n is total transactions in the chain. Gets slow quickly even for educational purposes.
-
-**Instead:** Maintain a UTXO set that is updated incrementally when blocks are added. This is how Bitcoin Core works and is a key concept to learn.
-
-### Anti-Pattern 5: Mixing Consensus Validation with Block Storage
-
-**What:** Validating PoW inside the storage layer or blockchain.AddBlock().
-
-**Why bad:** Conflates two distinct concerns. When receiving a block from the network you validate before storing; when mining you've already done the PoW.
-
-**Instead:** Validate in the caller (network sync validates received blocks; miner produces valid blocks by construction). Blockchain.AddBlock() should only check structural validity.
-
-## Suggested Build Order
-
-Build order is dictated by dependency relationships. Each phase produces a working, testable artifact.
+## Build Order (Dependency Graph for Implementation)
 
 ```
-Phase 1: Foundation
-  [Block] -> [Blockchain (in-memory)] -> [Genesis]
-  Testable: Create genesis, add blocks, traverse chain
-
-Phase 2: Persistence
-  [Storage Interface] -> [BoltDB Implementation]
-  [Blockchain uses Storage instead of in-memory slice]
-  Testable: Restart process, chain persists
-
-Phase 3: Proof of Work
-  [PoW Algorithm] -> [Difficulty Target]
-  [Block creation now requires mining]
-  Testable: Mine blocks, verify PoW, adjust difficulty
-
-Phase 4: Transactions
-  [TXOutput, TXInput] -> [Transaction] -> [Coinbase TX]
-  [Blocks now contain transactions instead of arbitrary data]
-  Testable: Create coinbase TX, include in mined block
-
-Phase 5: Wallet & Addresses
-  [ECDSA Key Generation] -> [Address Derivation] -> [TX Signing]
-  Testable: Generate wallet, derive address, sign TX
-
-Phase 6: UTXO Model
-  [UTXO Set] -> [Spendable Output Finder] -> [Balance Query]
-  [Full transaction flow: find UTXOs -> create TX -> mine -> update UTXOs]
-  Testable: Send coins, check balances, verify UTXO updates
-
-Phase 7: Mempool
-  [Transaction Pool] -> [TX Validation] -> [TX Selection for Mining]
-  Testable: Submit TX, validate, mine from pool
-
-Phase 8: CLI
-  [Cobra commands wrapping all above functionality]
-  Testable: Full workflow via command line
-
-Phase 9: P2P Networking
-  [TCP Server] -> [Message Protocol] -> [Peer Management]
-  [Chain Sync] -> [TX Relay] -> [Block Relay]
-  Testable: Run 2-3 nodes, sync chains, relay transactions
-
-Phase 10: Merkle Trees
-  [Merkle Tree] -> [Block header includes Merkle root]
-  Can be added at any point after Phase 4 but fits here
-  Testable: Verify transaction inclusion via Merkle proof
-
-Phase 11: API Layer
-  [HTTP/JSON-RPC Server] -> [Endpoint Handlers]
-  Testable: curl commands for all operations
-
-Phase 12: Web Dashboard
-  [Block Explorer] -> [Node Status] -> [Mining Controls]
-  Testable: Visual verification in browser
+Phase 1: Dockerfiles + .dockerignore + .golangci.yml + nginx.conf
+    No K8s dependency. Testable with `docker build` locally.
+    |
+Phase 2: GitHub Actions CI
+    Depends on Dockerfiles. Validates build+test+lint in automation.
+    |
+Phase 3: Kustomize manifests (base + overlays)
+    Depends on knowing image names from Phase 1-2.
+    Testable with `kubectl apply -k deploy/k8s/overlays/dev --dry-run=client`.
+    |
+Phase 4: Tiltfile + local K8s dev
+    Depends on Dockerfiles (Phase 1) and Kustomize (Phase 3).
+    Testable with `tilt up` against a kind/k3d cluster.
+    |
+Phase 5: ArgoCD Application
+    Depends on Kustomize manifests (Phase 3) and images in registry (Phase 2).
+    Testable by applying the Application CR to an ArgoCD instance.
 ```
 
-**Build order rationale:**
-- Phases 1-3 establish the core blockchain with real mining (no shortcuts).
-- Phases 4-6 add the transaction model, which is the most complex and educational part.
-- Phase 7 bridges transactions and mining with the mempool.
-- Phase 8 provides a user interface before networking complexity.
-- Phase 9 is the hardest phase and benefits from having all local functionality solid first.
-- Phases 10-12 are enhancements that layer on top of working infrastructure.
+**Rationale:** Dockerfiles first because everything else (CI, Tilt, K8s) depends on container images. CI second because it validates Dockerfiles in automation and pushes images. Kustomize third because both Tilt and ArgoCD consume its manifests. Tilt before ArgoCD because Tilt provides the local feedback loop for iterating on manifests. ArgoCD last because it is the consumer of all prior artifacts.
+
+## Files: New vs Modified
+
+### New Files (19 files)
+
+| File | Purpose |
+|------|---------|
+| `.github/workflows/ci.yaml` | CI pipeline definition |
+| `.golangci.yml` | golangci-lint configuration |
+| `.dockerignore` | Exclude .git/, data/, node_modules/, .planning/ from Docker context |
+| `deploy/docker/Dockerfile.backend` | Go multi-stage build |
+| `deploy/docker/Dockerfile.frontend` | React multi-stage build + nginx |
+| `deploy/docker/nginx.conf` | Frontend reverse proxy to backend Service |
+| `deploy/k8s/base/kustomization.yaml` | Base Kustomize config with configMapGenerator |
+| `deploy/k8s/base/namespace.yaml` | `shitcoin` namespace |
+| `deploy/k8s/base/backend-deployment.yaml` | Backend Deployment (config volume, data volume) |
+| `deploy/k8s/base/backend-service.yaml` | Backend ClusterIP Service (ports 8080, 3000) |
+| `deploy/k8s/base/frontend-deployment.yaml` | Frontend Deployment (nginx) |
+| `deploy/k8s/base/frontend-service.yaml` | Frontend ClusterIP Service (port 80) |
+| `deploy/k8s/base/configs/shitcoin.yaml` | Config file for configMapGenerator |
+| `deploy/k8s/overlays/dev/kustomization.yaml` | Dev overlay (local images, emptyDir) |
+| `deploy/k8s/overlays/dev/patches/backend-resources.yaml` | Dev resource limits |
+| `deploy/k8s/overlays/prod/kustomization.yaml` | Prod overlay (registry images, PVC) |
+| `deploy/k8s/overlays/prod/patches/backend-resources.yaml` | Prod resource limits |
+| `argocd/application.yaml` | ArgoCD Application CR |
+| `Tiltfile` | Tilt local dev orchestration |
+
+### Modified Files (1 file)
+
+| File | Change |
+|------|--------|
+| `.gitignore` | Add `.tilt-dev/` and `tilt_modules/` |
+
+### Existing Files NOT Modified (0 changes to source)
+
+No changes to any file in `cmd/`, `internal/`, `web/src/`, `etc/`, `go.mod`, or `web/package.json`. The CI/CD and K8s layer is entirely additive.
 
 ## Scalability Considerations
 
-This is an educational project, but understanding scalability teaches important concepts.
+| Concern | Local Dev (Tilt) | Single-Node K8s | Multi-Node K8s |
+|---------|-----------------|-----------------|----------------|
+| Storage | emptyDir (ephemeral) | PVC with hostPath | PVC with cloud storage |
+| P2P peers | Single replica, no peers | Single replica | StatefulSet + headless Service |
+| Frontend scaling | Single replica | Single replica | HPA on CPU |
+| Config management | Kustomize dev overlay | Kustomize dev overlay | Kustomize prod overlay |
+| Image registry | Local (kind load) | ghcr.io | ghcr.io |
 
-| Concern | At 100 blocks | At 10K blocks | At 100K blocks |
-|---------|---------------|---------------|----------------|
-| Chain storage | Trivial (~few MB) | Moderate (~100s MB) | BoltDB handles fine for educational use |
-| UTXO set scan | No issue with cached set | UTXO set cache essential | UTXO set with periodic flush |
-| Block sync | Near instant | Seconds | Minutes (acceptable for local) |
-| Mempool size | Trivial | Cap at ~1000 TXs | Cap and eviction policy |
-| PoW difficulty | Low (instant mine) | Adjustable | Target 10-30 second blocks for demos |
-
-**Key insight:** For an educational blockchain on localhost, the bottleneck is never raw performance. The architecture should optimize for **clarity and debuggability** over throughput.
-
-## Technology Choices (Architecture-Driven)
-
-| Component | Choice | Rationale |
-|-----------|--------|-----------|
-| P2P | Raw TCP with custom protocol | Educational value; libp2p hides networking mechanics |
-| Storage | bbolt (maintained BoltDB fork) | Simple, embedded, bucket concept maps well to blockchain data; BoltDB is archived but bbolt is actively maintained by etcd team |
-| Serialization | encoding/gob | Go-native, simple, sufficient for localhost-only communication |
-| Hashing | crypto/sha256 (stdlib) | Standard, matches Bitcoin's approach |
-| Signing | crypto/ecdsa (stdlib) | No external deps, sufficient for educational ECDSA |
-| CLI | spf13/cobra | De facto standard for Go CLIs, excellent DX |
-| Web | net/http (stdlib) + html/template | No framework needed for a simple dashboard |
-| Logging | log/slog (stdlib) | Structured logging, built into Go 1.21+ |
+For this educational project, single-replica Deployments are the right scope. Multi-node StatefulSets are an interesting extension but not part of v1.1.
 
 ## Sources
 
-- [Jeiwan - Building Blockchain in Go (7-part series)](https://jeiwan.net/posts/building-blockchain-in-go-part-1/) - Canonical educational Go blockchain, HIGH confidence
-- [Jeiwan/blockchain_go GitHub](https://github.com/Jeiwan/blockchain_go) - Reference implementation, HIGH confidence
-- [TheODDYSEY/Blockchain-Go](https://github.com/TheODDYSEY/Blockchain-Go) - Progressive build structure, MEDIUM confidence
-- [volodymyrprokopyuk/go-blockchain](https://github.com/volodymyrprokopyuk/go-blockchain) - Clean package architecture with gRPC, MEDIUM confidence
-- [TheDhejavu/the-crypto-project](https://github.com/TheDhejavu/the-crypto-project) - Multi-package layout with libp2p, MEDIUM confidence
-- [btcsuite/btcd](https://github.com/btcsuite/btcd) - Production Go Bitcoin implementation, HIGH confidence for architecture patterns
-- [Jeiwan - Transactions Part 1](https://jeiwan.net/posts/building-blockchain-in-go-part-4/) - UTXO model architecture, HIGH confidence
-- [Jeiwan - Network](https://jeiwan.net/posts/building-blockchain-in-go-part-7/) - P2P protocol design, HIGH confidence
-- [BoltDB vs Badger Comparison](https://tech.townsourced.com/post/boltdb-vs-badger/) - Storage engine comparison, MEDIUM confidence
-- [freeCodeCamp - Build a Blockchain from Scratch with Go](https://www.freecodecamp.org/news/build-a-blockchain-in-golang-from-scratch/) - Build order reference, MEDIUM confidence
-- [btcsuite/btcd mempool](https://github.com/btcsuite/btcd/blob/master/mempool/mempool.go) - Mempool architecture reference, HIGH confidence
+- [GitHub Actions CI with Go](https://www.alexedwards.net/blog/ci-with-go-and-github-actions) - HIGH confidence
+- [Go CI/CD Best Practices with GitHub Actions](https://dev.to/ticatwolves/automate-your-go-project-best-practices-cicd-with-github-actions-4bo4) - MEDIUM confidence
+- [Go Linting with golangci-lint in CI](https://medium.com/@tedious/go-linting-best-practices-for-ci-cd-with-github-actions-aa6d96e0c509) - MEDIUM confidence
+- [Tilt Dev Official Site](https://tilt.dev/) - HIGH confidence
+- [Local K8s Development with Tilt (2026)](https://oneuptime.com/blog/post/2026-01-19-kubernetes-tilt-local-development/view) - MEDIUM confidence
+- [Kustomize Official Docs](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) - HIGH confidence
+- [Kustomize Best Practices](https://www.openanalytics.eu/blog/2021/02/23/kustomize-best-practices/) - MEDIUM confidence
+- [ArgoCD Kustomize Integration](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/) - HIGH confidence
+- [GitOps Repo Structure with ArgoCD](https://itnext.io/how-to-structure-your-gitops-repository-with-a-single-argocd-instance-f128b916c915) - MEDIUM confidence
+- [Multi-Stage Docker Builds for Go (2026)](https://oneuptime.com/blog/post/2026-01-07-go-docker-multi-stage/view) - MEDIUM confidence
+- [Deploying Go to Production (2026)](https://dasroot.net/posts/2026/03/deploying-go-applications-production-best-practices-tools/) - MEDIUM confidence
