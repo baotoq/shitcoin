@@ -5,7 +5,6 @@ import (
 
 	"github.com/baotoq/shitcoin/internal/svc"
 	"github.com/zeromicro/go-zero/rest"
-	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 // PeerCounter provides the current number of connected peers.
@@ -17,19 +16,15 @@ type PeerCounter interface {
 // RegisterRoutes registers all REST API and WebSocket routes on the server.
 // Hub must implement ServeHTTP for WebSocket upgrade handling.
 func RegisterRoutes(server *rest.Server, svcCtx *svc.ServiceContext, peerCounter PeerCounter, hub http.Handler) {
-	notImplemented := func(w http.ResponseWriter, r *http.Request) {
-		httpx.OkJson(w, map[string]string{"status": "not implemented"})
-	}
-
 	server.AddRoutes([]rest.Route{
-		{Method: http.MethodGet, Path: "/api/status", Handler: notImplemented},
-		{Method: http.MethodGet, Path: "/api/blocks", Handler: notImplemented},
-		{Method: http.MethodGet, Path: "/api/blocks/:height", Handler: notImplemented},
-		{Method: http.MethodGet, Path: "/api/blocks/hash/:hash", Handler: notImplemented},
-		{Method: http.MethodGet, Path: "/api/tx/:hash", Handler: notImplemented},
-		{Method: http.MethodGet, Path: "/api/mempool", Handler: notImplemented},
-		{Method: http.MethodGet, Path: "/api/address/:addr", Handler: notImplemented},
-		{Method: http.MethodGet, Path: "/api/search", Handler: notImplemented},
+		{Method: http.MethodGet, Path: "/api/status", Handler: StatusHandler(svcCtx, peerCounter)},
+		{Method: http.MethodGet, Path: "/api/blocks", Handler: BlocksHandler(svcCtx)},
+		{Method: http.MethodGet, Path: "/api/blocks/:height", Handler: BlockByHeightHandler(svcCtx)},
+		{Method: http.MethodGet, Path: "/api/blocks/hash/:hash", Handler: BlockByHashHandler(svcCtx)},
+		{Method: http.MethodGet, Path: "/api/tx/:hash", Handler: TxHandler(svcCtx)},
+		{Method: http.MethodGet, Path: "/api/mempool", Handler: MempoolHandler(svcCtx)},
+		{Method: http.MethodGet, Path: "/api/address/:addr", Handler: AddressHandler(svcCtx)},
+		{Method: http.MethodGet, Path: "/api/search", Handler: SearchHandler(svcCtx)},
 	})
 
 	// WebSocket route with no timeout (long-lived connection).
