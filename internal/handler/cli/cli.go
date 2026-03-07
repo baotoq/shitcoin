@@ -68,7 +68,7 @@ func (c *CLI) printUsage() {
 	fmt.Println("  createwallet              - Generate a new wallet address")
 	fmt.Println("  listaddresses             - List all wallet addresses")
 	fmt.Println("  getbalance -address ADDR  - Get balance for address")
-	fmt.Println("  send -from ADDR -to ADDR -amount AMOUNT - Send coins")
+	fmt.Println("  send -from ADDR -to ADDR -amount AMOUNT [-fee FEE] - Send coins")
 	fmt.Println("  mine -address ADDR        - Mine a new block")
 	fmt.Println("  startnode [-port PORT] [-mine ADDR] [-peers HOST:PORT,...] [-datadir DIR] - Start a node")
 	fmt.Println("  printchain                - Print all blocks in the chain")
@@ -141,6 +141,7 @@ func (c *CLI) send(args []string) {
 	from := fs.String("from", "", "Source address")
 	to := fs.String("to", "", "Destination address")
 	amount := fs.Int64("amount", 0, "Amount in satoshis")
+	fee := fs.Int64("fee", 0, "Transaction fee in satoshis")
 	fs.Parse(args)
 
 	if *from == "" || *to == "" || *amount <= 0 {
@@ -168,7 +169,8 @@ func (c *CLI) send(args []string) {
 		os.Exit(1)
 	}
 
-	// Select UTXOs to cover amount (simple greedy)
+	// Select UTXOs to cover amount + fee (simple greedy)
+	needed := *amount + *fee
 	var accumulated int64
 	var inputs []tx.TxInput
 	var inputValues []int64
@@ -176,18 +178,18 @@ func (c *CLI) send(args []string) {
 		inputs = append(inputs, tx.NewTxInput(u.TxID(), u.Vout()))
 		inputValues = append(inputValues, u.Value())
 		accumulated += u.Value()
-		if accumulated >= *amount {
+		if accumulated >= needed {
 			break
 		}
 	}
 
-	if accumulated < *amount {
-		fmt.Printf("Error: insufficient funds. Have %d, need %d\n", accumulated, *amount)
+	if accumulated < needed {
+		fmt.Printf("Error: insufficient funds. Have %d, need %d (amount %d + fee %d)\n", accumulated, needed, *amount, *fee)
 		os.Exit(1)
 	}
 
-	// Create transaction with change
-	transaction, err := tx.CreateTransactionWithChange(inputs, inputValues, *to, *amount, *from, 0)
+	// Create transaction with change (fee is implicit: change = inputs - amount - fee)
+	transaction, err := tx.CreateTransactionWithChange(inputs, inputValues, *to, *amount, *from, *fee)
 	if err != nil {
 		fmt.Printf("Error creating transaction: %v\n", err)
 		os.Exit(1)
@@ -199,8 +201,8 @@ func (c *CLI) send(args []string) {
 		os.Exit(1)
 	}
 
-	// Add to mempool
-	if err := c.svc.Mempool.Add(transaction); err != nil {
+	// Add to mempool with fee tracking
+	if err := c.svc.Mempool.AddWithFee(transaction, *fee); err != nil {
 		fmt.Printf("Error adding to mempool: %v\n", err)
 		os.Exit(1)
 	}
@@ -217,7 +219,7 @@ func (c *CLI) send(args []string) {
 	}
 
 	txID := transaction.ID().String()
-	fmt.Printf("Transaction %s... added to mempool\n", txID[:16])
+	fmt.Printf("Transaction %s... added to mempool (fee: %d satoshis)\n", txID[:16], *fee)
 }
 
 // mine drains the mempool and mines a new block.
@@ -237,11 +239,11 @@ func (c *CLI) mine(args []string) {
 		os.Exit(1)
 	}
 
-	// Drain mempool
-	txs := c.svc.Mempool.DrainAll()
+	// Drain mempool sorted by fee
+	txs, totalFees := c.svc.Mempool.DrainByFee(0)
 
-	// Mine block
-	blk, err := c.svc.Chain.MineBlock(ctx, *address, txs, 0)
+	// Mine block with collected fees
+	blk, err := c.svc.Chain.MineBlock(ctx, *address, txs, totalFees)
 	if err != nil {
 		fmt.Printf("Error mining block: %v\n", err)
 		os.Exit(1)

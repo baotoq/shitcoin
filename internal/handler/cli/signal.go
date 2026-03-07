@@ -59,8 +59,8 @@ func (c *CLI) autoMine(minerAddress string) {
 				Payload: ws.MiningStartedPayload{BlockHeight: nextHeight},
 			})
 
-			txs := c.svc.Mempool.DrainAll()
-			blk, err := c.svc.Chain.MineBlock(ctx, minerAddress, txs, 0)
+			txs, totalFees := c.svc.Mempool.DrainByFee(0)
+			blk, err := c.svc.Chain.MineBlock(ctx, minerAddress, txs, totalFees)
 			if err != nil {
 				if ctx.Err() != nil {
 					c.svc.EventBus.Publish(events.Event{
@@ -83,7 +83,7 @@ func (c *CLI) autoMine(minerAddress string) {
 				Payload: ws.MempoolChangedPayload{Count: c.svc.Mempool.Count()},
 			})
 
-			fmt.Printf("Mined block #%d (%s) with %d tx\n", blk.Height(), blk.Hash().String()[:16], len(txs))
+			fmt.Printf("Mined block #%d (%s) with %d tx (fees: %d)\n", blk.Height(), blk.Hash().String()[:16], len(txs), totalFees)
 		}
 	}
 }
@@ -155,8 +155,8 @@ func (c *CLI) autoMineWithP2P(minerAddress string, srv *p2p.Server) {
 				Payload: ws.MiningStartedPayload{BlockHeight: nextHeight},
 			})
 
-			txs := c.svc.Mempool.DrainAll()
-			blk, err := c.svc.Chain.MineBlock(mineCtx, minerAddress, txs, 0)
+			txs, totalFees := c.svc.Mempool.DrainByFee(0)
+			blk, err := c.svc.Chain.MineBlock(mineCtx, minerAddress, txs, totalFees)
 			cancel() // clean up mine context
 
 			if err != nil {
@@ -184,7 +184,7 @@ func (c *CLI) autoMineWithP2P(minerAddress string, srv *p2p.Server) {
 				Payload: ws.MempoolChangedPayload{Count: c.svc.Mempool.Count()},
 			})
 
-			fmt.Printf("Mined block #%d (%s) with %d tx\n", blk.Height(), blk.Hash().String()[:16], len(txs))
+			fmt.Printf("Mined block #%d (%s) with %d tx (fees: %d)\n", blk.Height(), blk.Hash().String()[:16], len(txs), totalFees)
 		}
 	}
 }
