@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+.gitmodules
+.gitattributes
+
+# Runtime state (never bake into images)
+data/
+wallets.json
+
+# Node.js / Frontend
+node_modules
+web/node_modules
+
+# IDE and OS files
+.vscode
+.idea
+.DS_Store
+*.swp
+*.swo
+
+# Build artifacts
+shitcoin
+*.exe
+*.test
+*.out
+coverage.html
+
+# Planning and documentation
+.planning
+.agents
+.claude
+README.md
+CLAUDE.md
+*.md
+
+# Docker files (prevent recursive context)
+Dockerfile*
+docker-compose*.yml
