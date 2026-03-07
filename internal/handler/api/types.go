@@ -1,8 +1,13 @@
 package api
 
 import (
+	"errors"
+
 	"github.com/baotoq/shitcoin/internal/infrastructure/persistence/bbolt"
 )
+
+// ErrBlockNotFound is returned when a block is not found.
+var ErrBlockNotFound = errors.New("block not found")
 
 // StatusResponse is the response for GET /api/status.
 type StatusResponse struct {
@@ -35,6 +40,13 @@ type SearchResult struct {
 	BlockHash   *string `json:"block_hash,omitempty"`
 	TxHash      *string `json:"tx_hash,omitempty"`
 	Address     *string `json:"address,omitempty"`
+}
+
+// TxResponse is the response for GET /api/tx/:hash.
+type TxResponse struct {
+	Tx          bbolt.TxModel `json:"tx"`
+	BlockHeight uint64        `json:"block_height"`
+	BlockHash   string        `json:"block_hash"`
 }
 
 // ErrorResponse is a standard error response.
