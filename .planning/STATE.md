@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 05 Plan 04 complete -- React SPA scaffold with Dashboard page
+**Current focus:** Phase 06 Plan 02 complete -- testnet CLI command for multi-node local network
 
 ## Current Position
 
-Phase: 05 of 8 (Web Dashboard)
-Plan: 4 of 4 in current phase (05-04 complete)
+Phase: 06 of 8 (Advanced Educational Features)
+Plan: 2 of 3 in current phase (06-02 complete)
 Status: In Progress
-Last activity: 2026-03-07 -- Plan 05-04 executed, React SPA scaffold with Dashboard page
+Last activity: 2026-03-07 -- Plan 06-02 executed, testnet CLI command for multi-node local network
 
 Progress: [██████████] 95%
 
@@ -67,6 +67,7 @@ Progress: [██████████] 95%
 | Phase 05 P02 | 5min | 2 tasks | 10 files |
 | Phase 05 P04 | 4min | 2 tasks | 33 files |
 | Phase 05 P05 | 3min | 3 tasks | 10 files |
+| Phase 06 P02 | 3min | 1 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,8 @@ Recent decisions affecting current work:
 - [Phase 05]: Satoshi-to-coin conversion (/ 100_000_000) displayed as 8 decimal places for educational clarity
 - [Phase 05]: Leading zero highlighting in MiningVisualizer compares hash chars against target for visual PoW demonstration
 - [Phase 05]: Mempool refreshes on mempool_changed, new_tx, and new_block WebSocket events for comprehensive live updates
+- [Phase 06]: Testnet spawns child processes via os/exec.CommandContext with process group cleanup (Setpgid + kill(-pid))
+- [Phase 06]: -http-port flag added to startnode for testnet per-node HTTP port isolation
 
 ### Roadmap Evolution
 
@@ -153,6 +156,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T08:37:49.523Z
-Stopped at: Completed 05-05-PLAN.md
+Last session: 2026-03-07T09:03:52Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None

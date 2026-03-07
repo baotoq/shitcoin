@@ -141,7 +141,7 @@ Plans:
 
 Plans:
 - [ ] 06-01-PLAN.md — Block reward halving, transaction fees, and fee-prioritized block construction
-- [ ] 06-02-PLAN.md — Multi-node testnet orchestration via `testnet` CLI command
+- [x] 06-02-PLAN.md — Multi-node testnet orchestration via `testnet` CLI command
 - [ ] 06-03-PLAN.md — Double-spend attack demo via `demo doublespend` CLI command
 
 ## Progress
@@ -158,7 +158,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.1 -> 5 -> 5.1 -> 6
 | 4.1 Use Test Assert | 2/2 | Complete | 2026-03-05 |
 | 5. Web Dashboard | 0/5 | Not started | - |
 | 5.1 Upgrade to Go 1.26.1 | 0/1 | Not started | - |
-| 6. Advanced Educational Features | 0/3 | Not started | - |
+| 6. Advanced Educational Features | 2/3 | In Progress | - |
 
 ---
 *Roadmap created: 2026-03-05*

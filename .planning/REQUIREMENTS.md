@@ -58,7 +58,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DASH-03**: Web dashboard visualizes mining in real-time (nonce attempts, hash values, target comparison)
 - [x] **DASH-04**: Web dashboard shows mempool with pending transactions
 - [x] **DASH-05**: User can search by block hash, transaction hash, or address in the dashboard
-- [ ] **ORCH-01**: User can launch a local multi-node testnet with a single CLI command
+- [x] **ORCH-01**: User can launch a local multi-node testnet with a single CLI command
 - [ ] **DEMO-01**: User can trigger a double-spend attempt that the network detects and rejects, demonstrating blockchain security
 
 ## v2 Requirements
@@ -132,7 +132,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-03 | Phase 5 | Complete |
 | DASH-04 | Phase 5 | Complete |
 | DASH-05 | Phase 5 | Complete |
-| ORCH-01 | Phase 6 | Pending |
+| ORCH-01 | Phase 6 | Complete |
 | DEMO-01 | Phase 6 | Pending |
 
 **Coverage:**
