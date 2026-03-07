@@ -29,8 +29,8 @@ Requirements for CI/CD & Kubernetes milestone. Each maps to roadmap phases.
 - [x] **K8S-02**: Kustomize base includes PVC for BoltDB data persistence
 - [x] **K8S-03**: Kustomize base uses configMapGenerator to externalize shitcoin.yaml
 - [x] **K8S-04**: Backend Deployment uses Recreate strategy with single replica for BoltDB safety
-- [ ] **K8S-05**: Kustomize dev overlay configures local image refs and lower resource limits
-- [ ] **K8S-06**: Kustomize prod overlay configures pinned image tags and production resource limits
+- [x] **K8S-05**: Kustomize dev overlay configures local image refs and lower resource limits
+- [x] **K8S-06**: Kustomize prod overlay configures pinned image tags and production resource limits
 - [x] **K8S-07**: Health probes (liveness + readiness) configured on /api/status
 
 ### Local Dev
@@ -90,8 +90,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | K8S-02 | Phase 11 | Complete |
 | K8S-03 | Phase 11 | Complete |
 | K8S-04 | Phase 11 | Complete |
-| K8S-05 | Phase 11 | Pending |
-| K8S-06 | Phase 11 | Pending |
+| K8S-05 | Phase 11 | Complete |
+| K8S-06 | Phase 11 | Complete |
 | K8S-07 | Phase 11 | Complete |
 | DEV-01 | Phase 12 | Pending |
 | DEV-02 | Phase 12 | Pending |

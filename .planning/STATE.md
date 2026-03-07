@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: CI/CD & Kubernetes
 status: executing
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-03-07T16:22:28.855Z"
-last_activity: 2026-03-07 -- Completed 11-01 (Kustomize Base Manifests)
+stopped_at: Completed 11-02-PLAN.md
+last_updated: "2026-03-07T16:25:23.961Z"
+last_activity: 2026-03-07 -- Completed 11-02 (Kustomize Overlays)
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
-  percent: 43
+  completed_plans: 6
+  percent: 96
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 11 of 13 (Kubernetes Manifests)
-Plan: 1 of 2 complete
-Status: Executing
-Last activity: 2026-03-07 -- Completed 11-01 (Kustomize Base Manifests)
+Plan: 2 of 2 complete
+Status: Phase 11 Complete
+Last activity: 2026-03-07 -- Completed 11-02 (Kustomize Overlays)
 
-Progress: [██████████] 96%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [██████████] 96%
 | Phase 10 P01 | 14min | 2 tasks | 2 files |
 | Phase 10 P02 | 10min | 2 tasks | 2 files |
 | Phase 11-01 P01 | 1min | 2 tasks | 7 files |
+| Phase 11 P02 | 1min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,7 @@ Recent decisions affecting current work:
 - [10-01]: Parallel test+lint CI jobs; go-version-file: go.mod for automatic version management
 - [Phase 11-01]: configMapGenerator with hash suffix for automatic pod restart on config changes
 - [Phase 11-01]: Recreate strategy with single replica for BoltDB single-writer safety
+- [Phase 11]: Dev overlay uses local images with :latest tag; prod uses GHCR images with pinned SHA tags
 
 ### Pending Todos
 
@@ -91,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T16:22:28.852Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-03-07T16:25:23.958Z
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None

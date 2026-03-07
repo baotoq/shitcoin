@@ -27,7 +27,7 @@
 
 - [x] **Phase 9: Containerization** - Multi-stage Dockerfiles for Go backend and React frontend with nginx reverse proxy (completed 2026-03-07)
 - [x] **Phase 10: CI Pipeline** - GitHub Actions for test, lint, build, and image push to GHCR (completed 2026-03-07)
-- [ ] **Phase 11: Kubernetes Manifests** - Kustomize base + overlays defining complete K8s deployment
+- [x] **Phase 11: Kubernetes Manifests** - Kustomize base + overlays defining complete K8s deployment (completed 2026-03-07)
 - [ ] **Phase 12: Local K8s Development** - Tilt with live-update for fast iteration on a local kind cluster
 - [ ] **Phase 13: GitOps Deployment** - ArgoCD Application for automated sync from git to cluster
 
@@ -73,7 +73,7 @@ Plans:
   3. Backend config (shitcoin.yaml) is externalized via ConfigMap, not baked into the image
   4. Liveness and readiness probes on /api/status report healthy for a running backend
   5. `kubectl apply -k deploy/k8s/overlays/prod` applies production resource limits and pinned image tags
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 11-01-PLAN.md -- Kustomize base manifests (Deployments, Services, PVC, ConfigMap, probes)
@@ -123,7 +123,7 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 6. Advanced Educational Features | v1.0 | 3/3 | Complete | 2026-03-07 |
 | 9. Containerization | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 10. CI Pipeline | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 11. Kubernetes Manifests | 1/2 | In Progress|  | - |
+| 11. Kubernetes Manifests | 2/2 | Complete   | 2026-03-07 | - |
 | 12. Local K8s Development | v1.1 | 0/1 | Not started | - |
 | 13. GitOps Deployment | v1.1 | 0/1 | Not started | - |
 
