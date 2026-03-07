@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: shitcoin
+    component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: shitcoin
+    component: backend
+  ports:
+    - port: 8080
+      targetPort: 8080
