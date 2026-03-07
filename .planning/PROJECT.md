@@ -25,16 +25,15 @@ A working blockchain you built and understand end-to-end — from transaction cr
 
 ### Active
 
-## Current Milestone: v1.1 CI/CD & Kubernetes
+## Current Milestone: v1.2 Testing & Quality
 
-**Goal:** Add CI/CD pipeline, local K8s development, and GitOps deployment to the blockchain project.
+**Goal:** Achieve comprehensive test coverage across all layers — domain logic, P2P networking, API/WebSocket, and infrastructure persistence.
 
 **Target features:**
-- GitHub Actions CI pipeline (test, lint, build Docker image)
-- Tilt local K8s dev with hot reload for Go backend + React frontend
-- Kustomize manifests with base + overlays
-- ArgoCD GitOps deployment
-- Multi-stage Dockerfiles for Go and React
+- Unit test coverage for domain layer (block, chain, tx, utxo, wallet, mempool)
+- P2P networking tests (message encoding, peer handshake, block sync, tx relay)
+- API & WebSocket handler tests (REST endpoints, event broadcasting)
+- Integration tests for infrastructure layer (BoltDB repositories, JSON file wallet store)
 
 ### Out of Scope
 
@@ -74,4 +73,4 @@ Tech stack: Go 1.26.1, go-zero, BoltDB, gorilla/websocket, React + Vite + TypeSc
 | Total-fee sorting (not fee-per-byte) | Educational project, all txs roughly same size | ✓ Good |
 
 ---
-*Last updated: 2026-03-07 after milestone v1.1 started*
+*Last updated: 2026-03-08 after milestone v1.2 started*

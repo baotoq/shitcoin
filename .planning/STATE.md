@@ -1,36 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: CI/CD & Kubernetes
-status: completed
-stopped_at: Completed 13-01-PLAN.md
-last_updated: "2026-03-07T17:04:18.659Z"
-last_activity: 2026-03-07 -- Completed 13-01 (ArgoCD Application CR)
+milestone: v1.2
+milestone_name: Testing & Quality
+status: active
+stopped_at: null
+last_updated: "2026-03-08"
+last_activity: 2026-03-08 -- Milestone v1.2 started
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-07)
+See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** v1.1 Milestone Complete
+**Current focus:** Defining requirements
 
 ## Current Position
 
-Phase: 13 of 13 (GitOps Deployment)
-Plan: 1 of 1 complete
-Status: Complete
-Last activity: 2026-03-07 -- Completed 13-01 (ArgoCD Application CR)
-
-Progress: [██████████] 100%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-08 — Milestone v1.2 started
 
 ## Performance Metrics
 
@@ -52,16 +50,6 @@ Progress: [██████████] 100%
 | 5.1 Upgrade to Go 1.26.1 | 1/1 | 3min | 3min |
 | 6. Advanced Educational Features | 3/3 | 12min | 4min |
 
-**Recent Trend:**
-- Trend: Stable, infrastructure phases may be faster (config files, no complex logic)
-| Phase 10 P01 | 14min | 2 tasks | 2 files |
-| Phase 10 P02 | 10min | 2 tasks | 2 files |
-| Phase 11-01 P01 | 1min | 2 tasks | 7 files |
-| Phase 11 P02 | 1min | 2 tasks | 2 files |
-| Phase 12 P02 | 1min | 1 task | 1 file |
-| Phase 12 P01 | 1min | 2 tasks | 4 files |
-| Phase 13 P01 | 1min | 1 tasks | 1 files |
-
 ## Accumulated Context
 
 ### Decisions
@@ -70,23 +58,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
 - [Roadmap v1.1]: 5-phase structure following strict dependency chain: Dockerfiles -> CI -> Kustomize -> Tilt -> ArgoCD
-- [Roadmap v1.1]: Phases 10 and 11 can run in parallel after Phase 9 (both depend on Dockerfiles, not each other)
 - [Research]: BoltDB requires Recreate strategy + single replica in K8s (Phase 11)
 - [Research]: CGO_ENABLED=0 mandatory for Go multi-stage Docker builds (Phase 9)
-- [09-01]: alpine:3.21 over scratch for shell/debugging access in runtime container
-- [09-01]: Config file copied from build context (not builder stage) into runtime image
-- [09-02]: Nginx listens on port 8080 (non-root compatible, no CAP_NET_BIND_SERVICE needed)
-- [09-02]: Added .dockerignore for web/ to exclude node_modules from build context
-- [Phase 10]: Separate GHCR image names: repo for backend, repo-web for frontend
-- [Phase 10]: GHA cache (type=gha) for Docker layer caching; conditional push on master merge only
-- [10-01]: golangci-lint v2 config with standard defaults plus extra linters (govet, errcheck, staticcheck, etc.)
-- [10-01]: Parallel test+lint CI jobs; go-version-file: go.mod for automatic version management
-- [Phase 11-01]: configMapGenerator with hash suffix for automatic pod restart on config changes
-- [Phase 11-01]: Recreate strategy with single replica for BoltDB single-writer safety
-- [Phase 11]: Dev overlay uses local images with :latest tag; prod uses GHCR images with pinned SHA tags
-- [12-02]: Makefile as single entry point for dev operations; idempotent kind-create with || true
-- [Phase 12]: Separate Dockerfile.dev for Tilt binary sync; GOARCH omitted to default to host arch on Apple Silicon
-- [Phase 13]: ArgoCD Application CR placed in argocd/ directory, separate from deploy/k8s/ to prevent recursive self-management
 
 ### Pending Todos
 
@@ -94,11 +67,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Research]: Graceful BoltDB shutdown -- existing code may not trap SIGTERM. Verify during Phase 11.
-- [Research]: Frontend live-update strategy (Vite HMR in container vs local proxy) -- decide during Phase 12.
+None.
 
 ## Session Continuity
 
-Last session: 2026-03-07T17:02:21.538Z
-Stopped at: Completed 13-01-PLAN.md
+Last session: 2026-03-08
+Stopped at: Milestone v1.2 started
 Resume file: None
