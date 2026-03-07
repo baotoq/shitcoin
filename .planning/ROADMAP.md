@@ -42,11 +42,11 @@
   2. `docker build` produces a working React frontend image with nginx that serves the SPA and proxies /api and /ws to the backend
   3. Build context excludes data/, wallets.json, .git, and node_modules (verified via .dockerignore)
   4. Both containers run as a non-root user (verified by `docker exec whoami`)
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 09-01: TBD
-- [ ] 09-02: TBD
+- [ ] 09-01-PLAN.md -- Backend Dockerfile + .dockerignore
+- [ ] 09-02-PLAN.md -- Frontend Dockerfile + nginx.conf
 
 ### Phase 10: CI Pipeline
 **Goal**: Every push and PR is automatically tested, linted, and built; images are pushed to registry on main merge
