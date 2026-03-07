@@ -1,0 +1,33 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Go
+*.go text diff=golang
+go.sum text -diff
+
+# Web
+*.ts text
+*.tsx text
+*.js text
+*.css text
+*.html text
+*.json text
+
+# Config
+*.yaml text
+*.yml text
+*.toml text
+*.md text
+
+# Binary
+*.db binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Vendored/generated - exclude from linguist stats
+web/node_modules/** linguist-vendored
+web/dist/** linguist-generated
