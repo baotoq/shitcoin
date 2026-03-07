@@ -57,10 +57,11 @@ Plans:
   2. A push to any branch triggers frontend lint, typecheck, and build verification
   3. Merging to main builds and pushes Docker images to GHCR with correct tags
   4. Go test coverage percentage is reported in CI output
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 10-01: TBD
+- [ ] 10-01-PLAN.md -- Go CI workflow (test + lint + coverage) and golangci-lint v2 config
+- [ ] 10-02-PLAN.md -- Frontend CI workflow and Docker build/push workflow
 
 ### Phase 11: Kubernetes Manifests
 **Goal**: Complete Kustomize manifest set defines a deployable, persistent, health-checked blockchain node
@@ -120,12 +121,12 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 5. Web Dashboard | v1.0 | 5/5 | Complete | 2026-03-07 |
 | 5.1 Upgrade to Go 1.26.1 | v1.0 | 1/1 | Complete | 2026-03-07 |
 | 6. Advanced Educational Features | v1.0 | 3/3 | Complete | 2026-03-07 |
-| 9. Containerization | 2/2 | Complete   | 2026-03-07 | - |
-| 10. CI Pipeline | v1.1 | 0/1 | Not started | - |
+| 9. Containerization | v1.1 | 2/2 | Complete | 2026-03-07 |
+| 10. CI Pipeline | v1.1 | 0/2 | Not started | - |
 | 11. Kubernetes Manifests | v1.1 | 0/2 | Not started | - |
 | 12. Local K8s Development | v1.1 | 0/1 | Not started | - |
 | 13. GitOps Deployment | v1.1 | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-07 -- v1.1 roadmap added*
+*Last updated: 2026-03-07 -- Phase 10 planned (2 plans)*
