@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: CI/CD & Kubernetes
 status: executing
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-03-07T14:51:53.536Z"
-last_activity: 2026-03-07 -- Completed 10-02 (Frontend CI & Docker Workflows)
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-03-07T14:55:00Z"
+last_activity: 2026-03-07 -- Completed 10-01 (Go CI Pipeline)
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 43
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 10 of 13 (CI Pipeline)
-Plan: 1 of 2 complete (10-02 done, 10-01 pending)
+Plan: 2 of 2 complete
 Status: Executing
-Last activity: 2026-03-07 -- Completed 10-02 (Frontend CI & Docker Workflows)
+Last activity: 2026-03-07 -- Completed 10-01 (Go CI Pipeline)
 
 Progress: [████░░░░░░] 43%
 
@@ -54,6 +54,7 @@ Progress: [████░░░░░░] 43%
 
 **Recent Trend:**
 - Trend: Stable, infrastructure phases may be faster (config files, no complex logic)
+| Phase 10 P01 | 14min | 2 tasks | 2 files |
 | Phase 10 P02 | 10min | 2 tasks | 2 files |
 
 ## Accumulated Context
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [09-02]: Added .dockerignore for web/ to exclude node_modules from build context
 - [Phase 10]: Separate GHCR image names: repo for backend, repo-web for frontend
 - [Phase 10]: GHA cache (type=gha) for Docker layer caching; conditional push on master merge only
+- [10-01]: golangci-lint v2 config with standard defaults plus extra linters (govet, errcheck, staticcheck, etc.)
+- [10-01]: Parallel test+lint CI jobs; go-version-file: go.mod for automatic version management
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T14:51:53.485Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-03-07T14:55:00Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None
