@@ -37,7 +37,7 @@
 
 **Milestone Goal:** Achieve comprehensive test coverage across all layers -- domain logic, P2P networking, API/WebSocket, and infrastructure persistence.
 
-- [ ] **Phase 14: Test Infrastructure** - Shared test helpers, consolidated mocks, and reusable builders in `internal/testutil/`
+- [x] **Phase 14: Test Infrastructure** - Shared test helpers, consolidated mocks, and reusable builders in `internal/testutil/` (completed 2026-03-07)
 - [ ] **Phase 15: Domain Layer Coverage** - Unit tests for chain, P2P, utxo, wallet, mempool, tx, and error paths across all domain packages
 - [ ] **Phase 16: Infrastructure Persistence Tests** - BoltDB repository and JSON file wallet store test coverage
 - [ ] **Phase 17: Handler Layer Tests** - REST API and WebSocket hub test coverage with httptest and mock dependencies
@@ -53,7 +53,7 @@
   1. `internal/testutil/` package exists with reusable block, transaction, wallet, and UTXO builder functions that compile and are importable from any test file
   2. Mock implementations for chain.Repository, utxo.Repository, and wallet.Repository exist in a single shared location, replacing duplicated mocks across 4+ packages
   3. Existing tests that used package-local mocks still pass after migrating to the shared mocks
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 14-01-PLAN.md — Create shared testutil package with builders and mock repositories (TDD)
@@ -122,7 +122,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 11. Kubernetes Manifests | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 12. Local K8s Development | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 13. GitOps Deployment | v1.1 | 1/1 | Complete | 2026-03-07 |
-| 14. Test Infrastructure | v1.2 | 1/2 | In progress | - |
+| 14. Test Infrastructure | 2/2 | Complete   | 2026-03-07 | - |
 | 15. Domain Layer Coverage | v1.2 | 0/? | Not started | - |
 | 16. Infrastructure Persistence Tests | v1.2 | 0/? | Not started | - |
 | 17. Handler Layer Tests | v1.2 | 0/? | Not started | - |

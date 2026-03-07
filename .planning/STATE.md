@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Testing & Quality
-status: active
-stopped_at: null
-last_updated: "2026-03-08"
-last_activity: 2026-03-08 -- v1.2 roadmap created (Phases 14-18)
+status: completed
+stopped_at: Completed 14-02-PLAN.md (test migration to shared testutil)
+last_updated: "2026-03-07T18:36:13.905Z"
+last_activity: 2026-03-08 -- Completed 14-02 test migration to shared testutil
 progress:
   total_phases: 5
-  completed_phases: 0
-  total_plans: 1
-  completed_plans: 1
-  percent: 20
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
 ---
 
 # Project State
@@ -26,14 +25,14 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 14 (1 of 5 in v1.2) (Test Infrastructure)
-Plan: 1 of 1 in current phase
-Status: Plan 14-01 complete
-Last activity: 2026-03-08 -- Completed 14-01 test builders and mock repos
+Plan: 2 of 2 in current phase
+Status: Plan 14-02 complete -- Phase 14 complete
+Last activity: 2026-03-08 -- Completed 14-02 test migration to shared testutil
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25 (22 v1.0 + 2 v1.1 + 1 v1.2)
+- Total plans completed: 26 (22 v1.0 + 2 v1.1 + 2 v1.2)
 - Average duration: 6min
 - Total execution time: ~2.3 hours
 
@@ -49,6 +48,7 @@ Last activity: 2026-03-08 -- Completed 14-01 test builders and mock repos
 | 5. Web Dashboard | 5/5 | 19min | 4min |
 | 5.1 Upgrade to Go 1.26.1 | 1/1 | 3min | 3min |
 | 6. Advanced Educational Features | 3/3 | 12min | 4min |
+| Phase 14 P02 | 6min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -64,6 +64,8 @@ Recent decisions affecting current work:
 - [14-01]: Difficulty bits=1 for test mining -- fast block creation while exercising real PoW
 - [14-01]: Exported map fields on mocks for test inspection
 - [14-01]: Domain error vars (ErrUTXONotFound, ErrWalletNotFound) in mock returns for ErrorIs
+- [14-02]: Fixed MockChainRepo to return domain sentinel errors (chain.ErrBlockNotFound, chain.ErrChainEmpty) -- required for errors.Is checks
+- [14-02]: External test packages (package foo_test) preferred for testutil imports
 
 ### Pending Todos
 
@@ -77,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 14-01-PLAN.md (test builders + mock repos)
+Stopped at: Completed 14-02-PLAN.md (test migration to shared testutil)
 Resume file: None
