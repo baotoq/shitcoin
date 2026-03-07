@@ -16,7 +16,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **MINE-05**: Node can auto-mine blocks continuously in the background with context-based cancellation
 - [x] **MINE-06**: Difficulty adjusts automatically every N blocks based on actual vs target block time (window-based, clamped)
 - [x] **MINE-07**: Block headers include a Merkle root computed from the block's transaction hashes
-- [ ] **MINE-08**: Block reward halves every N blocks (configurable interval)
+- [x] **MINE-08**: Block reward halves every N blocks (configurable interval)
 - [x] **MINE-09**: Consensus parameters (block time target, difficulty interval, initial reward, halving interval) are configurable
 
 ### Transactions & Wallets
@@ -29,8 +29,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **TX-06**: Each mined block includes a coinbase transaction that creates the block reward for the miner
 - [x] **TX-07**: System maintains a persistent UTXO set for efficient balance queries and transaction validation
 - [x] **TX-08**: UTXO set supports reversibility (undo-log) to enable chain reorganization
-- [ ] **TX-09**: Transaction fees are computed as the difference between input and output sums, collected by the miner
-- [ ] **TX-10**: Miner prioritizes transactions in block construction by fee rate
+- [x] **TX-09**: Transaction fees are computed as the difference between input and output sums, collected by the miner
+- [x] **TX-10**: Miner prioritizes transactions in block construction by fee rate
 
 ### Networking
 
@@ -99,7 +99,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MINE-05 | Phase 3 | Complete |
 | MINE-06 | Phase 1 | Complete |
 | MINE-07 | Phase 3 | Complete |
-| MINE-08 | Phase 6 | Pending |
+| MINE-08 | Phase 6 | Complete |
 | MINE-09 | Phase 1 | Complete |
 | TX-01 | Phase 2 | Complete |
 | TX-02 | Phase 2 | Complete |
@@ -109,8 +109,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TX-06 | Phase 2 | Complete |
 | TX-07 | Phase 2 | Complete |
 | TX-08 | Phase 2 | Complete |
-| TX-09 | Phase 6 | Pending |
-| TX-10 | Phase 6 | Pending |
+| TX-09 | Phase 6 | Complete |
+| TX-10 | Phase 6 | Complete |
 | NET-01 | Phase 4 | Complete |
 | NET-02 | Phase 4 | Complete |
 | NET-03 | Phase 3 | Complete |

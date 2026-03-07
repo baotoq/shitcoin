@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 06 Plan 02 complete -- testnet CLI command for multi-node local network
+**Current focus:** Phase 06 Plan 01 complete -- block reward halving and transaction fees
 
 ## Current Position
 
 Phase: 06 of 8 (Advanced Educational Features)
-Plan: 2 of 3 in current phase (06-02 complete)
+Plan: 2 of 3 in current phase (06-01 complete)
 Status: In Progress
-Last activity: 2026-03-07 -- Plan 06-02 executed, testnet CLI command for multi-node local network
+Last activity: 2026-03-07 -- Plan 06-01 executed, block reward halving and transaction fees
 
 Progress: [██████████] 95%
 
@@ -68,6 +68,7 @@ Progress: [██████████] 95%
 | Phase 05 P04 | 4min | 2 tasks | 33 files |
 | Phase 05 P05 | 3min | 3 tasks | 10 files |
 | Phase 06 P02 | 3min | 1 tasks | 14 files |
+| Phase 06 P01 | 7min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -139,6 +140,10 @@ Recent decisions affecting current work:
 - [Phase 05]: Mempool refreshes on mempool_changed, new_tx, and new_block WebSocket events for comprehensive live updates
 - [Phase 06]: Testnet spawns child processes via os/exec.CommandContext with process group cleanup (Setpgid + kill(-pid))
 - [Phase 06]: -http-port flag added to startnode for testnet per-node HTTP port isolation
+- [06-01]: RewardAtHeight exported for testability and potential API use
+- [06-01]: AddWithFee alongside backward-compatible Add(tx) delegates to AddWithFee(tx, 0)
+- [06-01]: DrainByFee returns (txs, totalFees) tuple for direct use in MineBlock
+- [06-01]: MineBlock accepts totalFees parameter rather than computing fees internally
 
 ### Roadmap Evolution
 
@@ -156,6 +161,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T09:03:52Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-03-07T09:07:39Z
+Stopped at: Completed 06-01-PLAN.md
 Resume file: None
