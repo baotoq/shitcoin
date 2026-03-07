@@ -42,8 +42,8 @@ Requirements for CI/CD & Kubernetes milestone. Each maps to roadmap phases.
 
 ### GitOps
 
-- [ ] **GIT-01**: ArgoCD Application CR with auto-sync pointing to Kustomize dev overlay
-- [ ] **GIT-02**: ArgoCD Application CR lives outside K8s manifest watched path
+- [x] **GIT-01**: ArgoCD Application CR with auto-sync pointing to Kustomize dev overlay
+- [x] **GIT-02**: ArgoCD Application CR lives outside K8s manifest watched path
 
 ## v2 Requirements
 
@@ -97,8 +97,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEV-02 | Phase 12 | Complete |
 | DEV-03 | Phase 12 | Complete |
 | DEV-04 | Phase 12 | Complete |
-| GIT-01 | Phase 13 | Pending |
-| GIT-02 | Phase 13 | Pending |
+| GIT-01 | Phase 13 | Complete |
+| GIT-02 | Phase 13 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 23 total

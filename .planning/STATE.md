@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: CI/CD & Kubernetes
-status: executing
-stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-03-07T16:50:28.513Z"
-last_activity: 2026-03-07 -- Completed 12-02 (Makefile Dev Commands)
+status: complete
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-03-07T17:02:21.541Z"
+last_activity: 2026-03-07 -- Completed 13-01 (ArgoCD Application CR)
 progress:
   total_phases: 5
-  completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
-  percent: 97
+  completed_phases: 5
+  total_plans: 9
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 12 - Local K8s Development (executing)
+**Current focus:** v1.1 Milestone Complete
 
 ## Current Position
 
-Phase: 12 of 13 (Local K8s Development)
-Plan: 2 of 3 complete
-Status: In Progress
-Last activity: 2026-03-07 -- Completed 12-02 (Makefile Dev Commands)
+Phase: 13 of 13 (GitOps Deployment)
+Plan: 1 of 1 complete
+Status: Complete
+Last activity: 2026-03-07 -- Completed 13-01 (ArgoCD Application CR)
 
-Progress: [██████████] 97%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [██████████] 97%
 | Phase 11 P02 | 1min | 2 tasks | 2 files |
 | Phase 12 P02 | 1min | 1 task | 1 file |
 | Phase 12 P01 | 1min | 2 tasks | 4 files |
+| Phase 13 P01 | 1min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,7 @@ Recent decisions affecting current work:
 - [Phase 11]: Dev overlay uses local images with :latest tag; prod uses GHCR images with pinned SHA tags
 - [12-02]: Makefile as single entry point for dev operations; idempotent kind-create with || true
 - [Phase 12]: Separate Dockerfile.dev for Tilt binary sync; GOARCH omitted to default to host arch on Apple Silicon
+- [Phase 13]: ArgoCD Application CR placed in argocd/ directory, separate from deploy/k8s/ to prevent recursive self-management
 
 ### Pending Todos
 
@@ -97,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T16:48:23.703Z
-Stopped at: Completed 12-01-PLAN.md
+Last session: 2026-03-07T17:02:21.538Z
+Stopped at: Completed 13-01-PLAN.md
 Resume file: None

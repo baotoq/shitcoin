@@ -29,7 +29,7 @@
 - [x] **Phase 10: CI Pipeline** - GitHub Actions for test, lint, build, and image push to GHCR (completed 2026-03-07)
 - [x] **Phase 11: Kubernetes Manifests** - Kustomize base + overlays defining complete K8s deployment (completed 2026-03-07)
 - [x] **Phase 12: Local K8s Development** - Tilt with live-update for fast iteration on a local kind cluster (completed 2026-03-07)
-- [ ] **Phase 13: GitOps Deployment** - ArgoCD Application for automated sync from git to cluster
+- [x] **Phase 13: GitOps Deployment** - ArgoCD Application for automated sync from git to cluster (completed 2026-03-07)
 
 ## Phase Details
 
@@ -101,7 +101,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. ArgoCD Application CR points to the Kustomize dev overlay and auto-syncs changes from git
   2. The ArgoCD Application manifest lives in argocd/ directory, outside the K8s manifest path that ArgoCD watches
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 13-01-PLAN.md -- ArgoCD Application CR with auto-sync pointing to Kustomize dev overlay
@@ -126,7 +126,7 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 10. CI Pipeline | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 11. Kubernetes Manifests | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 12. Local K8s Development | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 13. GitOps Deployment | v1.1 | 0/1 | Not started | - |
+| 13. GitOps Deployment | 1/1 | Complete   | 2026-03-07 | - |
 
 ---
 *Roadmap created: 2026-03-05*
