@@ -55,6 +55,8 @@ func (c *CLI) Run(args []string) {
 		c.printChain()
 	case "testnet":
 		c.testnet(args[1:])
+	case "demo":
+		c.demo(args[1:])
 	default:
 		fmt.Printf("Unknown command: %s\n", args[0])
 		c.printUsage()
@@ -73,6 +75,7 @@ func (c *CLI) printUsage() {
 	fmt.Println("  startnode [-port PORT] [-mine ADDR] [-peers HOST:PORT,...] [-datadir DIR] - Start a node")
 	fmt.Println("  printchain                - Print all blocks in the chain")
 	fmt.Println("  testnet [-nodes N] [-base-port PORT] [-base-http-port PORT] - Launch a local multi-node testnet")
+	fmt.Println("  demo doublespend           - Demonstrate double-spend detection")
 }
 
 // createWallet generates a new wallet and persists it.
