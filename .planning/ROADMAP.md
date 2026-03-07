@@ -53,7 +53,11 @@
   1. `internal/testutil/` package exists with reusable block, transaction, wallet, and UTXO builder functions that compile and are importable from any test file
   2. Mock implementations for chain.Repository, utxo.Repository, and wallet.Repository exist in a single shared location, replacing duplicated mocks across 4+ packages
   3. Existing tests that used package-local mocks still pass after migrating to the shared mocks
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — Create shared testutil package with builders and mock repositories (TDD)
+- [ ] 14-02-PLAN.md — Migrate existing tests to shared testutil, delete local duplicates
 
 ### Phase 15: Domain Layer Coverage
 **Goal**: Domain logic is thoroughly tested, covering happy paths, edge cases, and error conditions across all domain packages
@@ -118,7 +122,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 11. Kubernetes Manifests | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 12. Local K8s Development | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 13. GitOps Deployment | v1.1 | 1/1 | Complete | 2026-03-07 |
-| 14. Test Infrastructure | v1.2 | 0/? | Not started | - |
+| 14. Test Infrastructure | v1.2 | 0/2 | Not started | - |
 | 15. Domain Layer Coverage | v1.2 | 0/? | Not started | - |
 | 16. Infrastructure Persistence Tests | v1.2 | 0/? | Not started | - |
 | 17. Handler Layer Tests | v1.2 | 0/? | Not started | - |
@@ -126,4 +130,4 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-08 -- v1.2 Testing & Quality milestone added (Phases 14-18)*
+*Last updated: 2026-03-08 -- Phase 14 planned (2 plans)*
