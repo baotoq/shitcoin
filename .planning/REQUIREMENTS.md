@@ -38,7 +38,7 @@ Requirements for CI/CD & Kubernetes milestone. Each maps to roadmap phases.
 - [ ] **DEV-01**: Tiltfile with docker_build and live_update for Go backend hot reload
 - [ ] **DEV-02**: Tiltfile with docker_build and live_update for React frontend
 - [ ] **DEV-03**: kind cluster config and setup instructions provided
-- [ ] **DEV-04**: Makefile with common commands (ci, docker-build, tilt-up, lint, test)
+- [x] **DEV-04**: Makefile with common commands (ci, docker-build, tilt-up, lint, test)
 
 ### GitOps
 
@@ -96,7 +96,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEV-01 | Phase 12 | Pending |
 | DEV-02 | Phase 12 | Pending |
 | DEV-03 | Phase 12 | Pending |
-| DEV-04 | Phase 12 | Pending |
+| DEV-04 | Phase 12 | Complete |
 | GIT-01 | Phase 13 | Pending |
 | GIT-02 | Phase 13 | Pending |
 

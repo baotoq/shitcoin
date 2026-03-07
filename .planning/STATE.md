@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: CI/CD & Kubernetes
-status: completed
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-03-07T16:27:58.828Z"
-last_activity: 2026-03-07 -- Completed 11-02 (Kustomize Overlays)
+status: executing
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-03-07T16:48:23.705Z"
+last_activity: 2026-03-07 -- Completed 12-02 (Makefile Dev Commands)
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
+  percent: 97
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 11 - Kubernetes Manifests (executing)
+**Current focus:** Phase 12 - Local K8s Development (executing)
 
 ## Current Position
 
-Phase: 11 of 13 (Kubernetes Manifests)
-Plan: 2 of 2 complete
-Status: Phase 11 Complete
-Last activity: 2026-03-07 -- Completed 11-02 (Kustomize Overlays)
+Phase: 12 of 13 (Local K8s Development)
+Plan: 2 of 3 complete
+Status: In Progress
+Last activity: 2026-03-07 -- Completed 12-02 (Makefile Dev Commands)
 
-Progress: [██████████] 100%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
@@ -58,6 +58,8 @@ Progress: [██████████] 100%
 | Phase 10 P02 | 10min | 2 tasks | 2 files |
 | Phase 11-01 P01 | 1min | 2 tasks | 7 files |
 | Phase 11 P02 | 1min | 2 tasks | 2 files |
+| Phase 12 P02 | 1min | 1 task | 1 file |
+| Phase 12 P01 | 1min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -81,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 11-01]: configMapGenerator with hash suffix for automatic pod restart on config changes
 - [Phase 11-01]: Recreate strategy with single replica for BoltDB single-writer safety
 - [Phase 11]: Dev overlay uses local images with :latest tag; prod uses GHCR images with pinned SHA tags
+- [12-02]: Makefile as single entry point for dev operations; idempotent kind-create with || true
+- [Phase 12]: Separate Dockerfile.dev for Tilt binary sync; GOARCH omitted to default to host arch on Apple Silicon
 
 ### Pending Todos
 
@@ -93,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T16:25:23.958Z
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-03-07T16:48:23.703Z
+Stopped at: Completed 12-01-PLAN.md
 Resume file: None
