@@ -73,11 +73,11 @@ Plans:
   3. Backend config (shitcoin.yaml) is externalized via ConfigMap, not baked into the image
   4. Liveness and readiness probes on /api/status report healthy for a running backend
   5. `kubectl apply -k deploy/k8s/overlays/prod` applies production resource limits and pinned image tags
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
+- [ ] 11-01-PLAN.md -- Kustomize base manifests (Deployments, Services, PVC, ConfigMap, probes)
+- [ ] 11-02-PLAN.md -- Kustomize dev and prod overlays (image refs, resource limits)
 
 ### Phase 12: Local K8s Development
 **Goal**: Developer runs `tilt up` and gets a live-reloading blockchain environment on a local K8s cluster
@@ -122,11 +122,11 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 5.1 Upgrade to Go 1.26.1 | v1.0 | 1/1 | Complete | 2026-03-07 |
 | 6. Advanced Educational Features | v1.0 | 3/3 | Complete | 2026-03-07 |
 | 9. Containerization | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 10. CI Pipeline | 2/2 | Complete    | 2026-03-07 | - |
+| 10. CI Pipeline | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 11. Kubernetes Manifests | v1.1 | 0/2 | Not started | - |
 | 12. Local K8s Development | v1.1 | 0/1 | Not started | - |
 | 13. GitOps Deployment | v1.1 | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-07 -- Phase 10 planned (2 plans)*
+*Last updated: 2026-03-07 -- Phase 11 planned (2 plans)*
