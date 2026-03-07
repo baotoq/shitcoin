@@ -1,11 +1,41 @@
 # Requirements: Shitcoin
 
-**Defined:** 2026-03-07
-**Core Value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
+**Defined:** 2026-03-08
+**Core Value:** A working blockchain you built and understand end-to-end — from transaction creation to block mining to peer synchronization.
 
-## v1.1 Requirements
+## v1.2 Requirements
 
-Requirements for CI/CD & Kubernetes milestone. Each maps to roadmap phases.
+Requirements for Testing & Quality milestone. Each maps to roadmap phases.
+
+### Test Infrastructure
+
+- [ ] **TINF-01**: Shared test helpers with reusable block, tx, wallet, and UTXO builders in `internal/testutil/`
+- [ ] **TINF-02**: Consolidated mock repositories (chain, UTXO, wallet) in shared `testutil` package, replacing duplicated mocks across 4+ packages
+- [ ] **TINF-03**: Race detection enabled in CI (`go test -race ./...` in GitHub Actions)
+
+### Domain Layer
+
+- [ ] **DOM-01**: Chain aggregate test coverage reaches 85%+ (mining orchestration, reorg logic, difficulty adjustment edge cases)
+- [ ] **DOM-02**: P2P unit test coverage reaches 80%+ (message encoding/decoding, handler dispatch, sync logic)
+- [ ] **DOM-03**: Domain gap-filling brings utxo, wallet, mempool, and tx packages to 95%+ coverage each
+- [ ] **DOM-04**: Error path tests cover invalid blocks, double spends, corrupt data, nil inputs, and boundary conditions across all domain packages
+
+### Handler Layer
+
+- [ ] **HNDL-01**: API handler test coverage reaches 80%+ (address, mempool, search, tx handlers)
+- [ ] **HNDL-02**: WebSocket hub test coverage reaches 75%+ (event subscribe, broadcast, client disconnect)
+
+### Infrastructure Layer
+
+- [ ] **INFR-01**: BoltDB repository test coverage reaches 80%+ (atomic block+UTXO saves, range queries, reorg deletes, undo entries)
+- [ ] **INFR-02**: JSON file wallet repository test coverage reaches 90%+
+
+### Integration Tests
+
+- [ ] **INTG-01**: P2P integration tests verify TCP handshake, block sync, and tx relay between 2+ in-process nodes
+- [ ] **INTG-02**: E2E chain scenario tests verify full workflow: create wallet, send tx, mine block, verify UTXO updated, check balance
+
+## v1.1 Requirements (Complete)
 
 ### Docker
 
@@ -45,9 +75,15 @@ Requirements for CI/CD & Kubernetes milestone. Each maps to roadmap phases.
 - [x] **GIT-01**: ArgoCD Application CR with auto-sync pointing to Kustomize dev overlay
 - [x] **GIT-02**: ArgoCD Application CR lives outside K8s manifest watched path
 
-## v2 Requirements
+## Future Requirements
 
-Deferred to future release. Tracked but not in current roadmap.
+### Quality Enhancements
+
+- **QUAL-01**: Coverage CI gate — fail CI if coverage drops below per-package thresholds
+- **QUAL-02**: Fuzz tests for P2P message deserialization and block serialization
+- **QUAL-03**: Golden file tests for wire format snapshot detection
+- **QUAL-04**: Benchmark tests for PoW mining at various difficulties
+- **QUAL-05**: CLI handler tests for command dispatch
 
 ### Kubernetes Advanced
 
@@ -63,12 +99,13 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| Helm charts | Kustomize is simpler and more educational; avoids Go template complexity in YAML |
-| Docker Compose | Defeats K8s learning purpose; Tilt provides same local dev convenience with real K8s |
-| Skaffold | Tilt has better live-update UX and active community |
-| Service mesh (Istio/Linkerd) | Massive complexity for localhost P2P; solves problems this project doesn't have |
-| Separate GitOps repo | Unnecessary friction for single educational project |
-| Multi-environment CI promotion | Educational project runs locally; single dev overlay sufficient |
+| Mock generation framework (mockgen, moq) | Only 3 interfaces; hand-written mocks are established and sufficient |
+| Property-based testing (gopter, rapid) | Overkill for educational project; table-driven tests cover same ground |
+| Mutation testing (go-mutesting) | Slow, noisy; 11K LOC project doesn't justify overhead |
+| Contract/API schema tests (OpenAPI) | No OpenAPI spec; REST API tested directly with httptest |
+| svc.ServiceContext tests | Pure wiring code with no logic to test |
+| External test infrastructure (testcontainers) | BoltDB is embedded, P2P is localhost; no external deps to containerize |
+| CLI orchestration tests (testnet, demo) | High effort, low value; domain logic underneath is what matters |
 
 ## Traceability
 
@@ -76,35 +113,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DOCK-01 | Phase 9 | Complete |
-| DOCK-02 | Phase 9 | Complete |
-| DOCK-03 | Phase 9 | Complete |
-| DOCK-04 | Phase 9 | Complete |
-| DOCK-05 | Phase 9 | Complete |
-| CI-01 | Phase 10 | Complete |
-| CI-02 | Phase 10 | Complete |
-| CI-03 | Phase 10 | Complete |
-| CI-04 | Phase 10 | Complete |
-| CI-05 | Phase 10 | Complete |
-| K8S-01 | Phase 11 | Complete |
-| K8S-02 | Phase 11 | Complete |
-| K8S-03 | Phase 11 | Complete |
-| K8S-04 | Phase 11 | Complete |
-| K8S-05 | Phase 11 | Complete |
-| K8S-06 | Phase 11 | Complete |
-| K8S-07 | Phase 11 | Complete |
-| DEV-01 | Phase 12 | Complete |
-| DEV-02 | Phase 12 | Complete |
-| DEV-03 | Phase 12 | Complete |
-| DEV-04 | Phase 12 | Complete |
-| GIT-01 | Phase 13 | Complete |
-| GIT-02 | Phase 13 | Complete |
+| TINF-01 | — | Pending |
+| TINF-02 | — | Pending |
+| TINF-03 | — | Pending |
+| DOM-01 | — | Pending |
+| DOM-02 | — | Pending |
+| DOM-03 | — | Pending |
+| DOM-04 | — | Pending |
+| HNDL-01 | — | Pending |
+| HNDL-02 | — | Pending |
+| INFR-01 | — | Pending |
+| INFR-02 | — | Pending |
+| INTG-01 | — | Pending |
+| INTG-02 | — | Pending |
 
 **Coverage:**
-- v1.1 requirements: 23 total
-- Mapped to phases: 23
-- Unmapped: 0
+- v1.2 requirements: 13 total
+- Mapped to phases: 0
+- Unmapped: 13 ⚠️
 
 ---
-*Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after roadmap creation*
+*Requirements defined: 2026-03-08*
+*Last updated: 2026-03-08 after initial definition*
