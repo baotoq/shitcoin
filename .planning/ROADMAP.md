@@ -101,10 +101,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. ArgoCD Application CR points to the Kustomize dev overlay and auto-syncs changes from git
   2. The ArgoCD Application manifest lives in argocd/ directory, outside the K8s manifest path that ArgoCD watches
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 13-01: TBD
+- [ ] 13-01-PLAN.md -- ArgoCD Application CR with auto-sync pointing to Kustomize dev overlay
 
 ## Progress
 
@@ -125,9 +125,9 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 9. Containerization | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 10. CI Pipeline | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 11. Kubernetes Manifests | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 12. Local K8s Development | 2/2 | Complete    | 2026-03-07 | - |
+| 12. Local K8s Development | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 13. GitOps Deployment | v1.1 | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-07 -- Phase 12 planned (2 plans)*
+*Last updated: 2026-03-07 -- Phase 13 planned (1 plan)*
