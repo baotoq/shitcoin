@@ -88,10 +88,11 @@ Plans:
   2. Editing a Go source file triggers automatic rebuild and restart in the backend container without a full image rebuild
   3. Editing a React source file triggers automatic update in the frontend container
   4. `make tilt-up`, `make test`, `make lint`, and `make docker-build` all work as documented
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 12-01: TBD
+- [ ] 12-01-PLAN.md -- Tiltfile with live-update for backend and frontend, Dockerfile.dev, kind cluster config
+- [ ] 12-02-PLAN.md -- Makefile with common dev commands
 
 ### Phase 13: GitOps Deployment
 **Goal**: ArgoCD automatically syncs Kubernetes state from git, completing the CI/CD loop
@@ -123,10 +124,10 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 6. Advanced Educational Features | v1.0 | 3/3 | Complete | 2026-03-07 |
 | 9. Containerization | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 10. CI Pipeline | v1.1 | 2/2 | Complete | 2026-03-07 |
-| 11. Kubernetes Manifests | 2/2 | Complete    | 2026-03-07 | - |
-| 12. Local K8s Development | v1.1 | 0/1 | Not started | - |
+| 11. Kubernetes Manifests | v1.1 | 2/2 | Complete | 2026-03-07 |
+| 12. Local K8s Development | v1.1 | 0/2 | Not started | - |
 | 13. GitOps Deployment | v1.1 | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-07 -- Phase 11 planned (2 plans)*
+*Last updated: 2026-03-07 -- Phase 12 planned (2 plans)*
