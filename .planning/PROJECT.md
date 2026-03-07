@@ -25,7 +25,16 @@ A working blockchain you built and understand end-to-end — from transaction cr
 
 ### Active
 
-(None — v1.0 complete, define next milestone for new requirements)
+## Current Milestone: v1.1 CI/CD & Kubernetes
+
+**Goal:** Add CI/CD pipeline, local K8s development, and GitOps deployment to the blockchain project.
+
+**Target features:**
+- GitHub Actions CI pipeline (test, lint, build Docker image)
+- Tilt local K8s dev with hot reload for Go backend + React frontend
+- Kustomize manifests with base + overlays
+- ArgoCD GitOps deployment
+- Multi-stage Dockerfiles for Go and React
 
 ### Out of Scope
 
@@ -65,4 +74,4 @@ Tech stack: Go 1.26.1, go-zero, BoltDB, gorilla/websocket, React + Vite + TypeSc
 | Total-fee sorting (not fee-per-byte) | Educational project, all txs roughly same size | ✓ Good |
 
 ---
-*Last updated: 2026-03-07 after v1.0 milestone*
+*Last updated: 2026-03-07 after milestone v1.1 started*
