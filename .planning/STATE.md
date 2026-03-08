@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Testing & Quality
 status: completed
-stopped_at: Completed 17-01-PLAN.md (API handler tests)
-last_updated: "2026-03-08T04:57:53.577Z"
+stopped_at: Completed 18-02-PLAN.md (race detection)
+last_updated: "2026-03-08T05:26:10.960Z"
 last_activity: 2026-03-08 -- Completed 17-02 WebSocket handler tests (84.0% coverage)
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 11
+  completed_plans: 10
 ---
 
 # Project State
@@ -55,6 +55,7 @@ Last activity: 2026-03-08 -- Completed 17-02 WebSocket handler tests (84.0% cove
 | Phase 16 P01 | 2min | 2 tasks | 3 files |
 | Phase 17 P02 | 2min | 2 tasks | 2 files |
 | Phase 17 P01 | 2min | 2 tasks | 5 files |
+| Phase 18 P02 | 1min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,7 @@ Recent decisions affecting current work:
 - [Phase 17]: Hub subscribeEventBus goroutine race resolved with retry-publish goroutine pattern
 - [Phase 17]: GetChainHeightErr added to MockChainRepo for BlocksHandler error testing
 - [Phase 17]: API handler coverage 93.5% -- local errUTXORepo for targeted error injection
+- [Phase 18]: Two-phase lock eviction pattern: collect under RLock, delete under Lock
 
 ### Pending Todos
 
@@ -96,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T04:55:37.918Z
-Stopped at: Completed 17-01-PLAN.md (API handler tests)
+Last session: 2026-03-08T05:26:10.956Z
+Stopped at: Completed 18-02-PLAN.md (race detection)
 Resume file: None

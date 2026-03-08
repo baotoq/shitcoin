@@ -11,7 +11,7 @@ Requirements for Testing & Quality milestone. Each maps to roadmap phases.
 
 - [x] **TINF-01**: Shared test helpers with reusable block, tx, wallet, and UTXO builders in `internal/testutil/`
 - [x] **TINF-02**: Consolidated mock repositories (chain, UTXO, wallet) in shared `testutil` package, replacing duplicated mocks across 4+ packages
-- [ ] **TINF-03**: Race detection enabled in CI (`go test -race ./...` in GitHub Actions)
+- [x] **TINF-03**: Race detection enabled in CI (`go test -race ./...` in GitHub Actions)
 
 ### Domain Layer
 
@@ -115,7 +115,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | TINF-01 | Phase 14 | Complete |
 | TINF-02 | Phase 14 | Complete |
-| TINF-03 | Phase 18 | Pending |
+| TINF-03 | Phase 18 | Complete |
 | DOM-01 | Phase 15 | Complete |
 | DOM-02 | Phase 15 | Complete |
 | DOM-03 | Phase 15 | Complete |
