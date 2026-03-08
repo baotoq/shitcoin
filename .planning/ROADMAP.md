@@ -100,8 +100,8 @@ Plans:
 **Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 17-01-PLAN.md — API handler tests (AddressHandler, BlockByHashHandler, SearchHandler, BlocksHandler edge cases, MempoolHandler with data)
-- [ ] 17-02-PLAN.md — WebSocket ServeWs integration tests and hub_test.go reliability improvements
+- [x] 17-01-PLAN.md — API handler tests (AddressHandler, BlockByHashHandler, SearchHandler, BlocksHandler edge cases, MempoolHandler with data)
+- [x] 17-02-PLAN.md — WebSocket ServeWs integration tests and hub_test.go reliability improvements
 
 ### Phase 18: Integration & CI Quality
 **Goal**: Cross-layer integration tests verify end-to-end workflows, and CI enforces race-safe execution across the entire test suite
@@ -112,7 +112,11 @@ Plans:
   2. E2E chain scenario tests verify the full workflow: create wallet, send tx, mine block, verify UTXO updated, check balance -- all in a single test function
   3. `go test -race ./...` passes in CI (GitHub Actions) with zero data race warnings
   4. CI pipeline runs all tests with `-race` flag on every push and PR
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 18-01-PLAN.md — P2P multi-node integration tests and E2E chain scenario tests
+- [ ] 18-02-PLAN.md — Fix ws.Hub broadcast race and enable -race in CI
 
 ## Progress
 
@@ -138,9 +142,9 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 14. Test Infrastructure | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 15. Domain Layer Coverage | v1.2 | 3/3 | Complete | 2026-03-08 |
 | 16. Infrastructure Persistence Tests | v1.2 | 2/2 | Complete | 2026-03-08 |
-| 17. Handler Layer Tests | 2/2 | Complete    | 2026-03-08 | - |
-| 18. Integration & CI Quality | v1.2 | 0/? | Not started | - |
+| 17. Handler Layer Tests | v1.2 | 2/2 | Complete | 2026-03-08 |
+| 18. Integration & CI Quality | v1.2 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-08 -- Phase 17 planned (2 plans)*
+*Last updated: 2026-03-08 -- Phase 18 planned (2 plans)*
