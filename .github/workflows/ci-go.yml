@@ -15,8 +15,8 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Run tests with coverage
-        run: go test -coverprofile=coverage.out ./...
+      - name: Run tests with coverage and race detection
+        run: go test -race -coverprofile=coverage.out ./...
 
       - name: Display coverage
         run: go tool cover -func=coverage.out

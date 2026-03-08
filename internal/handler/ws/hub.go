@@ -56,16 +56,24 @@ func (h *Hub) Run() {
 
 		case message := <-h.broadcast:
 			h.mu.RLock()
+			var evict []*Client
 			for client := range h.clients {
 				select {
 				case client.send <- message:
 				default:
-					// Slow client -- evict
-					delete(h.clients, client)
-					close(client.send)
+					evict = append(evict, client)
 				}
 			}
 			h.mu.RUnlock()
+			// Evict slow clients outside the RLock
+			for _, client := range evict {
+				h.mu.Lock()
+				if _, ok := h.clients[client]; ok {
+					delete(h.clients, client)
+					close(client.send)
+				}
+				h.mu.Unlock()
+			}
 		}
 	}
 }
