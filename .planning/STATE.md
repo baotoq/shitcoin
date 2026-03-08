@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Testing & Quality
 status: completed
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-03-08T03:56:20.688Z"
-last_activity: 2026-03-08 -- Completed 15-01 domain layer gap-fill
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-03-08T03:56:13Z"
+last_activity: 2026-03-08 -- Completed 15-02 chain aggregate coverage
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -25,14 +25,14 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 15 (2 of 5 in v1.2) (Domain Layer Coverage)
-Plan: 1 of 3 in current phase
-Status: Plan 15-01 complete
-Last activity: 2026-03-08 -- Completed 15-01 domain layer gap-fill
+Plan: 2 of 3 in current phase
+Status: Plan 15-02 complete
+Last activity: 2026-03-08 -- Completed 15-02 chain aggregate coverage
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 27 (22 v1.0 + 2 v1.1 + 3 v1.2)
+- Total plans completed: 28 (22 v1.0 + 2 v1.1 + 4 v1.2)
 - Average duration: 6min
 - Total execution time: ~2.3 hours
 
@@ -50,6 +50,7 @@ Last activity: 2026-03-08 -- Completed 15-01 domain layer gap-fill
 | 6. Advanced Educational Features | 3/3 | 12min | 4min |
 | Phase 14 P02 | 6min | 2 tasks | 9 files |
 | Phase 15 P01 | 2min | 2 tasks | 5 files |
+| Phase 15 P02 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,8 @@ Recent decisions affecting current work:
 - [14-02]: External test packages (package foo_test) preferred for testutil imports
 - [15-01]: Error-returning mock repo (errRepo) wraps memRepo for targeted error injection in utxo tests
 - [15-01]: Wallet coverage at 97.8% exceeds 93% target -- unreachable NewWallet crypto branch is only uncovered line
+- [15-02]: Error injection via exported fields on MockChainRepo (SaveBlockWithUTXOsErr, GetLatestBlockErr)
+- [15-02]: bits=20 for invalid PoW test blocks to ensure validation failure without mining
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T03:56:20.685Z
-Stopped at: Completed 15-01-PLAN.md
+Last session: 2026-03-08T03:56:13Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None

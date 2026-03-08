@@ -15,7 +15,7 @@ Requirements for Testing & Quality milestone. Each maps to roadmap phases.
 
 ### Domain Layer
 
-- [ ] **DOM-01**: Chain aggregate test coverage reaches 85%+ (mining orchestration, reorg logic, difficulty adjustment edge cases)
+- [x] **DOM-01**: Chain aggregate test coverage reaches 85%+ (mining orchestration, reorg logic, difficulty adjustment edge cases)
 - [ ] **DOM-02**: P2P unit test coverage reaches 80%+ (message encoding/decoding, handler dispatch, sync logic)
 - [x] **DOM-03**: Domain gap-filling brings utxo, wallet, mempool, and tx packages to 95%+ coverage each
 - [x] **DOM-04**: Error path tests cover invalid blocks, double spends, corrupt data, nil inputs, and boundary conditions across all domain packages
@@ -116,7 +116,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TINF-01 | Phase 14 | Complete |
 | TINF-02 | Phase 14 | Complete |
 | TINF-03 | Phase 18 | Pending |
-| DOM-01 | Phase 15 | Pending |
+| DOM-01 | Phase 15 | Complete |
 | DOM-02 | Phase 15 | Pending |
 | DOM-03 | Phase 15 | Complete |
 | DOM-04 | Phase 15 | Complete |
