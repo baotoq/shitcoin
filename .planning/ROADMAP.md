@@ -86,8 +86,8 @@ Plans:
 **Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 16-01-PLAN.md — BoltDB repository tests (SaveBlockWithUTXOs, DeleteBlocksAbove, undo entries, storage model round-trips)
-- [ ] 16-02-PLAN.md — JSON file wallet repo error-path tests (corrupt files, read-only directories)
+- [x] 16-01-PLAN.md — BoltDB repository tests (SaveBlockWithUTXOs, DeleteBlocksAbove, undo entries, storage model round-trips)
+- [x] 16-02-PLAN.md — JSON file wallet repo error-path tests (corrupt files, read-only directories)
 
 ### Phase 17: Handler Layer Tests
 **Goal**: HTTP API and WebSocket handlers are tested against mock dependencies, verifying request/response behavior and event broadcasting
@@ -97,7 +97,11 @@ Plans:
   1. `go test -cover ./internal/handler/api/` reports 80%+ coverage, with tests for address, mempool, search, and tx handlers using httptest
   2. `go test -cover ./internal/handler/ws/` reports 75%+ coverage, with tests for event subscribe, broadcast to connected clients, and client disconnect cleanup
   3. All handler tests use mock dependencies (no real BoltDB or network connections)
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — API handler tests (AddressHandler, BlockByHashHandler, SearchHandler, BlocksHandler edge cases, MempoolHandler with data)
+- [ ] 17-02-PLAN.md — WebSocket ServeWs integration tests and hub_test.go reliability improvements
 
 ### Phase 18: Integration & CI Quality
 **Goal**: Cross-layer integration tests verify end-to-end workflows, and CI enforces race-safe execution across the entire test suite
@@ -133,10 +137,10 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 13. GitOps Deployment | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 14. Test Infrastructure | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 15. Domain Layer Coverage | v1.2 | 3/3 | Complete | 2026-03-08 |
-| 16. Infrastructure Persistence Tests | 2/2 | Complete    | 2026-03-08 | - |
-| 17. Handler Layer Tests | v1.2 | 0/? | Not started | - |
+| 16. Infrastructure Persistence Tests | v1.2 | 2/2 | Complete | 2026-03-08 |
+| 17. Handler Layer Tests | v1.2 | 0/2 | Not started | - |
 | 18. Integration & CI Quality | v1.2 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-08 -- Phase 16 planned (2 plans)*
+*Last updated: 2026-03-08 -- Phase 17 planned (2 plans)*
