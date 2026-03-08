@@ -27,7 +27,7 @@ Requirements for Testing & Quality milestone. Each maps to roadmap phases.
 
 ### Infrastructure Layer
 
-- [ ] **INFR-01**: BoltDB repository test coverage reaches 80%+ (atomic block+UTXO saves, range queries, reorg deletes, undo entries)
+- [x] **INFR-01**: BoltDB repository test coverage reaches 80%+ (atomic block+UTXO saves, range queries, reorg deletes, undo entries)
 - [x] **INFR-02**: JSON file wallet repository test coverage reaches 90%+
 
 ### Integration Tests
@@ -122,7 +122,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOM-04 | Phase 15 | Complete |
 | HNDL-01 | Phase 17 | Pending |
 | HNDL-02 | Phase 17 | Pending |
-| INFR-01 | Phase 16 | Pending |
+| INFR-01 | Phase 16 | Complete |
 | INFR-02 | Phase 16 | Complete |
 | INTG-01 | Phase 18 | Pending |
 | INTG-02 | Phase 18 | Pending |

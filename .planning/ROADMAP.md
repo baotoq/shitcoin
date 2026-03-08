@@ -39,7 +39,7 @@
 
 - [x] **Phase 14: Test Infrastructure** - Shared test helpers, consolidated mocks, and reusable builders in `internal/testutil/` (completed 2026-03-07)
 - [x] **Phase 15: Domain Layer Coverage** - Unit tests for chain, P2P, utxo, wallet, mempool, tx, and error paths across all domain packages (completed 2026-03-08)
-- [ ] **Phase 16: Infrastructure Persistence Tests** - BoltDB repository and JSON file wallet store test coverage
+- [x] **Phase 16: Infrastructure Persistence Tests** - BoltDB repository and JSON file wallet store test coverage (completed 2026-03-08)
 - [ ] **Phase 17: Handler Layer Tests** - REST API and WebSocket hub test coverage with httptest and mock dependencies
 - [ ] **Phase 18: Integration & CI Quality** - P2P multi-node integration tests, E2E chain scenarios, and race detection in CI
 
@@ -83,7 +83,7 @@ Plans:
   1. `go test -cover ./internal/infrastructure/persistence/bbolt/` reports 80%+ coverage, including atomic block+UTXO saves, range queries, reorg deletes, and undo entries
   2. `go test -cover ./internal/infrastructure/persistence/jsonfile/` reports 90%+ coverage
   3. All persistence tests use `t.TempDir()` for isolation and pass when run with `go test -count=2` (no shared state between runs)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 16-01-PLAN.md — BoltDB repository tests (SaveBlockWithUTXOs, DeleteBlocksAbove, undo entries, storage model round-trips)
@@ -133,7 +133,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 13. GitOps Deployment | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 14. Test Infrastructure | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 15. Domain Layer Coverage | v1.2 | 3/3 | Complete | 2026-03-08 |
-| 16. Infrastructure Persistence Tests | 1/2 | In Progress|  | - |
+| 16. Infrastructure Persistence Tests | 2/2 | Complete   | 2026-03-08 | - |
 | 17. Handler Layer Tests | v1.2 | 0/? | Not started | - |
 | 18. Integration & CI Quality | v1.2 | 0/? | Not started | - |
 
