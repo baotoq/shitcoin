@@ -7,6 +7,9 @@ import (
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
 	"github.com/baotoq/shitcoin/internal/domain/chain"
+	"github.com/baotoq/shitcoin/internal/domain/tx"
+	"github.com/baotoq/shitcoin/internal/domain/utxo"
+	"github.com/baotoq/shitcoin/internal/testutil"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -221,4 +224,122 @@ func (s *ChainRepoSuite) TestGetBlocksInRange() {
 // BboltRepository type assertion to ensure suite uses correct type.
 func (s *ChainRepoSuite) TestRepoNotNil() {
 	require.NotNil(s.T(), s.repo)
+}
+
+func (s *ChainRepoSuite) TestSaveBlockWithUTXOs() {
+	ctx := context.Background()
+	b := testutil.MustCreateBlock(s.T(), 0, block.Hash{})
+
+	// Extract coinbase tx from the block
+	coinbaseTx := b.RawTransactions()[0].(*tx.Transaction)
+
+	// Build undo entry: genesis has no spent inputs, only created outputs
+	undoEntry := &utxo.UndoEntry{
+		BlockHeight: 0,
+		Spent:       []utxo.SpentUTXO{},
+		Created: []utxo.UTXORef{
+			{TxID: coinbaseTx.ID().String(), Vout: 0},
+		},
+	}
+
+	s.Require().NoError(s.repo.SaveBlockWithUTXOs(ctx, b, undoEntry))
+
+	// Verify block is retrievable
+	got, err := s.repo.GetBlock(ctx, b.Hash())
+	s.Require().NoError(err)
+	s.Assert().Equal(b.Hash(), got.Hash())
+	s.Assert().Equal(b.Height(), got.Height())
+
+	// Verify undo entry is retrievable
+	gotUndo, err := s.repo.GetUndoEntry(ctx, 0)
+	s.Require().NoError(err)
+	s.Assert().Equal(uint64(0), gotUndo.BlockHeight)
+	s.Require().Len(gotUndo.Created, 1)
+	s.Assert().Equal(coinbaseTx.ID().String(), gotUndo.Created[0].TxID)
+}
+
+func (s *ChainRepoSuite) TestSaveBlockWithUTXOs_WithSpentInputs() {
+	ctx := context.Background()
+
+	// Block 0 (genesis) -- save normally
+	block0 := testutil.MustCreateBlock(s.T(), 0, block.Hash{})
+	coinbaseTx0 := block0.RawTransactions()[0].(*tx.Transaction)
+	s.Require().NoError(s.repo.SaveBlock(ctx, block0))
+
+	// Block 1 -- save via SaveBlockWithUTXOs with spent input referencing block0's coinbase
+	block1 := testutil.MustCreateBlock(s.T(), 1, block0.Hash())
+	coinbaseTx1 := block1.RawTransactions()[0].(*tx.Transaction)
+
+	undoEntry := &utxo.UndoEntry{
+		BlockHeight: 1,
+		Spent: []utxo.SpentUTXO{
+			{
+				TxID:    coinbaseTx0.ID().String(),
+				Vout:    0,
+				Value:   5_000_000_000,
+				Address: "1TestAddr",
+			},
+		},
+		Created: []utxo.UTXORef{
+			{TxID: coinbaseTx1.ID().String(), Vout: 0},
+		},
+	}
+
+	s.Require().NoError(s.repo.SaveBlockWithUTXOs(ctx, block1, undoEntry))
+
+	// Verify block stored
+	got, err := s.repo.GetBlock(ctx, block1.Hash())
+	s.Require().NoError(err)
+	s.Assert().Equal(block1.Hash(), got.Hash())
+
+	// Verify undo entry stored
+	gotUndo, err := s.repo.GetUndoEntry(ctx, 1)
+	s.Require().NoError(err)
+	s.Assert().Equal(uint64(1), gotUndo.BlockHeight)
+	s.Require().Len(gotUndo.Spent, 1)
+	s.Assert().Equal(coinbaseTx0.ID().String(), gotUndo.Spent[0].TxID)
+	s.Require().Len(gotUndo.Created, 1)
+}
+
+func (s *ChainRepoSuite) TestDeleteBlocksAbove() {
+	blocks := s.createChain(5) // heights 0-4
+	ctx := context.Background()
+
+	s.Require().NoError(s.repo.DeleteBlocksAbove(ctx, 2))
+
+	// Blocks 0-2 should still exist
+	for h := uint64(0); h <= 2; h++ {
+		got, err := s.repo.GetBlockByHeight(ctx, h)
+		s.Require().NoError(err, "block at height %d should exist", h)
+		s.Assert().Equal(blocks[h].Hash(), got.Hash())
+	}
+
+	// Blocks 3-4 should be gone
+	for h := uint64(3); h <= 4; h++ {
+		_, err := s.repo.GetBlockByHeight(ctx, h)
+		s.Require().ErrorIs(err, chain.ErrBlockNotFound, "block at height %d should be gone", h)
+	}
+
+	// Chain height should be 2
+	height, err := s.repo.GetChainHeight(ctx)
+	s.Require().NoError(err)
+	s.Assert().Equal(uint64(2), height)
+
+	// Latest block should be at height 2
+	latest, err := s.repo.GetLatestBlock(ctx)
+	s.Require().NoError(err)
+	s.Assert().Equal(blocks[2].Hash(), latest.Hash())
+}
+
+func (s *ChainRepoSuite) TestDeleteBlocksAbove_EmptyChain() {
+	ctx := context.Background()
+	// DeleteBlocksAbove on empty chain should return nil (early return)
+	err := s.repo.DeleteBlocksAbove(ctx, 0)
+	s.Require().NoError(err)
+}
+
+func (s *ChainRepoSuite) TestGetUndoEntry_NotFound() {
+	ctx := context.Background()
+	_, err := s.repo.GetUndoEntry(ctx, 999)
+	s.Require().ErrorIs(err, utxo.ErrUndoEntryNotFound)
 }
