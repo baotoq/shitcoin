@@ -83,7 +83,7 @@ Plans:
   1. `go test -cover ./internal/infrastructure/persistence/bbolt/` reports 80%+ coverage, including atomic block+UTXO saves, range queries, reorg deletes, and undo entries
   2. `go test -cover ./internal/infrastructure/persistence/jsonfile/` reports 90%+ coverage
   3. All persistence tests use `t.TempDir()` for isolation and pass when run with `go test -count=2` (no shared state between runs)
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 16-01-PLAN.md — BoltDB repository tests (SaveBlockWithUTXOs, DeleteBlocksAbove, undo entries, storage model round-trips)
@@ -133,7 +133,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 13. GitOps Deployment | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 14. Test Infrastructure | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 15. Domain Layer Coverage | v1.2 | 3/3 | Complete | 2026-03-08 |
-| 16. Infrastructure Persistence Tests | v1.2 | 0/2 | Not started | - |
+| 16. Infrastructure Persistence Tests | 1/2 | In Progress|  | - |
 | 17. Handler Layer Tests | v1.2 | 0/? | Not started | - |
 | 18. Integration & CI Quality | v1.2 | 0/? | Not started | - |
 

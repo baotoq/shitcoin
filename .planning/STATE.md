@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Testing & Quality
 status: completed
-stopped_at: Completed 15-03-PLAN.md (P2P handler & payload coverage)
-last_updated: "2026-03-08T04:02:43.612Z"
+stopped_at: Completed 16-02-PLAN.md (wallet repo error paths)
+last_updated: "2026-03-08T04:30:43.184Z"
 last_activity: 2026-03-08 -- Completed 15-03 P2P handler & payload coverage
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 15 - Domain Layer Coverage (complete)
+**Current focus:** Phase 16 - Infrastructure Persistence Tests (in progress)
 
 ## Current Position
 
-Phase: 15 (2 of 5 in v1.2) (Domain Layer Coverage)
-Plan: 3 of 3 in current phase
-Status: Phase 15 complete -- all 3 plans done
-Last activity: 2026-03-08 -- Completed 15-03 P2P handler & payload coverage
+Phase: 16 (3 of 5 in v1.2) (Infrastructure Persistence Tests)
+Plan: 2 of 2 in current phase
+Status: Plan 16-02 complete -- 1 of 2 plans done
+Last activity: 2026-03-08 -- Completed 16-02 wallet repo error paths
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Last activity: 2026-03-08 -- Completed 15-03 P2P handler & payload coverage
 | Phase 15 P01 | 2min | 2 tasks | 5 files |
 | Phase 15 P02 | 3min | 2 tasks | 2 files |
 | Phase 15 P03 | 5min | 2 tasks | 3 files |
+| Phase 16 P02 | 1min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,7 @@ Recent decisions affecting current work:
 - [15-02]: bits=20 for invalid PoW test blocks to ensure validation failure without mining
 - [15-03]: require.Eventually for async mempool assertions instead of time.Sleep
 - [15-03]: Tested removePeer indirectly via handleVersion protocol violation path
+- [Phase 16]: Permission-based error injection with t.Cleanup restore for jsonfile wallet repo tests
 
 ### Pending Todos
 
@@ -87,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T03:58:06Z
-Stopped at: Completed 15-03-PLAN.md (P2P handler & payload coverage)
+Last session: 2026-03-08T04:30:43.182Z
+Stopped at: Completed 16-02-PLAN.md (wallet repo error paths)
 Resume file: None
