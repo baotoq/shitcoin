@@ -25,6 +25,8 @@ type MockChainRepo struct {
 	SaveBlockWithUTXOsErr error
 	// GetLatestBlockErr, when non-nil, overrides GetLatestBlock to return this error.
 	GetLatestBlockErr error
+	// GetChainHeightErr, when non-nil, overrides GetChainHeight to return this error.
+	GetChainHeightErr error
 }
 
 // NewMockChainRepo creates a new MockChainRepo with initialized maps.
@@ -105,6 +107,9 @@ func (m *MockChainRepo) GetLatestBlock(_ context.Context) (*block.Block, error) 
 func (m *MockChainRepo) GetChainHeight(_ context.Context) (uint64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	if m.GetChainHeightErr != nil {
+		return 0, m.GetChainHeightErr
+	}
 	if m.Latest == nil {
 		return 0, nil
 	}

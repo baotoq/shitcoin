@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -81,4 +82,98 @@ func TestBlockByHeightHandler_NotFound(t *testing.T) {
 	handler(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestBlockByHeightHandler_InvalidHeight(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	svcCtx := &svc.ServiceContext{ChainRepo: repo}
+
+	handler := BlockByHeightHandler(svcCtx)
+	req := httptest.NewRequest(http.MethodGet, "/api/blocks/abc", nil)
+	req = pathvar.WithVars(req, map[string]string{"height": "abc"})
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestBlockByHashHandler_ValidHash(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	genesis := testutil.MustCreateBlock(t, 0, block.Hash{})
+	repo.AddBlock(genesis)
+
+	svcCtx := &svc.ServiceContext{ChainRepo: repo}
+	handler := BlockByHashHandler(svcCtx)
+
+	hashHex := genesis.Hash().String()
+	req := httptest.NewRequest(http.MethodGet, "/api/blocks/hash/"+hashHex, nil)
+	req = pathvar.WithVars(req, map[string]string{"hash": hashHex})
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp bbolt.BlockModel
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, uint64(0), resp.Height)
+}
+
+func TestBlockByHashHandler_InvalidHex(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	svcCtx := &svc.ServiceContext{ChainRepo: repo}
+
+	handler := BlockByHashHandler(svcCtx)
+	req := httptest.NewRequest(http.MethodGet, "/api/blocks/hash/notahex", nil)
+	req = pathvar.WithVars(req, map[string]string{"hash": "notahex"})
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestBlockByHashHandler_NotFound(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	svcCtx := &svc.ServiceContext{ChainRepo: repo}
+
+	handler := BlockByHashHandler(svcCtx)
+	fakeHash := "0000000000000000000000000000000000000000000000000000000000000000"
+	req := httptest.NewRequest(http.MethodGet, "/api/blocks/hash/"+fakeHash, nil)
+	req = pathvar.WithVars(req, map[string]string{"hash": fakeHash})
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestBlocksHandler_PageBeyondTotal(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	genesis := testutil.MustCreateBlock(t, 0, block.Hash{})
+	repo.AddBlock(genesis)
+
+	svcCtx := &svc.ServiceContext{ChainRepo: repo}
+	handler := BlocksHandler(svcCtx)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/blocks?page=100", nil)
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp BlockListResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Empty(t, resp.Blocks)
+}
+
+func TestBlocksHandler_GetChainHeightError(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	repo.GetChainHeightErr = errors.New("db connection failed")
+
+	svcCtx := &svc.ServiceContext{ChainRepo: repo}
+	handler := BlocksHandler(svcCtx)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/blocks", nil)
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
