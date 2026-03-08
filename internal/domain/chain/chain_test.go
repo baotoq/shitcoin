@@ -302,3 +302,146 @@ func TestCoinbaseIncludesFees(t *testing.T) {
 	// Coinbase output should be BlockReward + totalFees
 	assert.Equal(t, int64(5000000000+1000), coinbaseTx.Outputs()[0].Value())
 }
+
+func TestGetCurrentBits_AdjustmentInterval(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-adjust"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty:        1,
+		DifficultyAdjustInterval: 5,
+		BlockTimeTarget:          600,
+		GenesisMessage:           "adjust-test",
+		BlockReward:              5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Mine 5 blocks to trigger difficulty adjustment at block 5
+	for i := 0; i < 5; i++ {
+		blk, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+		require.NoError(t, err, "mining block %d", i+1)
+		require.Equal(t, uint64(i+1), blk.Height())
+	}
+
+	// Chain should be at height 5 (adjustment was triggered)
+	require.Equal(t, uint64(5), ch.Height())
+
+	// Mine one more block to confirm adjusted difficulty is used
+	blk, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(6), blk.Height())
+}
+
+func TestGetCurrentBits_BeforeInterval(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-before-interval"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty:        1,
+		DifficultyAdjustInterval: 10,
+		BlockTimeTarget:          600,
+		GenesisMessage:           "before-interval-test",
+		BlockReward:              5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Mine 3 blocks (well before interval of 10)
+	for i := 0; i < 3; i++ {
+		blk, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+		require.NoError(t, err)
+		// All blocks should use initial difficulty (bits=1)
+		assert.Equal(t, uint32(1), blk.Bits(), "block %d should use initial difficulty", i+1)
+	}
+}
+
+func TestSetLatestBlock(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-setlatest"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "setlatest-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Create a new block to set as latest
+	newBlock := testutil.MustCreateBlock(t, 42, ch.LatestBlock().Hash())
+
+	ch.SetLatestBlock(newBlock)
+
+	assert.Equal(t, newBlock.Hash(), ch.LatestBlock().Hash())
+	assert.Equal(t, uint64(42), ch.Height())
+}
+
+func TestInitialize_AlreadyInitialized(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-already-init"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "already-init-test",
+		BlockReward:       5000000000,
+	}
+
+	// Pre-seed repo with an existing genesis block
+	existingBlock := testutil.MustCreateBlock(t, 0, block.Hash{})
+	repo.AddBlock(existingBlock)
+
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	// Initialize should load existing chain, not create new genesis
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Should have loaded the existing block as latest
+	assert.Equal(t, existingBlock.Hash(), ch.LatestBlock().Hash())
+	assert.Equal(t, uint64(0), ch.Height())
+}
+
+func TestInitialize_EmptyMinerAddress(t *testing.T) {
+	ctx := context.Background()
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "empty-miner-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	// Initialize with empty miner address on empty repo
+	// Should create genesis without coinbase (no miner address)
+	require.NoError(t, ch.Initialize(ctx, ""))
+
+	// Genesis block should exist
+	require.NotNil(t, ch.LatestBlock())
+	assert.Equal(t, uint64(0), ch.Height())
+
+	// Genesis block should have no transactions (empty miner address)
+	assert.Empty(t, ch.LatestBlock().RawTransactions())
+}
