@@ -20,6 +20,11 @@ type MockChainRepo struct {
 	ByHeight map[uint64]*block.Block
 	Undos    map[uint64]*utxo.UndoEntry
 	Latest   *block.Block
+
+	// SaveBlockWithUTXOsErr, when non-nil, causes SaveBlockWithUTXOs to return this error.
+	SaveBlockWithUTXOsErr error
+	// GetLatestBlockErr, when non-nil, overrides GetLatestBlock to return this error.
+	GetLatestBlockErr error
 }
 
 // NewMockChainRepo creates a new MockChainRepo with initialized maps.
@@ -51,6 +56,9 @@ func (m *MockChainRepo) SaveBlock(_ context.Context, b *block.Block) error {
 func (m *MockChainRepo) SaveBlockWithUTXOs(_ context.Context, b *block.Block, undoEntry *utxo.UndoEntry) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if m.SaveBlockWithUTXOsErr != nil {
+		return m.SaveBlockWithUTXOsErr
+	}
 	m.Blocks[b.Hash()] = b
 	m.ByHeight[b.Height()] = b
 	if undoEntry != nil {
@@ -85,6 +93,9 @@ func (m *MockChainRepo) GetBlockByHeight(_ context.Context, height uint64) (*blo
 func (m *MockChainRepo) GetLatestBlock(_ context.Context) (*block.Block, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	if m.GetLatestBlockErr != nil {
+		return nil, m.GetLatestBlockErr
+	}
 	if m.Latest == nil {
 		return nil, chain.ErrChainEmpty
 	}

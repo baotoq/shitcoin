@@ -2,6 +2,7 @@ package chain_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/baotoq/shitcoin/internal/domain/block"
@@ -444,4 +445,402 @@ func TestInitialize_EmptyMinerAddress(t *testing.T) {
 
 	// Genesis block should have no transactions (empty miner address)
 	assert.Empty(t, ch.LatestBlock().RawTransactions())
+}
+
+func TestMineBlock_BeforeInitialize(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "uninit-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	// MineBlock without Initialize should return error
+	_, err := ch.MineBlock(context.Background(), "miner", nil, 0)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "chain not initialized")
+}
+
+func TestMineBlock_WithTransactions(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-with-txs"
+
+	w := testutil.MustCreateWallet(t)
+	fromAddr := w.Address()
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "tx-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	// Initialize and mine a block to the wallet address to get spendable UTXOs
+	require.NoError(t, ch.Initialize(ctx, fromAddr))
+	_, err := ch.MineBlock(ctx, fromAddr, nil, 0)
+	require.NoError(t, err)
+
+	// Build a signed transaction spending from the wallet
+	spendTx := testutil.MustBuildSignedTx(t, utxoSet, w.PrivateKey(), fromAddr)
+
+	// Mine a block with the user transaction
+	blk, err := ch.MineBlock(ctx, minerAddr, []*tx.Transaction{spendTx}, 1000)
+	require.NoError(t, err)
+
+	// Block should contain coinbase + user tx (2 transactions)
+	rawTxs := blk.RawTransactions()
+	assert.Equal(t, 2, len(rawTxs))
+
+	// First should be coinbase
+	coinbaseTx, ok := rawTxs[0].(*tx.Transaction)
+	require.True(t, ok)
+	assert.True(t, coinbaseTx.IsCoinbase())
+
+	// Second should be the user transaction
+	userTx, ok := rawTxs[1].(*tx.Transaction)
+	require.True(t, ok)
+	assert.Equal(t, spendTx.ID(), userTx.ID())
+}
+
+func TestMineBlock_WithMiningProgress(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-progress"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "progress-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Set OnMiningProgress callback
+	var progressCalled bool
+	ch.OnMiningProgress = func(p block.MiningProgress) {
+		progressCalled = true
+	}
+
+	// Mine a block -- should use MineWithProgress path
+	blk, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+	require.NoError(t, err)
+	require.NotNil(t, blk)
+
+	// Callback should have been invoked (nonce 0 % sampleRate == 0)
+	assert.True(t, progressCalled, "OnMiningProgress callback should have been invoked")
+}
+
+func TestMineBlock_SaveBlockWithUTXOsError(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-save-err"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "save-err-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Configure error on SaveBlockWithUTXOs for subsequent saves
+	repo.SaveBlockWithUTXOsErr = fmt.Errorf("disk full")
+
+	// MineBlock should propagate the save error
+	_, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "disk full")
+}
+
+func TestReorganize_EmptyForkBlocks(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-empty-fork"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "empty-fork-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Mine 2 blocks
+	for range 2 {
+		_, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+		require.NoError(t, err)
+	}
+
+	heightBefore := ch.Height()
+
+	// Reorganize with empty fork blocks at current tip
+	err := ch.Reorganize(ctx, heightBefore, nil, nil)
+	require.NoError(t, err)
+
+	// Chain tip should remain at the same height (no new blocks applied)
+	assert.Equal(t, heightBefore, ch.Height())
+}
+
+func TestReorganize_InvalidForkBlock(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-invalid-fork"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "invalid-fork-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Mine 2 blocks
+	for range 2 {
+		_, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+		require.NoError(t, err)
+	}
+
+	forkBlock, err := repo.GetBlockByHeight(ctx, 1)
+	require.NoError(t, err)
+
+	// Create a fork block with high difficulty that is NOT mined (invalid PoW)
+	coinbase := tx.NewCoinbaseTxWithHeight("fork-miner", cfg.BlockReward, 2)
+	blockTxs := []any{coinbase}
+	txHashes := []block.Hash{coinbase.ID()}
+	merkleRoot := block.ComputeMerkleRoot(txHashes)
+
+	// Create block with high difficulty (bits=20) so it won't pass PoW validation without mining
+	invalidBlk, err := block.NewBlock(forkBlock.Hash(), 2, 20, blockTxs, merkleRoot)
+	require.NoError(t, err)
+	// Intentionally NOT mining the block -- PoW is invalid
+
+	// Reorganize should fail on PoW validation
+	err = ch.Reorganize(ctx, 1, []*block.Block{invalidBlk}, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid PoW")
+}
+
+func TestReorganize_BeforeInitialize(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "reorg-uninit-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	// Reorganize without Initialize should return error
+	err := ch.Reorganize(context.Background(), 0, nil, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "chain not initialized")
+}
+
+func TestHeight_NilLatestBlock(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "height-nil-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	// Height should return 0 when latestBlock is nil
+	assert.Equal(t, uint64(0), ch.Height())
+}
+
+func TestMineBlock_WithoutUTXOSet(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-no-utxo"
+
+	repo := testutil.NewMockChainRepo()
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "no-utxo-test",
+		BlockReward:       5000000000,
+	}
+	// Create chain without UTXO set (nil)
+	ch := chain.NewChain(repo, pow, cfg, nil)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Mine a block -- should use SaveBlock path (not SaveBlockWithUTXOs)
+	blk, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(1), blk.Height())
+}
+
+func TestReorganize_NilMempoolAdder(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-nil-mempool"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "nil-mempool-test",
+		BlockReward:       5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Mine 2 blocks
+	for range 2 {
+		_, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+		require.NoError(t, err)
+	}
+
+	forkBlock, err := repo.GetBlockByHeight(ctx, 1)
+	require.NoError(t, err)
+
+	// Create fork block at height 2
+	coinbase := tx.NewCoinbaseTxWithHeight("fork", cfg.BlockReward, 2)
+	blockTxs := []any{coinbase}
+	txHashes := []block.Hash{coinbase.ID()}
+	merkleRoot := block.ComputeMerkleRoot(txHashes)
+	forkBlk, err := block.NewBlock(forkBlock.Hash(), 2, uint32(cfg.InitialDifficulty), blockTxs, merkleRoot)
+	require.NoError(t, err)
+	require.NoError(t, pow.Mine(forkBlk))
+
+	// Create another fork block at height 3
+	coinbase2 := tx.NewCoinbaseTxWithHeight("fork", cfg.BlockReward, 3)
+	blockTxs2 := []any{coinbase2}
+	txHashes2 := []block.Hash{coinbase2.ID()}
+	merkleRoot2 := block.ComputeMerkleRoot(txHashes2)
+	forkBlk2, err := block.NewBlock(forkBlk.Hash(), 3, uint32(cfg.InitialDifficulty), blockTxs2, merkleRoot2)
+	require.NoError(t, err)
+	require.NoError(t, pow.Mine(forkBlk2))
+
+	// Reorganize with nil mempool adder should not panic
+	err = ch.Reorganize(ctx, 1, []*block.Block{forkBlk, forkBlk2}, nil)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(3), ch.Height())
+}
+
+func TestInitialize_RepoError(t *testing.T) {
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "repo-err-test",
+		BlockReward:       5000000000,
+	}
+
+	// Set GetLatestBlock to return a non-ErrChainEmpty error
+	repo.GetLatestBlockErr = fmt.Errorf("database corruption")
+
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	err := ch.Initialize(context.Background(), "miner")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "database corruption")
+}
+
+func TestReorganize_WithoutUTXOSet(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-reorg-no-utxo"
+
+	repo := testutil.NewMockChainRepo()
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty: 1,
+		GenesisMessage:    "reorg-no-utxo-test",
+		BlockReward:       5000000000,
+	}
+	// Create chain without UTXO set
+	ch := chain.NewChain(repo, pow, cfg, nil)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Mine 2 blocks
+	for range 2 {
+		_, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+		require.NoError(t, err)
+	}
+
+	forkBlock, err := repo.GetBlockByHeight(ctx, 1)
+	require.NoError(t, err)
+
+	// Create fork blocks without transactions (no UTXO set)
+	coinbase := tx.NewCoinbaseTxWithHeight("fork", cfg.BlockReward, 2)
+	blockTxs := []any{coinbase}
+	txHashes := []block.Hash{coinbase.ID()}
+	merkleRoot := block.ComputeMerkleRoot(txHashes)
+	forkBlk, err := block.NewBlock(forkBlock.Hash(), 2, uint32(cfg.InitialDifficulty), blockTxs, merkleRoot)
+	require.NoError(t, err)
+	require.NoError(t, pow.Mine(forkBlk))
+
+	coinbase2 := tx.NewCoinbaseTxWithHeight("fork", cfg.BlockReward, 3)
+	blockTxs2 := []any{coinbase2}
+	txHashes2 := []block.Hash{coinbase2.ID()}
+	merkleRoot2 := block.ComputeMerkleRoot(txHashes2)
+	forkBlk2, err := block.NewBlock(forkBlk.Hash(), 3, uint32(cfg.InitialDifficulty), blockTxs2, merkleRoot2)
+	require.NoError(t, err)
+	require.NoError(t, pow.Mine(forkBlk2))
+
+	// Reorganize without UTXO set should use SaveBlock path
+	err = ch.Reorganize(ctx, 1, []*block.Block{forkBlk, forkBlk2}, nil)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(3), ch.Height())
+}
+
+func TestGetCurrentBits_ZeroInterval(t *testing.T) {
+	ctx := context.Background()
+	minerAddr := "miner-zero-interval"
+
+	repo := testutil.NewMockChainRepo()
+	utxoRepo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(utxoRepo)
+	pow := &block.ProofOfWork{}
+	cfg := chain.ChainConfig{
+		InitialDifficulty:        1,
+		DifficultyAdjustInterval: 0, // zero interval -- no adjustment
+		GenesisMessage:           "zero-interval-test",
+		BlockReward:              5000000000,
+	}
+	ch := chain.NewChain(repo, pow, cfg, utxoSet)
+
+	require.NoError(t, ch.Initialize(ctx, minerAddr))
+
+	// Mine 3 blocks -- should all use the latest block's bits (no adjustment)
+	for i := 0; i < 3; i++ {
+		blk, err := ch.MineBlock(ctx, minerAddr, nil, 0)
+		require.NoError(t, err)
+		assert.Equal(t, uint32(1), blk.Bits())
+	}
 }
