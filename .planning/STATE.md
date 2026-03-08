@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Testing & Quality
 status: completed
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-03-08T03:56:13Z"
-last_activity: 2026-03-08 -- Completed 15-02 chain aggregate coverage
+stopped_at: Completed 15-03-PLAN.md (P2P handler & payload coverage)
+last_updated: "2026-03-08T03:58:06Z"
+last_activity: 2026-03-08 -- Completed 15-03 P2P handler & payload coverage
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -20,19 +20,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 15 - Domain Layer Coverage
+**Current focus:** Phase 15 - Domain Layer Coverage (complete)
 
 ## Current Position
 
 Phase: 15 (2 of 5 in v1.2) (Domain Layer Coverage)
-Plan: 2 of 3 in current phase
-Status: Plan 15-02 complete
-Last activity: 2026-03-08 -- Completed 15-02 chain aggregate coverage
+Plan: 3 of 3 in current phase
+Status: Phase 15 complete -- all 3 plans done
+Last activity: 2026-03-08 -- Completed 15-03 P2P handler & payload coverage
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28 (22 v1.0 + 2 v1.1 + 4 v1.2)
+- Total plans completed: 29 (22 v1.0 + 2 v1.1 + 5 v1.2)
 - Average duration: 6min
 - Total execution time: ~2.3 hours
 
@@ -51,6 +51,7 @@ Last activity: 2026-03-08 -- Completed 15-02 chain aggregate coverage
 | Phase 14 P02 | 6min | 2 tasks | 9 files |
 | Phase 15 P01 | 2min | 2 tasks | 5 files |
 | Phase 15 P02 | 3min | 2 tasks | 2 files |
+| Phase 15 P03 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [15-01]: Wallet coverage at 97.8% exceeds 93% target -- unreachable NewWallet crypto branch is only uncovered line
 - [15-02]: Error injection via exported fields on MockChainRepo (SaveBlockWithUTXOsErr, GetLatestBlockErr)
 - [15-02]: bits=20 for invalid PoW test blocks to ensure validation failure without mining
+- [15-03]: require.Eventually for async mempool assertions instead of time.Sleep
+- [15-03]: Tested removePeer indirectly via handleVersion protocol violation path
 
 ### Pending Todos
 
@@ -84,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T03:56:13Z
-Stopped at: Completed 15-02-PLAN.md
+Last session: 2026-03-08T03:58:06Z
+Stopped at: Completed 15-03-PLAN.md (P2P handler & payload coverage)
 Resume file: None

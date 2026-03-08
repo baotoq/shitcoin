@@ -38,7 +38,7 @@
 **Milestone Goal:** Achieve comprehensive test coverage across all layers -- domain logic, P2P networking, API/WebSocket, and infrastructure persistence.
 
 - [x] **Phase 14: Test Infrastructure** - Shared test helpers, consolidated mocks, and reusable builders in `internal/testutil/` (completed 2026-03-07)
-- [ ] **Phase 15: Domain Layer Coverage** - Unit tests for chain, P2P, utxo, wallet, mempool, tx, and error paths across all domain packages
+- [x] **Phase 15: Domain Layer Coverage** - Unit tests for chain, P2P, utxo, wallet, mempool, tx, and error paths across all domain packages (completed 2026-03-08)
 - [ ] **Phase 16: Infrastructure Persistence Tests** - BoltDB repository and JSON file wallet store test coverage
 - [ ] **Phase 17: Handler Layer Tests** - REST API and WebSocket hub test coverage with httptest and mock dependencies
 - [ ] **Phase 18: Integration & CI Quality** - P2P multi-node integration tests, E2E chain scenarios, and race detection in CI
@@ -68,7 +68,7 @@ Plans:
   2. `go test -cover ./internal/domain/p2p/` reports 80%+ coverage, including message encoding/decoding, handler dispatch, and sync logic
   3. `go test -cover` for utxo, wallet, mempool, and tx packages each report 95%+ coverage
   4. Tests exist for error paths including invalid blocks, double spends, corrupt data, nil inputs, and boundary conditions -- verified by running `go test -v` and seeing explicit error-case test names
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 15-01-PLAN.md — Gap-fill tx, utxo, wallet, mempool to 95%+ coverage
@@ -128,7 +128,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 12. Local K8s Development | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 13. GitOps Deployment | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 14. Test Infrastructure | v1.2 | 2/2 | Complete | 2026-03-07 |
-| 15. Domain Layer Coverage | 2/3 | In Progress|  | - |
+| 15. Domain Layer Coverage | 3/3 | Complete   | 2026-03-08 | - |
 | 16. Infrastructure Persistence Tests | v1.2 | 0/? | Not started | - |
 | 17. Handler Layer Tests | v1.2 | 0/? | Not started | - |
 | 18. Integration & CI Quality | v1.2 | 0/? | Not started | - |
