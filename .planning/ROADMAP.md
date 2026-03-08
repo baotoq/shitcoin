@@ -40,7 +40,7 @@
 - [x] **Phase 14: Test Infrastructure** - Shared test helpers, consolidated mocks, and reusable builders in `internal/testutil/` (completed 2026-03-07)
 - [x] **Phase 15: Domain Layer Coverage** - Unit tests for chain, P2P, utxo, wallet, mempool, tx, and error paths across all domain packages (completed 2026-03-08)
 - [x] **Phase 16: Infrastructure Persistence Tests** - BoltDB repository and JSON file wallet store test coverage (completed 2026-03-08)
-- [ ] **Phase 17: Handler Layer Tests** - REST API and WebSocket hub test coverage with httptest and mock dependencies
+- [x] **Phase 17: Handler Layer Tests** - REST API and WebSocket hub test coverage with httptest and mock dependencies (completed 2026-03-08)
 - [ ] **Phase 18: Integration & CI Quality** - P2P multi-node integration tests, E2E chain scenarios, and race detection in CI
 
 ## Phase Details
@@ -97,7 +97,7 @@ Plans:
   1. `go test -cover ./internal/handler/api/` reports 80%+ coverage, with tests for address, mempool, search, and tx handlers using httptest
   2. `go test -cover ./internal/handler/ws/` reports 75%+ coverage, with tests for event subscribe, broadcast to connected clients, and client disconnect cleanup
   3. All handler tests use mock dependencies (no real BoltDB or network connections)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 17-01-PLAN.md — API handler tests (AddressHandler, BlockByHashHandler, SearchHandler, BlocksHandler edge cases, MempoolHandler with data)
@@ -138,7 +138,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 14. Test Infrastructure | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 15. Domain Layer Coverage | v1.2 | 3/3 | Complete | 2026-03-08 |
 | 16. Infrastructure Persistence Tests | v1.2 | 2/2 | Complete | 2026-03-08 |
-| 17. Handler Layer Tests | 1/2 | In Progress|  | - |
+| 17. Handler Layer Tests | 2/2 | Complete   | 2026-03-08 | - |
 | 18. Integration & CI Quality | v1.2 | 0/? | Not started | - |
 
 ---
