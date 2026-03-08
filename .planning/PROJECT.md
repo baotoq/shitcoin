@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A full blockchain implementation in Go that replicates Bitcoin's core mechanics for educational purposes. Implements Proof of Work mining, UTXO-based transactions with fees and halving, P2P networking with consensus, wallet/key management, a 9-command CLI, and a React web dashboard with real-time mining visualization.
+A full blockchain implementation in Go that replicates Bitcoin's core mechanics for educational purposes. Implements Proof of Work mining, UTXO-based transactions with fees and halving, P2P networking with consensus, wallet/key management, a 9-command CLI, a React web dashboard with real-time mining visualization, and comprehensive test coverage with race-safe CI.
 
 ## Core Value
 
@@ -22,18 +22,16 @@ A working blockchain you built and understand end-to-end — from transaction cr
 - ✓ Genesis block creation and chain initialization — v1.0
 - ✓ Block reward halving and fee-prioritized mining — v1.0
 - ✓ Multi-node testnet orchestration and double-spend demo — v1.0
+- ✓ Shared testutil package with builders and consolidated mock repositories — v1.2
+- ✓ Domain layer test coverage: chain 85%+, P2P 80%+, utxo/wallet/mempool/tx 95%+ — v1.2
+- ✓ Infrastructure persistence tests: BoltDB 86%+, JSON wallet 92%+ — v1.2
+- ✓ Handler layer tests: API 93%+, WebSocket hub 84%+ — v1.2
+- ✓ P2P integration tests and E2E chain scenario tests — v1.2
+- ✓ Race detection enabled in CI with zero data races — v1.2
 
 ### Active
 
-## Current Milestone: v1.2 Testing & Quality
-
-**Goal:** Achieve comprehensive test coverage across all layers — domain logic, P2P networking, API/WebSocket, and infrastructure persistence.
-
-**Target features:**
-- Unit test coverage for domain layer (block, chain, tx, utxo, wallet, mempool)
-- P2P networking tests (message encoding, peer handshake, block sync, tx relay)
-- API & WebSocket handler tests (REST endpoints, event broadcasting)
-- Integration tests for infrastructure layer (BoltDB repositories, JSON file wallet store)
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -42,12 +40,16 @@ A working blockchain you built and understand end-to-end — from transaction cr
 - Scripting system (Bitcoin Script) — simplified transaction validation instead
 - SPV/light clients — all nodes are full nodes
 - Mobile or desktop GUI — CLI + web dashboard covers needs
+- Mock generation framework (mockgen, moq) — only 3 interfaces; hand-written mocks sufficient
+- Property-based testing — overkill for educational project
+- Mutation testing — slow, noisy for 11K LOC project
 
 ## Context
 
-Shipped v1.0 with 11,449 Go LOC + React frontend.
+Shipped v1.2 with comprehensive test coverage across all layers.
 Tech stack: Go 1.26.1, go-zero, BoltDB, gorilla/websocket, React + Vite + TypeScript + Tailwind CSS.
-42 requirements satisfied across 8 phases (22 plans, 127 commits, 3 days).
+12 test packages, 7,375 test LOC, all passing with `-race` flag.
+55 requirements satisfied across 18 phases (42 plans, 3 milestones).
 
 ## Constraints
 
@@ -71,6 +73,11 @@ Tech stack: Go 1.26.1, go-zero, BoltDB, gorilla/websocket, React + Vite + TypeSc
 | gorilla/websocket for real-time | Mature library, simple hub pattern for broadcasting | ✓ Good |
 | In-process double-spend demo | Faster and more reliable than subprocess approach | ✓ Good |
 | Total-fee sorting (not fee-per-byte) | Educational project, all txs roughly same size | ✓ Good |
+| Shared testutil before test phases | Phase 14 first — eliminates mock duplication across all subsequent phases | ✓ Good |
+| require.Eventually over time.Sleep | Deterministic async assertions, no flaky tests | ✓ Good |
+| Error injection via exported mock fields | Simple, type-safe, no framework needed | ✓ Good |
+| Two-phase lock eviction for Hub broadcast | Collect under RLock, delete under Lock — eliminates data race | ✓ Good |
+| OS-assigned port 0 for P2P integration tests | Avoids CI port conflicts, works in parallel | ✓ Good |
 
 ---
-*Last updated: 2026-03-08 after milestone v1.2 started*
+*Last updated: 2026-03-08 after v1.2 milestone*
