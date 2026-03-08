@@ -71,9 +71,9 @@ Plans:
 **Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 15-01-PLAN.md — Gap-fill tx, utxo, wallet, mempool to 95%+ coverage
-- [ ] 15-02-PLAN.md — Chain aggregate tests to 85%+ coverage
-- [ ] 15-03-PLAN.md — P2P handler and payload tests to 80%+ coverage
+- [x] 15-01-PLAN.md — Gap-fill tx, utxo, wallet, mempool to 95%+ coverage
+- [x] 15-02-PLAN.md — Chain aggregate tests to 85%+ coverage
+- [x] 15-03-PLAN.md — P2P handler and payload tests to 80%+ coverage
 
 ### Phase 16: Infrastructure Persistence Tests
 **Goal**: Persistence layer correctness is verified with real BoltDB and file I/O, ensuring data integrity across block saves, queries, and reorgs
@@ -83,7 +83,11 @@ Plans:
   1. `go test -cover ./internal/infrastructure/persistence/bbolt/` reports 80%+ coverage, including atomic block+UTXO saves, range queries, reorg deletes, and undo entries
   2. `go test -cover ./internal/infrastructure/persistence/jsonfile/` reports 90%+ coverage
   3. All persistence tests use `t.TempDir()` for isolation and pass when run with `go test -count=2` (no shared state between runs)
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 16-01-PLAN.md — BoltDB repository tests (SaveBlockWithUTXOs, DeleteBlocksAbove, undo entries, storage model round-trips)
+- [ ] 16-02-PLAN.md — JSON file wallet repo error-path tests (corrupt files, read-only directories)
 
 ### Phase 17: Handler Layer Tests
 **Goal**: HTTP API and WebSocket handlers are tested against mock dependencies, verifying request/response behavior and event broadcasting
@@ -128,11 +132,11 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 12. Local K8s Development | v1.1 | 2/2 | Complete | 2026-03-07 |
 | 13. GitOps Deployment | v1.1 | 1/1 | Complete | 2026-03-07 |
 | 14. Test Infrastructure | v1.2 | 2/2 | Complete | 2026-03-07 |
-| 15. Domain Layer Coverage | 3/3 | Complete    | 2026-03-08 | - |
-| 16. Infrastructure Persistence Tests | v1.2 | 0/? | Not started | - |
+| 15. Domain Layer Coverage | v1.2 | 3/3 | Complete | 2026-03-08 |
+| 16. Infrastructure Persistence Tests | v1.2 | 0/2 | Not started | - |
 | 17. Handler Layer Tests | v1.2 | 0/? | Not started | - |
 | 18. Integration & CI Quality | v1.2 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-03-05*
-*Last updated: 2026-03-08 -- Phase 15 planned (3 plans)*
+*Last updated: 2026-03-08 -- Phase 16 planned (2 plans)*
