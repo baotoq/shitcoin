@@ -32,8 +32,8 @@ Requirements for Testing & Quality milestone. Each maps to roadmap phases.
 
 ### Integration Tests
 
-- [ ] **INTG-01**: P2P integration tests verify TCP handshake, block sync, and tx relay between 2+ in-process nodes
-- [ ] **INTG-02**: E2E chain scenario tests verify full workflow: create wallet, send tx, mine block, verify UTXO updated, check balance
+- [x] **INTG-01**: P2P integration tests verify TCP handshake, block sync, and tx relay between 2+ in-process nodes
+- [x] **INTG-02**: E2E chain scenario tests verify full workflow: create wallet, send tx, mine block, verify UTXO updated, check balance
 
 ## v1.1 Requirements (Complete)
 
@@ -124,8 +124,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HNDL-02 | Phase 17 | Complete |
 | INFR-01 | Phase 16 | Complete |
 | INFR-02 | Phase 16 | Complete |
-| INTG-01 | Phase 18 | Pending |
-| INTG-02 | Phase 18 | Pending |
+| INTG-01 | Phase 18 | Complete |
+| INTG-02 | Phase 18 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 13 total

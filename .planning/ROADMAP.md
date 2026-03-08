@@ -41,7 +41,7 @@
 - [x] **Phase 15: Domain Layer Coverage** - Unit tests for chain, P2P, utxo, wallet, mempool, tx, and error paths across all domain packages (completed 2026-03-08)
 - [x] **Phase 16: Infrastructure Persistence Tests** - BoltDB repository and JSON file wallet store test coverage (completed 2026-03-08)
 - [x] **Phase 17: Handler Layer Tests** - REST API and WebSocket hub test coverage with httptest and mock dependencies (completed 2026-03-08)
-- [ ] **Phase 18: Integration & CI Quality** - P2P multi-node integration tests, E2E chain scenarios, and race detection in CI
+- [x] **Phase 18: Integration & CI Quality** - P2P multi-node integration tests, E2E chain scenarios, and race detection in CI (completed 2026-03-08)
 
 ## Phase Details
 
@@ -112,7 +112,7 @@ Plans:
   2. E2E chain scenario tests verify the full workflow: create wallet, send tx, mine block, verify UTXO updated, check balance -- all in a single test function
   3. `go test -race ./...` passes in CI (GitHub Actions) with zero data race warnings
   4. CI pipeline runs all tests with `-race` flag on every push and PR
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 18-01-PLAN.md — P2P multi-node integration tests and E2E chain scenario tests
@@ -143,7 +143,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 15. Domain Layer Coverage | v1.2 | 3/3 | Complete | 2026-03-08 |
 | 16. Infrastructure Persistence Tests | v1.2 | 2/2 | Complete | 2026-03-08 |
 | 17. Handler Layer Tests | v1.2 | 2/2 | Complete | 2026-03-08 |
-| 18. Integration & CI Quality | 1/2 | In Progress|  | - |
+| 18. Integration & CI Quality | 2/2 | Complete   | 2026-03-08 | - |
 
 ---
 *Roadmap created: 2026-03-05*

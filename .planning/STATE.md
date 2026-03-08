@@ -4,13 +4,13 @@ milestone: v1.2
 milestone_name: Testing & Quality
 status: completed
 stopped_at: Completed 18-02-PLAN.md (race detection)
-last_updated: "2026-03-08T05:26:10.960Z"
+last_updated: "2026-03-08T05:27:33.192Z"
 last_activity: 2026-03-08 -- Completed 17-02 WebSocket handler tests (84.0% coverage)
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 17 - Handler Layer Tests (completed)
+**Current focus:** Phase 18 - Integration & CI Quality (completed)
 
 ## Current Position
 
-Phase: 17 (4 of 5 in v1.2) (Handler Layer Tests)
+Phase: 18 (5 of 5 in v1.2) (Integration & CI Quality)
 Plan: 2 of 2 in current phase
-Status: Plan 17-02 complete -- 2 of 2 plans done
-Last activity: 2026-03-08 -- Completed 17-02 WebSocket handler tests (84.0% coverage)
+Status: Plan 18-02 complete -- 2 of 2 plans done
+Last activity: 2026-03-08 -- Completed 18-01 integration tests (6 tests: 3 P2P + 3 E2E)
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Last activity: 2026-03-08 -- Completed 17-02 WebSocket handler tests (84.0% cove
 | Phase 16 P01 | 2min | 2 tasks | 3 files |
 | Phase 17 P02 | 2min | 2 tasks | 2 files |
 | Phase 17 P01 | 2min | 2 tasks | 5 files |
+| Phase 18 P01 | 2min | 2 tasks | 2 files |
 | Phase 18 P02 | 1min | 1 tasks | 2 files |
 
 ## Accumulated Context
@@ -86,6 +87,8 @@ Recent decisions affecting current work:
 - [Phase 17]: GetChainHeightErr added to MockChainRepo for BlocksHandler error testing
 - [Phase 17]: API handler coverage 93.5% -- local errUTXORepo for targeted error injection
 - [Phase 18]: Two-phase lock eviction pattern: collect under RLock, delete under Lock
+- [18-01]: OS-assigned port 0 for all P2P integration tests to avoid CI port conflicts
+- [18-01]: UTXO state change verified by TxID comparison (not value) to avoid false positives from equal coinbase rewards
 
 ### Pending Todos
 
@@ -98,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T05:26:10.956Z
-Stopped at: Completed 18-02-PLAN.md (race detection)
+Last session: 2026-03-08T05:27:00Z
+Stopped at: Completed 18-01-PLAN.md (integration tests)
 Resume file: None
