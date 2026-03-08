@@ -1,6 +1,7 @@
 package utxo
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -225,6 +226,193 @@ func TestGetBalance(t *testing.T) {
 	balance, err = set.GetBalance("nobody")
 	require.NoError(t, err)
 	assert.Equal(t, int64(0), balance)
+}
+
+// --- Error-returning mock repo for error path tests ---
+
+type errRepo struct {
+	memRepo
+	putErr       error
+	deleteErr    error
+	getErr       error
+	getByAddrErr error
+	// Track call counts to fail on specific calls
+	putCount    int
+	putFailAt   int // fail on Nth put call (0 = never)
+	deleteCount int
+	deleteFailAt int
+}
+
+func newErrRepo() *errRepo {
+	return &errRepo{
+		memRepo: *newMemRepo(),
+	}
+}
+
+func (e *errRepo) Put(u UTXO) error {
+	e.putCount++
+	if e.putFailAt > 0 && e.putCount >= e.putFailAt {
+		return e.putErr
+	}
+	if e.putErr != nil && e.putFailAt == 0 {
+		return e.putErr
+	}
+	return e.memRepo.Put(u)
+}
+
+func (e *errRepo) Get(txID block.Hash, vout uint32) (UTXO, error) {
+	if e.getErr != nil {
+		return UTXO{}, e.getErr
+	}
+	return e.memRepo.Get(txID, vout)
+}
+
+func (e *errRepo) Delete(txID block.Hash, vout uint32) error {
+	e.deleteCount++
+	if e.deleteFailAt > 0 && e.deleteCount >= e.deleteFailAt {
+		return e.deleteErr
+	}
+	if e.deleteErr != nil && e.deleteFailAt == 0 {
+		return e.deleteErr
+	}
+	return e.memRepo.Delete(txID, vout)
+}
+
+func (e *errRepo) GetByAddress(address string) ([]UTXO, error) {
+	if e.getByAddrErr != nil {
+		return nil, e.getByAddrErr
+	}
+	return e.memRepo.GetByAddress(address)
+}
+
+// --- UndoBlock error path tests ---
+
+func TestUndoBlock_ErrorPaths(t *testing.T) {
+	tests := []struct {
+		name    string
+		undo    *UndoEntry
+		setup   func(repo *errRepo)
+		wantErr string
+	}{
+		{
+			name: "invalid created txID hex",
+			undo: &UndoEntry{
+				Created: []UTXORef{{TxID: "not-valid-hex", Vout: 0}},
+			},
+			wantErr: "parse created txid",
+		},
+		{
+			name: "repo Delete error during undo of created UTXO",
+			undo: &UndoEntry{
+				Created: []UTXORef{{TxID: block.DoubleSHA256([]byte("tx1")).String(), Vout: 0}},
+			},
+			setup: func(repo *errRepo) {
+				// Put the UTXO so it exists, then configure delete to fail
+				txID := block.DoubleSHA256([]byte("tx1"))
+				_ = repo.memRepo.Put(NewUTXO(txID, 0, 1000, "addr"))
+				repo.deleteErr = fmt.Errorf("disk full")
+			},
+			wantErr: "delete created utxo",
+		},
+		{
+			name: "invalid spent txID hex",
+			undo: &UndoEntry{
+				Created: []UTXORef{},
+				Spent:   []SpentUTXO{{TxID: "not-valid-hex", Vout: 0, Value: 1000, Address: "addr"}},
+			},
+			wantErr: "parse spent txid",
+		},
+		{
+			name: "repo Put error during undo of spent UTXO",
+			undo: &UndoEntry{
+				Created: []UTXORef{},
+				Spent:   []SpentUTXO{{TxID: block.DoubleSHA256([]byte("tx2")).String(), Vout: 0, Value: 1000, Address: "addr"}},
+			},
+			setup: func(repo *errRepo) {
+				repo.putErr = fmt.Errorf("disk full")
+			},
+			wantErr: "restore spent utxo",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := newErrRepo()
+			if tt.setup != nil {
+				tt.setup(repo)
+			}
+			set := NewSet(repo)
+
+			err := set.UndoBlock(tt.undo)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
+		})
+	}
+}
+
+// --- ApplyBlock repo error tests ---
+
+func TestApplyBlock_RepoPutError(t *testing.T) {
+	repo := newErrRepo()
+	repo.putErr = fmt.Errorf("disk full")
+	set := NewSet(repo)
+
+	coinbase := tx.NewCoinbaseTx("miner", 5_000_000_000)
+	_, err := set.ApplyBlock(0, []*tx.Transaction{coinbase})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "put utxo")
+}
+
+func TestApplyBlock_RepoDeleteError(t *testing.T) {
+	repo := newErrRepo()
+	set := NewSet(repo)
+
+	// First apply a coinbase to create a UTXO
+	coinbase := tx.NewCoinbaseTx("alice", 5_000_000_000)
+	_, err := set.ApplyBlock(0, []*tx.Transaction{coinbase})
+	require.NoError(t, err)
+
+	// Now configure delete to fail and try to spend the UTXO
+	repo.deleteErr = fmt.Errorf("disk full")
+	input := tx.NewTxInput(coinbase.ID(), 0)
+	spendTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(5_000_000_000, "bob")})
+	coinbase2 := tx.NewCoinbaseTx("miner", 5_000_000_000)
+
+	_, err = set.ApplyBlock(1, []*tx.Transaction{coinbase2, spendTx})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "delete spent utxo")
+}
+
+func TestApplyBlock_RepoGetError(t *testing.T) {
+	repo := newErrRepo()
+	set := NewSet(repo)
+
+	// Apply coinbase first
+	coinbase := tx.NewCoinbaseTx("alice", 5_000_000_000)
+	_, err := set.ApplyBlock(0, []*tx.Transaction{coinbase})
+	require.NoError(t, err)
+
+	// Configure Get to fail (simulating corrupt data)
+	repo.getErr = fmt.Errorf("corrupt data")
+	input := tx.NewTxInput(coinbase.ID(), 0)
+	spendTx := tx.NewTransaction([]tx.TxInput{input}, []tx.TxOutput{tx.NewTxOutput(5_000_000_000, "bob")})
+	coinbase2 := tx.NewCoinbaseTx("miner", 5_000_000_000)
+
+	_, err = set.ApplyBlock(1, []*tx.Transaction{coinbase2, spendTx})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "get utxo")
+}
+
+// --- GetBalance repo error test ---
+
+func TestGetBalance_RepoError(t *testing.T) {
+	repo := newErrRepo()
+	repo.getByAddrErr = fmt.Errorf("db connection lost")
+	set := NewSet(repo)
+
+	_, err := set.GetBalance("someaddr")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "get utxos by address")
 }
 
 func TestGetUTXO(t *testing.T) {

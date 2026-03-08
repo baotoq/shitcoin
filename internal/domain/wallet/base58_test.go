@@ -99,4 +99,18 @@ func TestBase58CheckDecode(t *testing.T) {
 		_, _, err := Base58CheckDecode(address)
 		require.Error(t, err)
 	})
+
+	t.Run("short input returns error", func(t *testing.T) {
+		// A very short Base58 string that decodes to fewer than 5 bytes
+		_, _, err := Base58CheckDecode("1")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrInvalidAddress)
+	})
+
+	t.Run("empty input returns error", func(t *testing.T) {
+		// Base58Decode of empty string returns nil, which is < 5 bytes
+		_, _, err := Base58CheckDecode("")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrInvalidAddress)
+	})
 }
