@@ -97,7 +97,7 @@ Plans:
   1. `go test -cover ./internal/handler/api/` reports 80%+ coverage, with tests for address, mempool, search, and tx handlers using httptest
   2. `go test -cover ./internal/handler/ws/` reports 75%+ coverage, with tests for event subscribe, broadcast to connected clients, and client disconnect cleanup
   3. All handler tests use mock dependencies (no real BoltDB or network connections)
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 17-01-PLAN.md — API handler tests (AddressHandler, BlockByHashHandler, SearchHandler, BlocksHandler edge cases, MempoolHandler with data)
@@ -138,7 +138,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18
 | 14. Test Infrastructure | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 15. Domain Layer Coverage | v1.2 | 3/3 | Complete | 2026-03-08 |
 | 16. Infrastructure Persistence Tests | v1.2 | 2/2 | Complete | 2026-03-08 |
-| 17. Handler Layer Tests | v1.2 | 0/2 | Not started | - |
+| 17. Handler Layer Tests | 1/2 | In Progress|  | - |
 | 18. Integration & CI Quality | v1.2 | 0/? | Not started | - |
 
 ---

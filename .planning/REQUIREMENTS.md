@@ -23,7 +23,7 @@ Requirements for Testing & Quality milestone. Each maps to roadmap phases.
 ### Handler Layer
 
 - [ ] **HNDL-01**: API handler test coverage reaches 80%+ (address, mempool, search, tx handlers)
-- [ ] **HNDL-02**: WebSocket hub test coverage reaches 75%+ (event subscribe, broadcast, client disconnect)
+- [x] **HNDL-02**: WebSocket hub test coverage reaches 75%+ (event subscribe, broadcast, client disconnect)
 
 ### Infrastructure Layer
 
@@ -121,7 +121,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOM-03 | Phase 15 | Complete |
 | DOM-04 | Phase 15 | Complete |
 | HNDL-01 | Phase 17 | Pending |
-| HNDL-02 | Phase 17 | Pending |
+| HNDL-02 | Phase 17 | Complete |
 | INFR-01 | Phase 16 | Complete |
 | INFR-02 | Phase 16 | Complete |
 | INTG-01 | Phase 18 | Pending |

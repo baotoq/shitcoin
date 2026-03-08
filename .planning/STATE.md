@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Testing & Quality
 status: completed
-stopped_at: Completed 16-01-PLAN.md (bbolt repository tests)
+stopped_at: Completed 17-02-PLAN.md (WebSocket handler tests)
 last_updated: "2026-03-08T04:34:32.527Z"
-last_activity: 2026-03-08 -- Completed 16-01 bbolt repository tests (86.3% coverage)
+last_activity: 2026-03-08 -- Completed 17-02 WebSocket handler tests (84.0% coverage)
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 7
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -20,19 +20,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** A working blockchain you built and understand end-to-end -- from transaction creation to block mining to peer synchronization.
-**Current focus:** Phase 16 - Infrastructure Persistence Tests (in progress)
+**Current focus:** Phase 17 - Handler Layer Tests (completed)
 
 ## Current Position
 
-Phase: 16 (3 of 5 in v1.2) (Infrastructure Persistence Tests)
+Phase: 17 (4 of 5 in v1.2) (Handler Layer Tests)
 Plan: 2 of 2 in current phase
-Status: Plan 16-01 complete -- 1 of 2 plans done
-Last activity: 2026-03-08 -- Completed 16-01 bbolt repository tests (86.3% coverage)
+Status: Plan 17-02 complete -- 2 of 2 plans done
+Last activity: 2026-03-08 -- Completed 17-02 WebSocket handler tests (84.0% coverage)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29 (22 v1.0 + 2 v1.1 + 5 v1.2)
+- Total plans completed: 30 (22 v1.0 + 2 v1.1 + 6 v1.2)
 - Average duration: 6min
 - Total execution time: ~2.3 hours
 
@@ -53,6 +53,7 @@ Last activity: 2026-03-08 -- Completed 16-01 bbolt repository tests (86.3% cover
 | Phase 15 P02 | 3min | 2 tasks | 2 files |
 | Phase 15 P03 | 5min | 2 tasks | 3 files |
 | Phase 16 P01 | 2min | 2 tasks | 3 files |
+| Phase 17 P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [15-03]: Tested removePeer indirectly via handleVersion protocol violation path
 - [Phase 16]: Permission-based error injection with t.Cleanup restore for jsonfile wallet repo tests
 - [Phase 16]: Used testutil.MustCreateBlock for SaveBlockWithUTXOs tests (blocks with coinbase txs vs suite's nil-tx blocks)
+- [Phase 17]: writePump batches queued messages with newline separators -- split on newline in integration tests
+- [Phase 17]: Hub subscribeEventBus goroutine race resolved with retry-publish goroutine pattern
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T04:32:17.606Z
-Stopped at: Completed 16-01-PLAN.md (bbolt repository tests)
+Last session: 2026-03-08T04:53:42Z
+Stopped at: Completed 17-02-PLAN.md (WebSocket handler tests)
 Resume file: None
