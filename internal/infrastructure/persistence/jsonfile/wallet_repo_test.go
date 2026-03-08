@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -123,4 +124,82 @@ func TestWalletRepo_FileFormatIsReadableJSON(t *testing.T) {
 	require.True(t, ok, "wallet entry is not an object")
 	assert.Contains(t, entry, "address")
 	assert.Contains(t, entry, "private_key_hex")
+}
+
+func TestWalletRepo_CorruptFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "wallets.json")
+
+	// Write invalid JSON.
+	require.NoError(t, os.WriteFile(filePath, []byte(`{not valid json`), 0o644))
+
+	_, err := NewWalletRepo(filePath)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal wallet file")
+}
+
+func TestWalletRepo_InvalidPrivateKey(t *testing.T) {
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "wallets.json")
+
+	// Write valid JSON with an invalid private key.
+	data := `{"wallets":[{"address":"1test","private_key_hex":"not-a-hex-key"}]}`
+	require.NoError(t, os.WriteFile(filePath, []byte(data), 0o644))
+
+	_, err := NewWalletRepo(filePath)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "reconstruct wallet")
+}
+
+func TestWalletRepo_UnreadableFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission-based test not supported on Windows")
+	}
+
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "wallets.json")
+
+	// Write a valid file, then make it unreadable.
+	require.NoError(t, os.WriteFile(filePath, []byte(`{"wallets":[]}`), 0o644))
+	require.NoError(t, os.Chmod(filePath, 0o000))
+	t.Cleanup(func() {
+		os.Chmod(filePath, 0o644) // Restore so t.TempDir cleanup succeeds.
+	})
+
+	_, err := NewWalletRepo(filePath)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "read wallet file")
+}
+
+func TestWalletRepo_FlushError_ReadOnlyDir(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission-based test not supported on Windows")
+	}
+
+	tmpDir := t.TempDir()
+	subDir := filepath.Join(tmpDir, "readonly")
+	require.NoError(t, os.MkdirAll(subDir, 0o755))
+	filePath := filepath.Join(subDir, "wallets.json")
+
+	// Create a valid repo and save a wallet to confirm it works.
+	repo, err := NewWalletRepo(filePath)
+	require.NoError(t, err)
+
+	w1, err := wallet.NewWallet()
+	require.NoError(t, err)
+	require.NoError(t, repo.Save(w1))
+
+	// Make the directory read-only so flush cannot write the temp file.
+	require.NoError(t, os.Chmod(subDir, 0o555))
+	t.Cleanup(func() {
+		os.Chmod(subDir, 0o755) // Restore so t.TempDir cleanup succeeds.
+	})
+
+	// Create a new wallet and attempt to save -- should fail.
+	w2, err := wallet.NewWallet()
+	require.NoError(t, err)
+
+	err = repo.Save(w2)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "write temp wallet file")
 }
