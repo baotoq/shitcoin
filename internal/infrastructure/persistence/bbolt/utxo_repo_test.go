@@ -172,6 +172,28 @@ func (s *UTXORepoSuite) TestCompositeKey36Bytes() {
 	s.Assert().Len(key, 36)
 }
 
+func (s *UTXORepoSuite) TestDeleteUndoEntry() {
+	entry := &utxo.UndoEntry{
+		BlockHeight: 7,
+		Spent:       []utxo.SpentUTXO{{TxID: "aabb", Vout: 0, Value: 500, Address: "alice"}},
+		Created:     []utxo.UTXORef{{TxID: "ccdd", Vout: 0}},
+	}
+
+	s.Require().NoError(s.repo.SaveUndoEntry(entry))
+
+	// Verify it exists
+	got, err := s.repo.GetUndoEntry(7)
+	s.Require().NoError(err)
+	s.Assert().Equal(uint64(7), got.BlockHeight)
+
+	// Delete it
+	s.Require().NoError(s.repo.DeleteUndoEntry(7))
+
+	// Verify it's gone
+	_, err = s.repo.GetUndoEntry(7)
+	s.Require().ErrorIs(err, utxo.ErrUndoEntryNotFound)
+}
+
 func (s *UTXORepoSuite) TestStorageModelRoundTrip() {
 	txID := block.DoubleSHA256([]byte("model-test"))
 	original := utxo.NewUTXO(txID, 3, 999, "test-addr")
