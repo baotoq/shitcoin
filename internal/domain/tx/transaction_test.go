@@ -393,3 +393,113 @@ func TestCreateTransactionWithChangeFeeInsufficientFunds(t *testing.T) {
 	_, err := CreateTransactionWithChange(inputs, inputValues, "recipient", 3000, "change-addr", 3000)
 	assert.ErrorIs(t, err, ErrInsufficientFunds)
 }
+
+// --- SignTransaction coinbase early-return ---
+
+func TestSignTransaction_CoinbaseNoop(t *testing.T) {
+	coinbaseTx := NewCoinbaseTx("miner-addr", 5_000_000_000)
+
+	// Signing a coinbase should be a no-op (return nil, inputs unchanged)
+	privKey, err := btcec.NewPrivateKey()
+	require.NoError(t, err)
+
+	err = SignTransaction(coinbaseTx, privKey)
+	assert.NoError(t, err)
+
+	// Inputs should remain unsigned
+	assert.Nil(t, coinbaseTx.Inputs()[0].Signature())
+	assert.Nil(t, coinbaseTx.Inputs()[0].PubKey())
+}
+
+// --- VerifyTransaction invalid signature/pubkey edge cases ---
+
+func TestVerifyTransaction_InvalidSignatures(t *testing.T) {
+	tests := []struct {
+		name      string
+		signature []byte
+		pubKey    []byte
+	}{
+		{
+			name:      "empty signature bytes",
+			signature: []byte{},
+			pubKey:    []byte{0x02, 0xAB},
+		},
+		{
+			name:      "empty pubkey bytes",
+			signature: []byte{0x30, 0x44},
+			pubKey:    []byte{},
+		},
+		{
+			name:      "invalid (non-parseable) signature bytes",
+			signature: []byte{0xFF, 0xFF, 0xFF, 0xFF},
+			pubKey:    nil, // will set a real pubkey below
+		},
+		{
+			name:      "invalid (non-parseable) pubkey bytes",
+			signature: nil, // will set a real signature below
+			pubKey:    []byte{0xFF, 0xFF, 0xFF},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			prevTxID := block.DoubleSHA256([]byte("prev-tx"))
+			input := NewTxInput(prevTxID, 0)
+
+			// For cases that need a real counterpart, generate one
+			privKey, err := btcec.NewPrivateKey()
+			require.NoError(t, err)
+
+			sig := tt.signature
+			pk := tt.pubKey
+
+			if tt.name == "invalid (non-parseable) signature bytes" {
+				// Use a valid pubkey with invalid signature
+				pk = privKey.PubKey().SerializeCompressed()
+			}
+			if tt.name == "invalid (non-parseable) pubkey bytes" {
+				// Use a valid signature with invalid pubkey
+				outputs := []TxOutput{NewTxOutput(1000, "addr1")}
+				tmpTx := NewTransaction([]TxInput{input}, outputs)
+				require.NoError(t, SignTransaction(tmpTx, privKey))
+				sig = tmpTx.Inputs()[0].Signature()
+			}
+
+			input.SetSignature(sig)
+			input.SetPubKey(pk)
+
+			tx := &Transaction{
+				id:      block.DoubleSHA256([]byte("test-id")),
+				inputs:  []TxInput{input},
+				outputs: []TxOutput{NewTxOutput(1000, "addr1")},
+			}
+
+			assert.False(t, VerifyTransaction(tx))
+		})
+	}
+}
+
+// --- ValidateCoinbase multiple outputs ---
+
+func TestValidateCoinbase_MultipleOutputs(t *testing.T) {
+	// Construct a coinbase transaction with 2 outputs by manipulating internal fields
+	input := TxInput{
+		txID: block.Hash{}, // zero hash
+		vout: 0xFFFFFFFF,   // coinbase marker
+	}
+	multiOutputCoinbase := &Transaction{
+		inputs: []TxInput{input},
+		outputs: []TxOutput{
+			NewTxOutput(3_000_000_000, "miner1"),
+			NewTxOutput(2_000_000_000, "miner2"),
+		},
+	}
+	multiOutputCoinbase.id = multiOutputCoinbase.ComputeID()
+
+	// Should be recognized as coinbase
+	assert.True(t, multiOutputCoinbase.IsCoinbase())
+
+	// ValidateCoinbase should reject it due to multiple outputs
+	err := ValidateCoinbase(multiOutputCoinbase, 5_000_000_000)
+	assert.ErrorIs(t, err, ErrInvalidCoinbase)
+}

@@ -321,6 +321,58 @@ func TestDrainByFeeMaxTxs(t *testing.T) {
 	assert.Equal(t, 3, mp.Count())
 }
 
+func TestGetByID_Found(t *testing.T) {
+	repo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(repo)
+	privKey, _ := btcec.NewPrivateKey()
+
+	spendTx := buildSignedTx(t, utxoSet, privKey, "testaddr")
+
+	mp := mempool.New(utxoSet)
+	require.NoError(t, mp.Add(spendTx))
+
+	got := mp.GetByID(spendTx.ID())
+	require.NotNil(t, got)
+	assert.Equal(t, spendTx.ID(), got.ID())
+}
+
+func TestGetByID_NotFound(t *testing.T) {
+	repo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(repo)
+	mp := mempool.New(utxoSet)
+
+	fakeHash := block.DoubleSHA256([]byte("nonexistent"))
+	got := mp.GetByID(fakeHash)
+	assert.Nil(t, got)
+}
+
+func TestRemove_NonExistentTxID(t *testing.T) {
+	repo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(repo)
+	privKey, _ := btcec.NewPrivateKey()
+
+	spendTx := buildSignedTx(t, utxoSet, privKey, "testaddr")
+
+	mp := mempool.New(utxoSet)
+	require.NoError(t, mp.Add(spendTx))
+
+	// Remove a non-existent tx ID -- should not panic and mempool unchanged
+	fakeHash := block.DoubleSHA256([]byte("nonexistent"))
+	mp.Remove([]block.Hash{fakeHash})
+
+	assert.Equal(t, 1, mp.Count())
+}
+
+func TestFeeForTx_NotFound(t *testing.T) {
+	repo := testutil.NewMockUTXORepo()
+	utxoSet := utxo.NewSet(repo)
+	mp := mempool.New(utxoSet)
+
+	fakeHash := block.DoubleSHA256([]byte("nonexistent"))
+	fee := mp.FeeForTx(fakeHash)
+	assert.Equal(t, int64(0), fee)
+}
+
 func TestDrainByFeeZeroLimit(t *testing.T) {
 	repo := testutil.NewMockUTXORepo()
 	utxoSet := utxo.NewSet(repo)
